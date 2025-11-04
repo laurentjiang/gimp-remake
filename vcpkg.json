@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "gimp-remake",
+  "version-string": "0.1.0",
+  "description": "Windows-only C++ rewrite of GIMP targeting clang++",
+  "supports": "windows & !uwp",
+  "dependencies": [
+    "qtbase",
+    "skia",
+    "nlohmann-json",
+    "gtest",
+    "catch2"
+  ]
+}

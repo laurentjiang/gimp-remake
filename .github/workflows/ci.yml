@@ -3,14 +3,17 @@ name: CI
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
     env:
-      VCPKG_ROOT: ${{ runner.temp }}\vcpkg
+      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
       VCPKG_DEFAULT_TRIPLET: x64-windows
     steps:
       - name: Checkout
@@ -37,11 +40,7 @@ jobs:
         working-directory: ${{ env.VCPKG_ROOT }}
 
       - name: Configure (CMake + vcpkg manifest)
-        run: |
-          cmake -B build -G Ninja ^
-            -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake ^
-            -DCMAKE_BUILD_TYPE=Release \
-            .
+        run: cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake -DCMAKE_BUILD_TYPE=Release .
 
       - name: Build
         run: cmake --build build --config Release

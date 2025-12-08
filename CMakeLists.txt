@@ -17,6 +17,10 @@ option(GIMP_REMAKE_BUILD_TESTS "Build tests" ON)
 
 add_executable(gimp-remake
     src/main.cpp
+    core/document.h
+    core/command.h
+    core/history_manager.h
+    render/renderer.h
 )
 
 # Enable modern C++ warnings; extend per-platform as we add code.

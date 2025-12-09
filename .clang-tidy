@@ -31,6 +31,7 @@ Checks: >
   -readability-named-parameter,
   -cppcoreguidelines-avoid-do-while,
   -clang-diagnostic-c++17-extensions
+    -llvm-header-guard
 
 WarningsAsErrors: ""
 HeaderFilterRegex: "^(?!.*/(build|vcpkg_installed)/)"

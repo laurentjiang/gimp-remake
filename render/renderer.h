@@ -7,14 +7,12 @@
 
 #pragma once
 
-namespace gimp
-{
+namespace gimp {
 class Document;
 
-class Renderer
-{
-public:
+class Renderer {
+  public:
     virtual ~Renderer() = default;
     virtual void render(const Document& document) = 0;
 };
-} // namespace gimp
+}  // namespace gimp

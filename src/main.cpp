@@ -9,6 +9,5 @@
 
 int main()
 {
-    std::cout << "GIMP Remake launcher stub. Hook UI shell here." << std::endl;
     return 0;
 }

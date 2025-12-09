@@ -18,8 +18,10 @@ option(GIMP_REMAKE_BUILD_TESTS "Build tests" ON)
 add_executable(gimp-remake
     src/main.cpp
     core/document.h
+    core/layer.h
     core/command.h
     core/history_manager.h
+    core/tile_store.h
     render/renderer.h
 )
 

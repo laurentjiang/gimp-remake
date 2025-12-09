@@ -7,11 +7,22 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 namespace gimp
 {
+class Layer;
+class TileStore;
+
 class Document
 {
 public:
     virtual ~Document() = default;
+
+    virtual std::shared_ptr<Layer> add_layer() = 0;
+    virtual void remove_layer(const std::shared_ptr<Layer>& layer) = 0;
+    virtual const std::vector<std::shared_ptr<Layer>>& layers() const = 0;
+    virtual TileStore& tile_store() = 0;
 };
 } // namespace gimp

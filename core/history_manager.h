@@ -9,16 +9,14 @@
 
 #include <memory>
 
-namespace gimp
-{
+namespace gimp {
 class Command;
 
-class HistoryManager
-{
-public:
+class HistoryManager {
+  public:
     virtual ~HistoryManager() = default;
     virtual void push(std::shared_ptr<Command> command) = 0;
     virtual bool undo() = 0;
     virtual bool redo() = 0;
 };
-} // namespace gimp
+}  // namespace gimp

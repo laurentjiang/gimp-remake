@@ -33,7 +33,14 @@ jobs:
           restore-keys: vcpkg-${{ runner.os }}-
 
       - name: Acquire vcpkg
-        run: git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
+        shell: pwsh
+        run: |
+          if (Test-Path $env:VCPKG_ROOT) {
+            git -C $env:VCPKG_ROOT pull
+          }
+          else {
+            git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
+          }
 
       - name: Bootstrap vcpkg
         run: .\bootstrap-vcpkg.bat

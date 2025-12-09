@@ -17,9 +17,6 @@ jobs:
       - name: Setup LLVM (clang-format/clang-tidy)
         run: choco install llvm --no-progress -y
 
-      - name: Ensure build directory
-        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release .
-
       - name: Run linter script
         shell: pwsh
         run: pwsh scripts/run-lint.ps1

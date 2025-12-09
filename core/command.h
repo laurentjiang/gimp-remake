@@ -7,13 +7,11 @@
 
 #pragma once
 
-namespace gimp
-{
-class Command
-{
-public:
+namespace gimp {
+class Command {
+  public:
     virtual ~Command() = default;
     virtual void apply() = 0;
     virtual void undo() = 0;
 };
-} // namespace gimp
+}  // namespace gimp

@@ -10,14 +10,12 @@
 #include <memory>
 #include <vector>
 
-namespace gimp
-{
+namespace gimp {
 class Layer;
 class TileStore;
 
-class Document
-{
-public:
+class Document {
+  public:
     virtual ~Document() = default;
 
     virtual std::shared_ptr<Layer> add_layer() = 0;
@@ -25,4 +23,4 @@ public:
     virtual const std::vector<std::shared_ptr<Layer>>& layers() const = 0;
     virtual TileStore& tile_store() = 0;
 };
-} // namespace gimp
+}  // namespace gimp

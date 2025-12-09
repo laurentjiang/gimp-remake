@@ -7,24 +7,22 @@
 
 #pragma once
 
-#include "../command.h"
 #include <memory>
+#include "../command.h"
 
-namespace gimp
-{
+namespace gimp {
 class Document;
 class Layer;
 
-class AddLayerCommand : public Command
-{
-public:
+class AddLayerCommand : public Command {
+  public:
     explicit AddLayerCommand(std::shared_ptr<Document> document);
 
     void apply() override;
     void undo() override;
 
-private:
+  private:
     std::shared_ptr<Document> document_;
     std::shared_ptr<Layer> layer_;
 };
-} // namespace gimp
+}  // namespace gimp

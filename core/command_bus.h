@@ -9,17 +9,26 @@
 
 #include <memory>
 
-namespace gimp
-{
+namespace gimp {
 class Command;
 class HistoryManager;
 
-class CommandBus
-{
-public:
+class CommandBus {
+  public:
     virtual ~CommandBus() = default;
 
     virtual void dispatch(std::shared_ptr<Command> command) = 0;
     virtual HistoryManager& history() = 0;
 };
-} // namespace gimp
+
+class BasicCommandBus final : public CommandBus {
+  public:
+    explicit BasicCommandBus(HistoryManager& history);
+
+    void dispatch(std::shared_ptr<Command> command) override;
+    HistoryManager& history() override;
+
+  private:
+    HistoryManager* history_;
+};
+}  // namespace gimp

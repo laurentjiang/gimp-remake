@@ -7,11 +7,9 @@
 
 #pragma once
 
-namespace gimp
-{
-class Layer
-{
-public:
+namespace gimp {
+class Layer {
+  public:
     virtual ~Layer() = default;
 };
-} // namespace gimp
+}  // namespace gimp

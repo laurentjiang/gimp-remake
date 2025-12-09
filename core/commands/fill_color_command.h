@@ -7,24 +7,22 @@
 
 #pragma once
 
-#include "../command.h"
 #include <cstdint>
 #include <memory>
+#include "../command.h"
 
-namespace gimp
-{
+namespace gimp {
 class Document;
 
-class FillColorCommand : public Command
-{
-public:
+class FillColorCommand : public Command {
+  public:
     FillColorCommand(std::shared_ptr<Document> document, std::uint32_t rgba);
 
     void apply() override;
     void undo() override;
 
-private:
+  private:
     std::shared_ptr<Document> document_;
     std::uint32_t color_;
 };
-} // namespace gimp
+}  // namespace gimp

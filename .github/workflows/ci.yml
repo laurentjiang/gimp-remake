@@ -45,11 +45,9 @@ jobs:
             .\bootstrap-vcpkg.bat
           }
 
-      - name: Configure (CMake + vcpkg manifest)
-        run: cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake -DCMAKE_BUILD_TYPE=Release .
-
-      - name: Build
-        run: cmake --build build --config Release
+      - name: Configure + Build
+        shell: pwsh
+        run: pwsh scripts/build.ps1 -Config Release
 
       - name: Test
         run: ctest --test-dir build --output-on-failure

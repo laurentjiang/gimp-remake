@@ -21,6 +21,9 @@ add_executable(gimp-remake
     core/layer.h
     core/command.h
     core/history_manager.h
+    core/command_bus.h
+    core/commands/add_layer_command.h
+    core/commands/fill_color_command.h
     core/tile_store.h
     render/renderer.h
 )

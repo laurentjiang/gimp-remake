@@ -9,6 +9,7 @@
     "skia",
     "nlohmann-json",
     "gtest",
-    "catch2"
+    "catch2",
+    "spdlog"
   ]
 }

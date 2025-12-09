@@ -10,14 +10,12 @@
 #include "command.h"
 #include "history_manager.h"
 
-namespace gimp
-{
+namespace gimp {
 BasicCommandBus::BasicCommandBus(HistoryManager& history) : history_{&history} {}
 
 void BasicCommandBus::dispatch(std::shared_ptr<Command> command)
 {
-    if (!command || !history_)
-    {
+    if (!command || !history_) {
         return;
     }
 
@@ -29,4 +27,4 @@ HistoryManager& BasicCommandBus::history()
 {
     return *history_;
 }
-} // namespace gimp
+}  // namespace gimp

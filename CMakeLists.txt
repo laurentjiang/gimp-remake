@@ -27,9 +27,13 @@ add_executable(gimp-remake
     core/commands/add_layer_command.cpp
     core/commands/fill_color_command.h
     core/commands/fill_color_command.cpp
+    core/event_bus.h
     core/tile_store.h
     render/renderer.h
 )
+
+find_package(spdlog CONFIG REQUIRED)
+target_link_libraries(gimp-remake PRIVATE spdlog::spdlog)
 
 # Enable modern C++ warnings; extend per-platform as we add code.
 if(MSVC)

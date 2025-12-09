@@ -9,8 +9,7 @@
 
 #include "../document.h"
 
-namespace gimp
-{
+namespace gimp {
 FillColorCommand::FillColorCommand(std::shared_ptr<Document> document, std::uint32_t rgba)
     : document_{std::move(document)}, color_{rgba}
 {
@@ -27,4 +26,4 @@ void FillColorCommand::undo()
 {
     // TODO: implement undo once fill is implemented.
 }
-} // namespace gimp
+}  // namespace gimp

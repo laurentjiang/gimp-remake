@@ -9,8 +9,7 @@
 
 #include "../document.h"
 
-namespace gimp
-{
+namespace gimp {
 AddLayerCommand::AddLayerCommand(std::shared_ptr<Document> document)
     : document_{std::move(document)}
 {
@@ -18,22 +17,19 @@ AddLayerCommand::AddLayerCommand(std::shared_ptr<Document> document)
 
 void AddLayerCommand::apply()
 {
-    if (!document_)
-    {
+    if (!document_) {
         return;
     }
 
-    if (!layer_)
-    {
+    if (!layer_) {
         layer_ = document_->add_layer();
     }
 }
 
 void AddLayerCommand::undo()
 {
-    if (document_ && layer_)
-    {
+    if (document_ && layer_) {
         document_->remove_layer(layer_);
     }
 }
-} // namespace gimp
+}  // namespace gimp

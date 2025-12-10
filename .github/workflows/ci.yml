@@ -36,13 +36,22 @@ jobs:
         id: acquire-vcpkg
         shell: pwsh
         run: |
-          if (Test-Path $env:VCPKG_ROOT) {
+          $needsClone = $false
+          if (Test-Path "$env:VCPKG_ROOT/.git") {
             git -C $env:VCPKG_ROOT pull
           }
           else {
+            if (Test-Path $env:VCPKG_ROOT) {
+              Remove-Item -Recurse -Force $env:VCPKG_ROOT
+            }
             git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
-            cd $env:VCPKG_ROOT
+            $needsClone = $true
+          }
+
+          if ($needsClone) {
+            Push-Location $env:VCPKG_ROOT
             .\bootstrap-vcpkg.bat
+            Pop-Location
           }
 
       - name: Configure + Build

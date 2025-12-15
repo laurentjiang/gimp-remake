@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [ main ]
-    tags:
-      - 'v*'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -12,51 +10,34 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}\.vcpkg
-      VCPKG_DEFAULT_TRIPLET: x64-windows
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Ninja
-        run: choco install ninja --no-progress -y
-
-      - name: Cache vcpkg artifacts
-        uses: actions/cache@v4
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
         with:
-          path: |
-            ${{ env.VCPKG_ROOT }}\installed
-            ${{ env.VCPKG_ROOT }}\packages
-            ${{ env.VCPKG_ROOT }}\buildtrees
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
-          restore-keys: vcpkg-${{ runner.os }}-
+          version: 1.10.0
 
-      - name: Acquire vcpkg
-        id: acquire-vcpkg
-        shell: pwsh
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        id: runvcpkg
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/vcpkg
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Configure CMake
         run: |
-          $needsClone = $false
-          if (Test-Path "$env:VCPKG_ROOT/.git") {
-            git -C $env:VCPKG_ROOT pull
-          }
-          else {
-            if (Test-Path $env:VCPKG_ROOT) {
-              Remove-Item -Recurse -Force $env:VCPKG_ROOT
-            }
-            git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
-            $needsClone = $true
-          }
+          cmake -S . -B build -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
 
-          if ($needsClone) {
-            Push-Location $env:VCPKG_ROOT
-            .\bootstrap-vcpkg.bat
-            Pop-Location
-          }
-
-      - name: Configure + Build
-        shell: pwsh
-        run: pwsh scripts/build.ps1 -Config Release
+      - name: Build
+        run: cmake --build build --config Release
 
       - name: Test
         run: ctest --test-dir build --output-on-failure

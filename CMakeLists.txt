@@ -30,10 +30,13 @@ add_executable(gimp-remake
     core/event_bus.h
     core/tile_store.h
     render/renderer.h
+    render/skia_renderer.h
+    render/skia_renderer.cpp
 )
 
 find_package(spdlog CONFIG REQUIRED)
-target_link_libraries(gimp-remake PRIVATE spdlog::spdlog)
+find_package(unofficial-skia CONFIG REQUIRED)
+target_link_libraries(gimp-remake PRIVATE spdlog::spdlog unofficial::skia::skia)
 
 # Enable modern C++ warnings; extend per-platform as we add code.
 if(MSVC)

@@ -7,13 +7,11 @@
 
 #pragma once
 
-namespace gimp
-{
-class EventBus
-{
-public:
+namespace gimp {
+class EventBus {
+  public:
     virtual ~EventBus() = default;
 
-    virtual void publish() = 0; // TODO: add payloads and topics when needed.
+    virtual void publish() = 0;  // TODO: add payloads and topics when needed.
 };
-}
+}  // namespace gimp

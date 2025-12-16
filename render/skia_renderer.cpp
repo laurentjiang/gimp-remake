@@ -6,15 +6,12 @@
  */
 
 #include "skia_renderer.h"
-#include "../core/document.h"
 #include <iostream>
+#include "../core/document.h"
 
-namespace gimp
-{
+namespace gimp {
 
-SkiaRenderer::SkiaRenderer()
-{
-}
+SkiaRenderer::SkiaRenderer() {}
 
 SkiaRenderer::~SkiaRenderer() = default;
 
@@ -23,4 +20,4 @@ void SkiaRenderer::render(const Document& document)
     (void)document;
 }
 
-} // namespace gimp
+}  // namespace gimp

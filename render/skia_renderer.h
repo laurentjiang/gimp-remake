@@ -9,16 +9,14 @@
 
 #include "renderer.h"
 
-namespace gimp
-{
+namespace gimp {
 class Document;
 
-class SkiaRenderer : public Renderer
-{
-public:
+class SkiaRenderer : public Renderer {
+  public:
     SkiaRenderer();
     ~SkiaRenderer() override;
 
     void render(const Document& document) override;
 };
-} // namespace gimp
+}  // namespace gimp

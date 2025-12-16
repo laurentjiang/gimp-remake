@@ -43,7 +43,13 @@ $sources = Get-ChildItem -Path $rootDir -Recurse -Include *.cpp |
 if ($sources) {
     Write-Host "Running clang-tidy on $($sources.Count) files..."
     # -p points to the build directory containing compile_commands.json
-    & $clangTidy.Path -p $lintBuildDir --quiet $sources.FullName
+    # We filter out "warnings generated" messages which count suppressed warnings from system headers
+    & $clangTidy.Path -p $lintBuildDir --quiet $sources.FullName 2>&1 | ForEach-Object {
+        $line = $_.ToString()
+        if ($line -notmatch "warnings generated\.$") {
+            Write-Output $line
+        }
+    }
 } else {
     Write-Host "No source files found."
 }

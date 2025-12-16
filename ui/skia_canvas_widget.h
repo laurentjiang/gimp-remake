@@ -17,18 +17,18 @@ class SkiaRenderer;
 class SkiaCanvasWidget : public QWidget {
     Q_OBJECT
 
-public:
-    explicit SkiaCanvasWidget(std::shared_ptr<Document> document, 
-                              std::shared_ptr<SkiaRenderer> renderer, 
+  public:
+    explicit SkiaCanvasWidget(std::shared_ptr<Document> document,
+                              std::shared_ptr<SkiaRenderer> renderer,
                               QWidget* parent = nullptr);
     ~SkiaCanvasWidget() override;
 
-protected:
+  protected:
     void paintEvent(QPaintEvent* event) override;
 
-private:
+  private:
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
 };
 
-} // namespace gimp
+}  // namespace gimp

@@ -18,14 +18,14 @@ class SkiaCanvasWidget;
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-public:
+  public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
 
-private:
+  private:
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     SkiaCanvasWidget* m_canvasWidget = nullptr;
 };
 
-} // namespace gimp
+}  // namespace gimp

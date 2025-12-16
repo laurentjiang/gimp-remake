@@ -6,6 +6,7 @@
  */
 
 #include "skia_renderer.h"
+#include <include/core/SkCanvas.h>
 #include <iostream>
 #include "../core/document.h"
 
@@ -17,7 +18,32 @@ SkiaRenderer::~SkiaRenderer() = default;
 
 void SkiaRenderer::render(const Document& document)
 {
-    (void)document;
+    int w = document.width();
+    int h = document.height();
+
+    if (w <= 0 || h <= 0)
+        return;
+
+    if (!m_surface || m_surface->width() != w || m_surface->height() != h) {
+        SkImageInfo info = SkImageInfo::MakeN32Premul(w, h);
+        m_surface = SkSurface::MakeRaster(info);
+    }
+
+    if (!m_surface)
+        return;
+
+    SkCanvas* canvas = m_surface->getCanvas();
+    canvas->clear(SK_ColorTRANSPARENT);
+
+    m_compositor.compose(canvas, document.layers());
+}
+
+sk_sp<SkImage> SkiaRenderer::get_result()
+{
+    if (m_surface) {
+        return m_surface->makeImageSnapshot();
+    }
+    return nullptr;
 }
 
 }  // namespace gimp

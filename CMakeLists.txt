@@ -34,6 +34,8 @@ add_executable(gimp-remake
     render/renderer.h
     render/skia_renderer.h
     render/skia_renderer.cpp
+    render/skia_compositor.h
+    render/skia_compositor.cpp
 )
 
 find_package(spdlog CONFIG REQUIRED)

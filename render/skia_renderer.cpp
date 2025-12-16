@@ -26,7 +26,7 @@ void SkiaRenderer::render(const Document& document)
 
     if (!m_surface || m_surface->width() != w || m_surface->height() != h) {
         SkImageInfo info = SkImageInfo::MakeN32Premul(w, h);
-        m_surface = SkSurface::MakeRaster(info);
+        m_surface = SkSurfaces::Raster(info);
     }
 
     if (!m_surface)

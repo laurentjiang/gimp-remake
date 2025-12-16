@@ -6,25 +6,23 @@
  */
 
 #include "skia_compositor.h"
-#include "../core/layer.h"
-#include <include/core/SkCanvas.h>
 #include <include/core/SkBitmap.h>
-#include <include/core/SkPaint.h>
-#include <include/core/SkImageInfo.h>
+#include <include/core/SkCanvas.h>
 #include <include/core/SkImage.h>
+#include <include/core/SkImageInfo.h>
+#include <include/core/SkPaint.h>
+#include "../core/layer.h"
 
 namespace gimp {
 
-void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers) {
+void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers)
+{
     for (const auto& layer : layers) {
-        if (!layer->visible()) continue;
+        if (!layer->visible())
+            continue;
 
         SkImageInfo info = SkImageInfo::Make(
-            layer->width(), 
-            layer->height(), 
-            kRGBA_8888_SkColorType, 
-            kUnpremul_SkAlphaType
-        );
+            layer->width(), layer->height(), kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
 
         SkBitmap bitmap;
         if (!bitmap.installPixels(info, (void*)layer->data().data(), info.minRowBytes())) {
@@ -33,15 +31,27 @@ void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers) {
 
         SkPaint paint;
         paint.setAlphaf(layer->opacity());
-        
+
         SkBlendMode mode = SkBlendMode::kSrcOver;
         switch (layer->blend_mode()) {
-            case BlendMode::Normal: mode = SkBlendMode::kSrcOver; break;
-            case BlendMode::Multiply: mode = SkBlendMode::kMultiply; break;
-            case BlendMode::Overlay: mode = SkBlendMode::kOverlay; break;
-            case BlendMode::Screen: mode = SkBlendMode::kScreen; break;
-            case BlendMode::Darken: mode = SkBlendMode::kDarken; break;
-            case BlendMode::Lighten: mode = SkBlendMode::kLighten; break;
+            case BlendMode::Normal:
+                mode = SkBlendMode::kSrcOver;
+                break;
+            case BlendMode::Multiply:
+                mode = SkBlendMode::kMultiply;
+                break;
+            case BlendMode::Overlay:
+                mode = SkBlendMode::kOverlay;
+                break;
+            case BlendMode::Screen:
+                mode = SkBlendMode::kScreen;
+                break;
+            case BlendMode::Darken:
+                mode = SkBlendMode::kDarken;
+                break;
+            case BlendMode::Lighten:
+                mode = SkBlendMode::kLighten;
+                break;
         }
         paint.setBlendMode(mode);
 
@@ -49,4 +59,4 @@ void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers) {
     }
 }
 
-} // namespace gimp
+}  // namespace gimp

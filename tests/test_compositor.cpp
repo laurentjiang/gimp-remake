@@ -5,25 +5,26 @@
  * @date 2025-12-16
  */
 
-#include <catch2/catch_test_macros.hpp>
-#include "../render/skia_compositor.h"
-#include "../core/layer.h"
-#include <include/core/SkCanvas.h>
 #include <include/core/SkBitmap.h>
+#include <include/core/SkCanvas.h>
 #include <include/core/SkColor.h>
+#include <catch2/catch_test_macros.hpp>
+#include "../core/layer.h"
+#include "../render/skia_compositor.h"
 
 using namespace gimp;
 
-TEST_CASE("SkiaCompositor blends layers correctly", "[render]") {
+TEST_CASE("SkiaCompositor blends layers correctly", "[render]")
+{
     // Setup
     LayerStack stack;
-    
+
     // Layer 1: Red background (R=255, A=255)
     auto layer1 = std::make_shared<Layer>(100, 100);
     layer1->set_name("Background");
     uint32_t* pixels1 = (uint32_t*)layer1->data().data();
     for (int i = 0; i < 100 * 100; ++i) {
-        pixels1[i] = 0xFF0000FF; 
+        pixels1[i] = 0xFF0000FF;
     }
     stack.add_layer(layer1);
 

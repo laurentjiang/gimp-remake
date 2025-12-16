@@ -1,6 +1,11 @@
 Param(
-    [string]$BuildDir = "build"
+    [string]$BuildDir = "build-lint"
 )
+
+$ErrorActionPreference = "Stop"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$rootDir = Resolve-Path (Join-Path $scriptDir "..")
+$lintBuildDir = Join-Path $rootDir $BuildDir
 
 # Locate clang-tidy (try common names)
 $clangTidy = Get-Command clang-tidy -ErrorAction SilentlyContinue
@@ -12,19 +17,35 @@ if (-not $clangTidy) {
     exit 1
 }
 
-# Ensure build dir with compile_commands.json exists
-if (-not (Test-Path $BuildDir)) {
-    cmake -B $BuildDir -G Ninja -DCMAKE_BUILD_TYPE=Release
-}
-if (-not (Test-Path (Join-Path $BuildDir "compile_commands.json"))) {
-    cmake -B $BuildDir -G Ninja -DCMAKE_BUILD_TYPE=Release
+# Configure for linting (needs compile_commands.json, usually requires Ninja on Windows)
+# We use a separate build directory to avoid conflicts with the main Visual Studio build
+if (-not (Test-Path (Join-Path $lintBuildDir "compile_commands.json"))) {
+    Write-Host "Configuring lint build in $lintBuildDir..."
+    
+    $cmakeArgs = @("-S", $rootDir, "-B", $lintBuildDir, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
+    
+    if ($env:VCPKG_ROOT) {
+        $toolchain = Join-Path $env:VCPKG_ROOT "scripts/buildsystems/vcpkg.cmake"
+        $cmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchain"
+    }
+    
+    & cmake $cmakeArgs
 }
 
-# Run clang-tidy on a starter translation unit; extend list as sources grow
-& $clangTidy.Path --quiet src/main.cpp -- -std=c++20
+# Find source files (excluding tests, build dirs, and vcpkg)
+$sources = Get-ChildItem -Path $rootDir -Recurse -Include *.cpp | 
+           Where-Object { 
+               $_.FullName -notmatch "\\build" -and 
+               $_.FullName -notmatch "\\vcpkg" -and 
+               $_.FullName -notmatch "\\tests" 
+           }
 
-if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+if ($sources) {
+    Write-Host "Running clang-tidy on $($sources.Count) files..."
+    # -p points to the build directory containing compile_commands.json
+    & $clangTidy.Path -p $lintBuildDir --quiet $sources.FullName
+} else {
+    Write-Host "No source files found."
 }
 
 Write-Host "clang-tidy completed." -ForegroundColor Green

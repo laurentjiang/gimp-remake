@@ -1,24 +1,30 @@
 Param(
-    [ValidateSet("Debug", "Release")]
-    [string]$Config = "Release"
+    [switch]$Clean,
+    [string]$Config = "Debug"
 )
 
-$src = Split-Path -Parent $MyInvocation.MyCommand.Path
-$root = Resolve-Path (Join-Path $src "..")
-$buildDir = Join-Path $root "build"
+$ErrorActionPreference = "Stop"
 
-$toolchain = $env:VCPKG_ROOT
-if (-not $toolchain) {
-    Write-Error "VCPKG_ROOT is not set; please set it to your vcpkg directory."
-    exit 1
-}
-$toolchainFile = Join-Path $toolchain "scripts/buildsystems/vcpkg.cmake"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$rootDir = Resolve-Path (Join-Path $scriptDir "..")
+$buildDir = Join-Path $rootDir "build"
 
-if (-not (Test-Path $buildDir)) {
-    New-Item -ItemType Directory -Path $buildDir | Out-Null
+if ($Clean -and (Test-Path $buildDir)) {
+    Write-Host "Cleaning build directory (preserving vcpkg)..."
+    Get-ChildItem -Path $buildDir | Where-Object { $_.Name -ne "vcpkg_installed" } | Remove-Item -Recurse -Force
 }
 
-cmake -S $root -B $buildDir -G Ninja -DCMAKE_TOOLCHAIN_FILE="$toolchainFile" "-DCMAKE_BUILD_TYPE=$Config"
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$cmakeArgs = @("-S", $rootDir, "-B", $buildDir)
 
+if ($env:VCPKG_ROOT) {
+    $toolchain = Join-Path $env:VCPKG_ROOT "scripts/buildsystems/vcpkg.cmake"
+    $cmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchain"
+}
+
+Write-Host "Configuring project..."
+& cmake $cmakeArgs
+
+Write-Host "Building project..."
 cmake --build $buildDir --config $Config
+
+Write-Host "Build complete."

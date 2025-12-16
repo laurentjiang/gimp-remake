@@ -5,9 +5,15 @@
  * @date 2025-12-08
  */
 
-#include <iostream>
+#include <QApplication>
+#include "ui/main_window.h"
 
-int main()
+int main(int argc, char* argv[])
 {
-    return 0;
+    QApplication app(argc, argv);
+
+    gimp::MainWindow window;
+    window.show();
+
+    return app.exec();
 }

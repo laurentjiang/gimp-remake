@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include "layer_stack.h"
 
 namespace gimp {
 class Layer;
@@ -20,7 +21,10 @@ class Document {
 
     virtual std::shared_ptr<Layer> add_layer() = 0;
     virtual void remove_layer(const std::shared_ptr<Layer>& layer) = 0;
-    virtual const std::vector<std::shared_ptr<Layer>>& layers() const = 0;
+    virtual const LayerStack& layers() const = 0;
     virtual TileStore& tile_store() = 0;
+
+    virtual int width() const = 0;
+    virtual int height() const = 0;
 };
 }  // namespace gimp

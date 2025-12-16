@@ -118,4 +118,8 @@ compile_commands.json
 *_qmlcache.qrc
 
 PLAN.md
+PLANv2.md
 vcpkg_installed
+HEADER_FORMAT.txt
+RULES.md
+COMMIT_FORMAT.txt

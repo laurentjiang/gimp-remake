@@ -10,21 +10,25 @@
 
 namespace gimp {
 
-void LayerStack::add_layer(std::shared_ptr<Layer> layer) {
+void LayerStack::add_layer(std::shared_ptr<Layer> layer)
+{
     if (layer) {
         m_layers.push_back(layer);
     }
 }
 
-void LayerStack::remove_layer(std::shared_ptr<Layer> layer) {
+void LayerStack::remove_layer(std::shared_ptr<Layer> layer)
+{
     auto it = std::find(m_layers.begin(), m_layers.end(), layer);
     if (it != m_layers.end()) {
         m_layers.erase(it);
     }
 }
 
-void LayerStack::insert_layer(size_t index, std::shared_ptr<Layer> layer) {
-    if (!layer) return;
+void LayerStack::insert_layer(size_t index, std::shared_ptr<Layer> layer)
+{
+    if (!layer)
+        return;
     if (index >= m_layers.size()) {
         m_layers.push_back(layer);
     } else {
@@ -32,11 +36,12 @@ void LayerStack::insert_layer(size_t index, std::shared_ptr<Layer> layer) {
     }
 }
 
-bool LayerStack::move_layer(size_t from_index, size_t to_index) {
+bool LayerStack::move_layer(size_t from_index, size_t to_index)
+{
     if (from_index >= m_layers.size()) {
         return false;
     }
-    
+
     // Clamp to_index to valid range [0, size-1]
     if (to_index >= m_layers.size()) {
         to_index = m_layers.size() - 1;
@@ -52,4 +57,4 @@ bool LayerStack::move_layer(size_t from_index, size_t to_index) {
     return true;
 }
 
-} // namespace gimp
+}  // namespace gimp

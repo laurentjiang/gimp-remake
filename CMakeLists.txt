@@ -35,6 +35,16 @@ add_executable(gimp-remake
 )
 
 find_package(spdlog CONFIG REQUIRED)
+
+# Workaround for unofficial-skia warnings about missing system libs on Windows
+if(WIN32)
+    set(z_vcpkg_skia_link_libs_FontSub_lib_RELEASE "FontSub.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
+    set(z_vcpkg_skia_link_libs_FontSub_lib_DEBUG "FontSub.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
+    
+    set(z_vcpkg_skia_link_libs_Usp10_lib_RELEASE "Usp10.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
+    set(z_vcpkg_skia_link_libs_Usp10_lib_DEBUG "Usp10.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
+endif()
+
 find_package(unofficial-skia CONFIG REQUIRED)
 target_link_libraries(gimp-remake PRIVATE spdlog::spdlog unofficial::skia::skia)
 

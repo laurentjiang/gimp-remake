@@ -8,8 +8,6 @@
     "qtbase",
     "skia",
     "nlohmann-json",
-    "gtest",
-    "catch2",
     "spdlog",
     "opencv4"
   ]

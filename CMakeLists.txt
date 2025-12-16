@@ -64,6 +64,28 @@ endif()
 include(CTest)
 if(GIMP_REMAKE_BUILD_TESTS)
     enable_testing()
-    # Placeholder smoke test to keep CI exercising ctest until real tests land.
-    add_test(NAME placeholder_smoke COMMAND ${CMAKE_COMMAND} -E echo "placeholder test")
+    
+    find_package(Catch2 CONFIG REQUIRED)
+
+    add_executable(unit_tests
+        tests/test_compositor.cpp
+        core/layer_stack.cpp
+        render/skia_compositor.cpp
+    )
+    
+    target_link_libraries(unit_tests PRIVATE 
+        Catch2::Catch2WithMain 
+        unofficial::skia::skia
+    )
+    
+    # Ensure tests use C++20
+    target_compile_features(unit_tests PRIVATE cxx_std_20)
+    
+    if(MSVC)
+        target_compile_options(unit_tests PRIVATE /W4 /permissive-)
+    else()
+        target_compile_options(unit_tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    add_test(NAME unit_tests COMMAND unit_tests)
 endif()

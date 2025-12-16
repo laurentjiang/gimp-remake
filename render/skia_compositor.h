@@ -14,8 +14,8 @@ class SkCanvas;
 namespace gimp {
 
 class SkiaCompositor {
-public:
+  public:
     void compose(SkCanvas* canvas, const LayerStack& layers);
 };
 
-} // namespace gimp
+}  // namespace gimp

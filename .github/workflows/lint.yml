@@ -2,7 +2,7 @@ name: Lint
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, "feature/*" ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -14,8 +14,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Ninja
+        run: choco install ninja --no-progress -y
+
       - name: Setup LLVM (clang-format/clang-tidy)
         run: choco install llvm --no-progress -y
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgJsonGlob: 'vcpkg.json'
 
       - name: Run linter script
         shell: pwsh

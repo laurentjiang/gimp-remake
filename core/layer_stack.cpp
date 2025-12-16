@@ -10,14 +10,14 @@
 
 namespace gimp {
 
-void LayerStack::add_layer(std::shared_ptr<Layer> layer)
+void LayerStack::add_layer(const std::shared_ptr<Layer>& layer)
 {
     if (layer) {
         m_layers.push_back(layer);
     }
 }
 
-void LayerStack::remove_layer(std::shared_ptr<Layer> layer)
+void LayerStack::remove_layer(const std::shared_ptr<Layer>& layer)
 {
     auto it = std::find(m_layers.begin(), m_layers.end(), layer);
     if (it != m_layers.end()) {
@@ -25,14 +25,14 @@ void LayerStack::remove_layer(std::shared_ptr<Layer> layer)
     }
 }
 
-void LayerStack::insert_layer(size_t index, std::shared_ptr<Layer> layer)
+void LayerStack::insert_layer(size_t index, const std::shared_ptr<Layer>& layer)
 {
     if (!layer)
         return;
     if (index >= m_layers.size()) {
         m_layers.push_back(layer);
     } else {
-        m_layers.insert(m_layers.begin() + index, layer);
+        m_layers.insert(m_layers.begin() + static_cast<std::ptrdiff_t>(index), layer);
     }
 }
 
@@ -52,8 +52,8 @@ bool LayerStack::move_layer(size_t from_index, size_t to_index)
     }
 
     auto layer = m_layers[from_index];
-    m_layers.erase(m_layers.begin() + from_index);
-    m_layers.insert(m_layers.begin() + to_index, layer);
+    m_layers.erase(m_layers.begin() + static_cast<std::ptrdiff_t>(from_index));
+    m_layers.insert(m_layers.begin() + static_cast<std::ptrdiff_t>(to_index), layer);
     return true;
 }
 

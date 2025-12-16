@@ -20,9 +20,9 @@ class LayerStack {
     using reverse_iterator = std::vector<std::shared_ptr<Layer>>::reverse_iterator;
     using const_reverse_iterator = std::vector<std::shared_ptr<Layer>>::const_reverse_iterator;
 
-    void add_layer(std::shared_ptr<Layer> layer);
-    void remove_layer(std::shared_ptr<Layer> layer);
-    void insert_layer(size_t index, std::shared_ptr<Layer> layer);
+    void add_layer(const std::shared_ptr<Layer>& layer);
+    void remove_layer(const std::shared_ptr<Layer>& layer);
+    void insert_layer(size_t index, const std::shared_ptr<Layer>& layer);
 
     bool move_layer(size_t from_index, size_t to_index);
 

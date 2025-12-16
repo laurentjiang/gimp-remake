@@ -12,20 +12,20 @@
 
 namespace gimp {
 
-SkiaRenderer::SkiaRenderer() {}
+SkiaRenderer::SkiaRenderer() = default;
 
 SkiaRenderer::~SkiaRenderer() = default;
 
 void SkiaRenderer::render(const Document& document)
 {
-    int w = document.width();
-    int h = document.height();
+    const int w = document.width();
+    const int h = document.height();
 
     if (w <= 0 || h <= 0)
         return;
 
     if (!m_surface || m_surface->width() != w || m_surface->height() != h) {
-        SkImageInfo info = SkImageInfo::MakeN32Premul(w, h);
+        const SkImageInfo info = SkImageInfo::MakeN32Premul(w, h);
         m_surface = SkSurfaces::Raster(info);
     }
 

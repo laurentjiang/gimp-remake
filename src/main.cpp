@@ -10,10 +10,10 @@
 
 int main(int argc, char* argv[])
 {
-    QApplication app(argc, argv);
+    const QApplication app(argc, argv);
 
     gimp::MainWindow window;
     window.show();
 
-    return app.exec();
+    return QApplication::exec();
 }

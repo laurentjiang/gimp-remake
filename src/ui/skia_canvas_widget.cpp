@@ -6,42 +6,48 @@
  */
 
 #include "ui/skia_canvas_widget.h"
-#include "core/document.h"
-#include "render/skia_renderer.h"
-#include <QPainter>
-#include <QImage>
 #include <include/core/SkImage.h>
 #include <include/core/SkPixmap.h>
+#include <QImage>
+#include <QPainter>
+#include "core/document.h"
+#include "render/skia_renderer.h"
 
 namespace gimp {
 
 SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
                                    std::shared_ptr<SkiaRenderer> renderer,
                                    QWidget* parent)
-    : QWidget(parent), m_document(document), m_renderer(renderer) {
+    : QWidget(parent), m_document(std::move(document)), m_renderer(std::move(renderer))
+{
     setMouseTracking(true);
 }
 
 SkiaCanvasWidget::~SkiaCanvasWidget() = default;
 
-void SkiaCanvasWidget::paintEvent(QPaintEvent* event) {
+void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
+{
     (void)event;
 
-    if (!m_document || !m_renderer) return;
+    if (!m_document || !m_renderer) {
+        return;
+    }
 
     m_renderer->render(*m_document);
 
     auto skImage = m_renderer->get_result();
-    if (!skImage) return;
+    if (!skImage) {
+        return;
+    }
 
-    SkImageInfo info = skImage->imageInfo();
+    const SkImageInfo info = skImage->imageInfo();
     QImage qImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
-    
-    SkPixmap pixmap(info, qImage.bits(), qImage.bytesPerLine());
+
+    const SkPixmap pixmap(info, qImage.bits(), qImage.bytesPerLine());
     if (skImage->readPixels(pixmap, 0, 0)) {
         QPainter painter(this);
         painter.drawImage(0, 0, qImage);
     }
 }
 
-} // namespace gimp
+}  // namespace gimp

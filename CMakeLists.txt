@@ -19,6 +19,8 @@ add_executable(gimp-remake
     src/main.cpp
     core/document.h
     core/layer.h
+    core/layer_stack.h
+    core/layer_stack.cpp
     core/command.h
     core/history_manager.h
     core/command_bus.h

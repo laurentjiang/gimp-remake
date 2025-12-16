@@ -17,6 +17,12 @@ if (-not $clangTidy) {
     exit 1
 }
 
+# Detect VCPKG_ROOT from GitHub Actions environment if not set
+if (-not $env:VCPKG_ROOT -and $env:VCPKG_INSTALLATION_ROOT) {
+    $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
+    Write-Host "Detected GitHub Actions VCPKG_ROOT: $env:VCPKG_ROOT"
+}
+
 # Configure for linting (needs compile_commands.json, usually requires Ninja on Windows)
 # We use a separate build directory to avoid conflicts with the main Visual Studio build
 if (-not (Test-Path (Join-Path $lintBuildDir "compile_commands.json"))) {

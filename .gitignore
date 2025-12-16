@@ -123,3 +123,4 @@ vcpkg_installed
 HEADER_FORMAT.txt
 RULES.md
 COMMIT_FORMAT.txt
+logs

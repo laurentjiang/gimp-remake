@@ -27,9 +27,17 @@ if (-not $env:VCPKG_ROOT -and $env:VCPKG_INSTALLATION_ROOT) {
 # We use a separate build directory to avoid conflicts with the main Visual Studio build
 if (-not (Test-Path (Join-Path $lintBuildDir "compile_commands.json"))) {
     Write-Host "Configuring lint build in $lintBuildDir..."
-    
-    $cmakeArgs = @("-S", $rootDir, "-B", $lintBuildDir, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Debug", "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
-    
+
+    $cmakeArgs = @(
+        "-S", $rootDir, 
+        "-B", $lintBuildDir, 
+        "-G", "Ninja", 
+        "-DCMAKE_BUILD_TYPE=Release", 
+        "-DVCPKG_TARGET_TRIPLET=x64-windows-release", 
+        "-DVCPKG_OVERLAY_TRIPLETS=$rootDir/triplets", 
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    )
+
     if ($env:VCPKG_ROOT) {
         $toolchain = Join-Path $env:VCPKG_ROOT "scripts/buildsystems/vcpkg.cmake"
         $cmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchain"

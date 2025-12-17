@@ -1,5 +1,5 @@
 Param(
-    [string]$Config = "Debug"
+    [string]$Config = "Release"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +13,8 @@ $exePath = Join-Path $buildDir "$Config/gimp-remake.exe"
 # This helps it work on different machines assuming vcpkg is used
 if ($Config -eq "Debug") {
     $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/debug/Qt6/plugins"
+} elseif ($Config -eq "Release") {
+    $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/release/Qt6/plugins"
 } else {
     $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/Qt6/plugins"
 }

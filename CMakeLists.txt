@@ -141,14 +141,20 @@ if(GIMP_REMAKE_BUILD_TESTS)
         tests/test_compositor.cpp
         core/layer_stack.cpp
         render/skia_compositor.cpp
+        tests/test_io_manager.cpp
+        src/io/io_manager.cpp
+        io/opencv_image.cpp
     )
     
+    target_include_directories(unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
     target_link_libraries(unit_tests PRIVATE 
         Catch2::Catch2
         Catch2::Catch2WithMain 
         unofficial::skia::skia
         Qt6::Core
         spdlog::spdlog
+        ${OpenCV_LIBS}
     )
     
     # Ensure tests use C++20

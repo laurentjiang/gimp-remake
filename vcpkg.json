@@ -5,10 +5,34 @@
   "builtin-baseline": "f06267da58f3c06b3a1aff9cbf5c2906e595ebc9",
   "supports": "windows & !uwp",
   "dependencies": [
-    "qtbase",
-    "skia",
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "gui",
+        "widgets",
+        "network",
+        "png",
+        "jpeg"
+      ]
+    },
+    {
+      "name": "skia",
+      "default-features": false,
+      "features": [
+        "gl",
+        "vulkan"
+      ]
+    },
+    {
+      "name": "opencv4",
+      "default-features": false,
+      "features": [
+        "jpeg",
+        "png"
+      ]
+    },
     "nlohmann-json",
-    "spdlog",
-    "opencv4"
+    "spdlog"
   ]
 }

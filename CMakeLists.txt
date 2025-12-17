@@ -35,6 +35,11 @@ add_executable(gimp-remake
     core/commands/fill_color_command.cpp
     core/event_bus.h
     core/tile_store.h
+    core/image.h
+    io/io_interface.h
+    io/io_manager.h
+    io/opencv_image.h
+    io/opencv_image.cpp
     render/renderer.h
     render/skia_renderer.h
     render/skia_renderer.cpp
@@ -44,6 +49,7 @@ add_executable(gimp-remake
     src/ui/skia_canvas_widget.cpp
     ui/main_window.h
     src/ui/main_window.cpp
+    src/io/io_manager.cpp
 )
 
 target_include_directories(gimp-remake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -59,16 +65,20 @@ if(WIN32)
     set(z_vcpkg_skia_link_libs_Usp10_lib_DEBUG "Usp10.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
 endif()
 
+find_package(OpenCV REQUIRED)
 find_package(unofficial-skia CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
     spdlog::spdlog 
     unofficial::skia::skia
+    ${OpenCV_LIBS}
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
 )
+
+target_include_directories(gimp-remake PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 if(WIN32)
     # Automatically deploy Qt platform plugin for Windows

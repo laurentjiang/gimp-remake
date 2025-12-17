@@ -3,14 +3,17 @@ name: CI
 on:
   push:
     branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
-    
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
+      VCPKG_BINARY_SOURCES: 'clear;default,readwrite'
+      VCPKG_TARGET_TRIPLET: x64-windows-release
+      VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/triplets
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,19 +26,29 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Restore/Save vcpkg binary cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ github.workspace }}/vcpkg_cache
+          key: vcpkg-binaries-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-binaries-${{ runner.os }}-
+
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
-        id: runvcpkg
         with:
           vcpkgDirectory: ${{ github.workspace }}/vcpkg
+          doNotCache: true
           vcpkgGitCommitId: '594ad8871e1e8e45f8e626c015fd611163430207'
 
       - name: Configure CMake
         shell: pwsh
-        env:
-          VCPKG_TARGET_TRIPLET: x64-windows-release
-          VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/triplets
-        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        run: >
+          cmake -S . -B build -G "Ninja"
+          -DCMAKE_BUILD_TYPE=Release
+          -DVCPKG_TARGET_TRIPLET=x64-windows-release
+          -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}/triplets"
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         run: cmake --build build --config Release

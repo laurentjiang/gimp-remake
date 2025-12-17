@@ -36,9 +36,8 @@ jobs:
           VCPKG_TARGET_TRIPLET: x64-windows-release
           VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}/triplets
         run: |
-          cmake -S . -B build -G "Ninja" `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+          # Single line command. No backticks. No syntax errors.
+          cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         run: cmake --build build --config Release

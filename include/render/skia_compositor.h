@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../core/layer_stack.h"
+#include "core/layer_stack.h"
 
 class SkCanvas;
 

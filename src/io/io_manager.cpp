@@ -8,38 +8,18 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <opencv2/imgproc.hpp>
+#include <stdexcept>
 
-#include "io/opencv_image.h"
 #include "io/io_manager.h"
 
 namespace gimp {
 
-IOManager::IOManager() = default;
-IOManager::~IOManager() = default;
-
-std::shared_ptr<Image> IOManager::read_image(const std::string& file_path) {
-    cv::Mat img = cv::imread(file_path, cv::IMREAD_UNCHANGED);
-
-    if (img.empty()) return nullptr;
-    return std::make_shared<OpenCVImage>(img, file_path);
+/* DocumentFile IOManager::importProject(const std::string& file_path) {
+    // Placeholder: not implemented
+    throw std::runtime_error("importProject not implemented");
 }
 
-bool IOManager::write_image(const Image& image, const std::string& file_path) {
-    return cv::imwrite(file_path, image.mat());
-}
-
-std::shared_ptr<Document> IOManager::import_project(const std::string& file_path) {
-    // Placeholder: implement your custom project format here
-    // Example: read JSON, reconstruct Document
-    std::ifstream in(file_path);
-    if (!in) return nullptr;
-    nlohmann::json j;
-    in >> j;
-    // ... reconstruct Document from j ...
-    return nullptr; // Not implemented
-}
-
-bool IOManager::export_project(const Document& document, const std::string& file_path) {
+bool IOManager::exportProject(const Document& document, const std::string& file_path) {
     // Placeholder: implement your custom project format here
     // Example: serialize Document to JSON
     nlohmann::json j;
@@ -48,6 +28,45 @@ bool IOManager::export_project(const Document& document, const std::string& file
     if (!out) return false;
     out << j.dump(2);
     return true; // Not implemented
+} */
+
+ImageFile IOManager::readImage(const std::string& file_path) {
+    cv::Mat img = cv::imread(file_path, cv::IMREAD_UNCHANGED);
+    return ImageFile(img, file_path);
+}
+
+bool IOManager::writeImage(const cv::Mat& mat, const std::string& file_path) {
+    return cv::imwrite(file_path, mat);
+}
+
+void IOManager::toGrayscale(cv::Mat& mat)
+{
+    cv::Mat copy = mat.clone();
+    if (mat.channels() == 3) {
+        cv::cvtColor(copy, mat, cv::COLOR_RGB2GRAY);
+    } else if (mat.channels() == 4) {
+        cv::cvtColor(copy, mat, cv::COLOR_RGBA2GRAY);
+    }
+}
+
+void IOManager::toRgb(cv::Mat& mat)
+{
+    cv::Mat copy = mat.clone();
+    if (mat.channels() == 1) {
+        cv::cvtColor(copy, mat, cv::COLOR_GRAY2RGB);
+    } else if (mat.channels() == 4) {
+        cv::cvtColor(copy, mat, cv::COLOR_RGBA2RGB);
+    }
+}
+
+void IOManager::toRgba(cv::Mat& mat)
+{
+    cv::Mat copy = mat.clone();
+    if (mat.channels() == 1) {
+        cv::cvtColor(copy, mat, cv::COLOR_GRAY2RGBA);
+    } else if (mat.channels() == 3) {
+        cv::cvtColor(copy, mat, cv::COLOR_RGB2RGBA);
+    }
 }
 
 } // namespace gimp

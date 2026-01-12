@@ -83,6 +83,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setCentralWidget(m_canvasWidget);
 }
 
+void MainWindow::set_document(std::shared_ptr<Document> document)
+{
+    m_document = document;
+    if (m_canvasWidget) {
+        m_canvasWidget->update();
+    }
+}
+
 MainWindow::~MainWindow() = default;
 
 }  // namespace gimp

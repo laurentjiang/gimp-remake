@@ -15,6 +15,7 @@ namespace gimp {
     class ImageFile {
         public:
             ImageFile(const cv::Mat& m, const std::string& path) : m_mat(m), m_path(path) {}
+            ImageFile(const ImageFile& other) : m_mat(other.m_mat), m_path(other.m_path) {}
             ~ImageFile() = default;
 
             const cv::Mat& mat() const { return m_mat; }

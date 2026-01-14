@@ -2,7 +2,7 @@
  * @file utility.h
  * @brief Utility functions for IO operations.
  * @author Aless Tosi
- * @date 2025-01-11
+ * @date 2026-01-11
  */
 
 #pragma once

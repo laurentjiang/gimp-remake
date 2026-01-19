@@ -25,6 +25,13 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
+      - name: Verify cache env vars
+        shell: pwsh
+        run: |
+          Write-Host "ACTIONS_CACHE_URL is set: $([bool]$env:ACTIONS_CACHE_URL)"
+          Write-Host "ACTIONS_RUNTIME_TOKEN is set: $([bool]$env:ACTIONS_RUNTIME_TOKEN)"
+          Write-Host "VCPKG_BINARY_SOURCES: $env:VCPKG_BINARY_SOURCES"
+
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
         with:
@@ -37,8 +44,9 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: ${{ github.workspace }}/vcpkg
-          doNotCache: true
           vcpkgGitCommitId: '594ad8871e1e8e45f8e626c015fd611163430207'
+          doNotCache: true
+          runVcpkgInstall: false
 
       - name: Configure CMake
         shell: pwsh

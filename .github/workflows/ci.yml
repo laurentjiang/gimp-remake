@@ -60,5 +60,5 @@ jobs:
         if: success()
         with:
           name: gimp-remake-windows
-          path: build/Release/gimp-remake.exe
+          path: build/gimp-remake.exe
           retention-days: 7

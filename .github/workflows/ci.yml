@@ -7,29 +7,20 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-env:
-  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg-cache
+permissions:
+  packages: write
 
 jobs:
   build-windows:
     runs-on: windows-latest
     timeout-minutes: 240
     
+    env:
+      VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite"
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Create vcpkg binary cache directory
-        shell: pwsh
-        run: New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/vcpkg-cache"
-
-      - name: Restore vcpkg binary cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/vcpkg-cache
-          key: vcpkg-cache-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'triplets/*.cmake') }}
-          restore-keys: |
-            vcpkg-cache-${{ runner.os }}-
 
       - name: Setup Ninja
         uses: ashutoshvarma/setup-ninja@master
@@ -47,14 +38,21 @@ jobs:
           doNotCache: true
           runVcpkgInstall: false
 
+      - name: Configure NuGet for GitHub Packages
+        shell: pwsh
+        run: |
+          $nuget = & "${{ github.workspace }}/vcpkg/vcpkg" fetch nuget | Select-Object -Last 1
+          & $nuget sources add -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" -StorePasswordInClearText -Name "GitHubPackages" -UserName "${{ github.repository_owner }}" -Password "${{ secrets.GITHUB_TOKEN }}" -NonInteractive
+          & $nuget setapikey "${{ secrets.GITHUB_TOKEN }}" -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" -NonInteractive
+
       - name: Configure CMake
         shell: pwsh
-        run: >
-          cmake -S . -B build -G "Ninja"
-          -DCMAKE_BUILD_TYPE=Release
-          -DVCPKG_TARGET_TRIPLET=x64-windows-release
-          -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}/triplets"
-          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+        run: |
+          cmake -S . -B build -G "Ninja" `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-release `
+            -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}/triplets" `
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         run: cmake --build build --config Release

@@ -5,20 +5,23 @@
  * @date 2025-12-17
  */
 
-#include <fstream>
-#include <iostream>
+#include "io/io_manager.h"
+
+#include "io/utility.h"
+
 #include <nlohmann/json.hpp>
 #include <opencv2/imgproc.hpp>
-#include <stdexcept>
 
-#include "io/io_manager.h"
-#include "io/utility.h"
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
 namespace gimp {
 
-ProjectFile IOManager::importProject(const std::string& file_path) {
+ProjectFile IOManager::importProject(const std::string& file_path)
+{
     std::ifstream inputFile(file_path);
     if (!inputFile.is_open()) {
         throw std::runtime_error("Failed to open project file: " + file_path);
@@ -42,7 +45,8 @@ ProjectFile IOManager::importProject(const std::string& file_path) {
             layer->set_name(layerJson.at("name").get<std::string>());
             layer->set_visible(layerJson.at("visible").get<bool>());
             layer->set_opacity(layerJson.at("opacity").get<float>());
-            layer->set_blend_mode(string_to_blend_mode(layerJson.at("blend_mode").get<std::string>()));
+            layer->set_blend_mode(
+                string_to_blend_mode(layerJson.at("blend_mode").get<std::string>()));
 
             // Restore layer data
             const std::vector<uint8_t> layerData = layerJson.at("data").get<std::vector<uint8_t>>();
@@ -59,7 +63,8 @@ ProjectFile IOManager::importProject(const std::string& file_path) {
     return project;
 }
 
-bool IOManager::exportProject(const ProjectFile& project, const std::string& file_path) {
+bool IOManager::exportProject(const ProjectFile& project, const std::string& file_path)
+{
     try {
         json projectJson;
 
@@ -99,12 +104,14 @@ bool IOManager::exportProject(const ProjectFile& project, const std::string& fil
     }
 }
 
-ImageFile IOManager::readImage(const std::string& file_path) {
+ImageFile IOManager::readImage(const std::string& file_path)
+{
     const cv::Mat img = cv::imread(file_path, cv::IMREAD_UNCHANGED);
     return {img, file_path};
 }
 
-bool IOManager::writeImage(const cv::Mat& mat, const std::string& file_path) {
+bool IOManager::writeImage(const cv::Mat& mat, const std::string& file_path)
+{
     return cv::imwrite(file_path, mat);
 }
 

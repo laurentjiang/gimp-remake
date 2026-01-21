@@ -70,6 +70,7 @@ int RunApplication(int argc, char* argv[]) {
     const QApplication app(argc, argv);
 
     gimp::MainWindow window;
+    
     window.show();
 
     return QApplication::exec();

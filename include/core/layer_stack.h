@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include "layer.h"
+
 #include <memory>
 #include <vector>
-#include "layer.h"
 
 namespace gimp {
 

@@ -11,18 +11,13 @@
       "features": [
         "gui",
         "widgets",
-        "network",
         "png",
         "jpeg"
       ]
     },
     {
       "name": "skia",
-      "default-features": false,
-      "features": [
-        "gl",
-        "vulkan"
-      ]
+      "default-features": false
     },
     {
       "name": "opencv4",

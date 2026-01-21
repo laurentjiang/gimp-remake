@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <memory>
 #include "../command.h"
+
+#include <memory>
 
 namespace gimp {
 class Document;

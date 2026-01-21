@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <string>
 #include "core/layer.h"
+
+#include <string>
 
 namespace gimp {
 
@@ -17,7 +18,8 @@ namespace gimp {
  * @param mode The blend mode to convert.
  * @return String representation of the blend mode.
  */
-inline std::string blend_mode_to_string(BlendMode mode) {
+inline std::string blend_mode_to_string(BlendMode mode)
+{
     switch (mode) {
         case BlendMode::Normal:
             return "Normal";
@@ -41,12 +43,18 @@ inline std::string blend_mode_to_string(BlendMode mode) {
  * @param mode String representation of the blend mode.
  * @return The corresponding BlendMode enum value.
  */
-inline BlendMode string_to_blend_mode(const std::string& mode) {
-    if (mode == "Multiply") return BlendMode::Multiply;
-    if (mode == "Overlay") return BlendMode::Overlay;
-    if (mode == "Screen") return BlendMode::Screen;
-    if (mode == "Darken") return BlendMode::Darken;
-    if (mode == "Lighten") return BlendMode::Lighten;
+inline BlendMode string_to_blend_mode(const std::string& mode)
+{
+    if (mode == "Multiply")
+        return BlendMode::Multiply;
+    if (mode == "Overlay")
+        return BlendMode::Overlay;
+    if (mode == "Screen")
+        return BlendMode::Screen;
+    if (mode == "Darken")
+        return BlendMode::Darken;
+    if (mode == "Lighten")
+        return BlendMode::Lighten;
     return BlendMode::Normal;
 }
 

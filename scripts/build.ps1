@@ -14,7 +14,13 @@ if ($Clean -and (Test-Path $buildDir)) {
     Get-ChildItem -Path $buildDir | Where-Object { $_.Name -ne "vcpkg_installed" } | Remove-Item -Recurse -Force
 }
 
-$cmakeArgs = @("-S", $rootDir, "-B", $buildDir)
+$cmakeArgs = @(
+    "-S", $rootDir, 
+    "-B", $buildDir, 
+    "-G", "Ninja",
+    "-DCMAKE_BUILD_TYPE=$Config",
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+)
 
 if ($env:VCPKG_ROOT) {
     $toolchain = Join-Path $env:VCPKG_ROOT "scripts/buildsystems/vcpkg.cmake"

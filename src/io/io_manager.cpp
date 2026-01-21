@@ -5,49 +5,53 @@
  * @date 2025-12-17
  */
 
-#include <fstream>
-#include <iostream>
+#include "io/io_manager.h"
+
+#include "io/utility.h"
+
 #include <nlohmann/json.hpp>
 #include <opencv2/imgproc.hpp>
-#include <stdexcept>
 
-#include "io/io_manager.h"
-#include "io/utility.h"
+#include <fstream>
+#include <iostream>
+#include <stdexcept>
 
 using json = nlohmann::json;
 
 namespace gimp {
 
-ProjectFile IOManager::importProject(const std::string& file_path) {
-    std::ifstream input_file(file_path);
-    if (!input_file.is_open()) {
+ProjectFile IOManager::importProject(const std::string& file_path)
+{
+    std::ifstream inputFile(file_path);
+    if (!inputFile.is_open()) {
         throw std::runtime_error("Failed to open project file: " + file_path);
     }
 
-    json project_json;
-    input_file >> project_json;
-    input_file.close();
+    json projectJson;
+    inputFile >> projectJson;
+    inputFile.close();
 
-    int width = project_json.at("width").get<int>();
-    int height = project_json.at("height").get<int>();
+    const int width = projectJson.at("width").get<int>();
+    const int height = projectJson.at("height").get<int>();
 
     ProjectFile project(width, height);
 
     // Import layers
-    if (project_json.contains("layers")) {
-        for (const auto& layer_json : project_json.at("layers")) {
+    if (projectJson.contains("layers")) {
+        for (const auto& layerJson : projectJson.at("layers")) {
             auto layer = std::make_shared<Layer>(width, height);
 
             // Restore layer properties
-            layer->set_name(layer_json.at("name").get<std::string>());
-            layer->set_visible(layer_json.at("visible").get<bool>());
-            layer->set_opacity(layer_json.at("opacity").get<float>());
-            layer->set_blend_mode(string_to_blend_mode(layer_json.at("blend_mode").get<std::string>()));
+            layer->set_name(layerJson.at("name").get<std::string>());
+            layer->set_visible(layerJson.at("visible").get<bool>());
+            layer->set_opacity(layerJson.at("opacity").get<float>());
+            layer->set_blend_mode(
+                string_to_blend_mode(layerJson.at("blend_mode").get<std::string>()));
 
             // Restore layer data
-            std::vector<uint8_t> layer_data = layer_json.at("data").get<std::vector<uint8_t>>();
-            if (layer_data.size() == layer->data().size()) {
-                layer->data() = layer_data;
+            const std::vector<uint8_t> layerData = layerJson.at("data").get<std::vector<uint8_t>>();
+            if (layerData.size() == layer->data().size()) {
+                layer->data() = layerData;
             } else {
                 throw std::runtime_error("Layer data size mismatch during import");
             }
@@ -59,52 +63,55 @@ ProjectFile IOManager::importProject(const std::string& file_path) {
     return project;
 }
 
-bool IOManager::exportProject(const ProjectFile& project, const std::string& file_path) {
+bool IOManager::exportProject(const ProjectFile& project, const std::string& file_path)
+{
     try {
-        json project_json;
+        json projectJson;
 
-        project_json["width"] = project.width();
-        project_json["height"] = project.height();
+        projectJson["width"] = project.width();
+        projectJson["height"] = project.height();
 
-        json layers_json = json::array();
+        json layersJson = json::array();
 
         // Export each layer
         for (const auto& layer : project.layers()) {
-            json layer_json;
-            layer_json["name"] = layer->name();
-            layer_json["visible"] = layer->visible();
-            layer_json["opacity"] = layer->opacity();
-            layer_json["blend_mode"] = blend_mode_to_string(layer->blend_mode());
-            layer_json["width"] = layer->width();
-            layer_json["height"] = layer->height();
-            layer_json["data"] = layer->data();
+            json layerJson;
+            layerJson["name"] = layer->name();
+            layerJson["visible"] = layer->visible();
+            layerJson["opacity"] = layer->opacity();
+            layerJson["blend_mode"] = blend_mode_to_string(layer->blend_mode());
+            layerJson["width"] = layer->width();
+            layerJson["height"] = layer->height();
+            layerJson["data"] = layer->data();
 
-            layers_json.push_back(layer_json);
+            layersJson.push_back(layerJson);
         }
 
-        project_json["layers"] = layers_json;
+        projectJson["layers"] = layersJson;
 
-        std::ofstream output_file(file_path);
-        if (!output_file.is_open()) {
+        std::ofstream outputFile(file_path);
+        if (!outputFile.is_open()) {
             return false;
         }
 
-        output_file << project_json.dump(4);  // Pretty-print with 4-space indent
-        output_file.close();
+        outputFile << projectJson.dump(4);  // Pretty-print with 4-space indent
+        outputFile.close();
 
         return true;
     } catch (const std::exception& e) {
-        std::cerr << "Error exporting project: " << e.what() << std::endl;
+        std::cerr << "Error exporting project: " << e.what() << '\n';
         return false;
     }
 }
 
-ImageFile IOManager::readImage(const std::string& file_path) {
-    cv::Mat img = cv::imread(file_path, cv::IMREAD_UNCHANGED);
-    return ImageFile(img, file_path);
+ImageFile IOManager::readImage(const std::string& file_path)
+{
+    const cv::Mat img = cv::imread(file_path, cv::IMREAD_UNCHANGED);
+    return {img, file_path};
 }
 
-bool IOManager::writeImage(const cv::Mat& mat, const std::string& file_path) {
+bool IOManager::writeImage(const cv::Mat& mat, const std::string& file_path)
+{
     return cv::imwrite(file_path, mat);
 }
 
@@ -144,4 +151,4 @@ void IOManager::toRgba(cv::Mat& mat)
     }
 }
 
-} // namespace gimp
+}  // namespace gimp

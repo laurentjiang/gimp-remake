@@ -15,7 +15,7 @@ BasicCommandBus::BasicCommandBus(HistoryManager& history) : history_{&history} {
 
 void BasicCommandBus::dispatch(std::shared_ptr<Command> command)
 {
-    if (!command || !history_) {
+    if (!command || history_ == nullptr) {
         return;
     }
 

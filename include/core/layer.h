@@ -13,7 +13,14 @@
 
 namespace gimp {
 
-enum class BlendMode { Normal, Multiply, Overlay, Screen, Darken, Lighten };
+enum class BlendMode {
+    Normal,
+    Multiply,
+    Overlay,
+    Screen,
+    Darken,
+    Lighten
+};
 
 class Layer {
   public:

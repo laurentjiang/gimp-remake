@@ -23,6 +23,8 @@ add_executable(gimp-remake
     "src/main.cpp"
     "src/ui/main_window.cpp"
     "src/ui/skia_canvas_widget.cpp"
+    "src/history/history_stack.cpp"
+    "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
     "include/ui/main_window.h"
     "include/ui/skia_canvas_widget.h"

@@ -12,6 +12,7 @@
 #include "core/document.h"
 
 namespace gimp {
+
     class ProjectFile : public Document {
         public:
             ProjectFile(int w, int h) : m_width(w), m_height(h) {}
@@ -45,5 +46,6 @@ namespace gimp {
                 void invalidate(const gimp::Rect&) override {}
             } m_dummyTileStore;
     }; // class ProjectFile
-}
+
+} // namespace gimp
 

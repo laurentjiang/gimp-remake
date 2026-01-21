@@ -14,27 +14,25 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-using namespace gimp;
-
 TEST_CASE("SkiaCompositor blends layers correctly", "[render]")
 {
     // Setup
-    LayerStack stack;
+    gimp::LayerStack stack;
 
     // Layer 1: Red background (R=255, A=255)
-    auto layer1 = std::make_shared<Layer>(100, 100);
+    auto layer1 = std::make_shared<gimp::Layer>(100, 100);
     layer1->set_name("Background");
-    uint32_t* pixels1 = (uint32_t*)layer1->data().data();
+    auto* pixels1 = reinterpret_cast<uint32_t*>(layer1->data().data());
     for (int i = 0; i < 100 * 100; ++i) {
         pixels1[i] = 0xFF0000FF;
     }
     stack.add_layer(layer1);
 
     // Layer 2: Blue semi-transparent overlay (B=255, A=255, Opacity=0.5)
-    auto layer2 = std::make_shared<Layer>(100, 100);
+    auto layer2 = std::make_shared<gimp::Layer>(100, 100);
     layer2->set_name("Overlay");
     layer2->set_opacity(0.5f);
-    uint32_t* pixels2 = (uint32_t*)layer2->data().data();
+    auto* pixels2 = reinterpret_cast<uint32_t*>(layer2->data().data());
     for (int i = 0; i < 100 * 100; ++i) {
         pixels2[i] = 0xFFFF0000;
     }
@@ -47,7 +45,7 @@ TEST_CASE("SkiaCompositor blends layers correctly", "[render]")
     canvas.clear(SK_ColorTRANSPARENT);
 
     // Act
-    SkiaCompositor compositor;
+    gimp::SkiaCompositor compositor;
     compositor.compose(&canvas, stack);
 
     // Assert: Expect blend of Red and Blue (approx R=127, B=127)

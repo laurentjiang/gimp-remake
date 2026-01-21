@@ -5,59 +5,53 @@
  * @date 2025-12-08
  */
 
-#include <QApplication>
-#include <QMessageBox>
-#include "ui/main_window.h"
-
-#include <memory>
-#include <iostream>
-#include <exception>
-
 #include "io/io_manager.h"
 #include "io/project_file.h"
+#include "ui/main_window.h"
+
+#include <QApplication>
+#include <QMessageBox>
+
+#include <exception>
+#include <iostream>
+#include <memory>
 
 // Error handling system
 #include "error_handling/error_codes.h"
-#include "error_handling/error_result.h"
 #include "error_handling/error_handler.h"
+#include "error_handling/error_result.h"
 #include "error_handling/exceptions.h"
 
 /**
  * @brief Set up error recovery handlers for the application
  */
-void SetupErrorRecoveryHandlers() {
-    using namespace gimp::error;
-    
+void setupErrorRecoveryHandlers()
+{
     // Register recovery handler for I/O errors
-    ErrorHandler::GetInstance().RegisterRecoveryHandler(
-        ErrorCategory::IO,
-        [](const ErrorInfo& error) -> bool {
-            std::cout << "Attempting I/O error recovery..." << std::endl;
+    gimp::error::ErrorHandler::GetInstance().RegisterRecoveryHandler(
+        gimp::error::ErrorCategory::IO, [](const gimp::error::ErrorInfo& /*error*/) -> bool {
+            std::cout << "Attempting I/O error recovery...\n";
             // In a real implementation, could try alternate file locations,
             // request elevated permissions, etc.
             return false;  // No automatic recovery implemented yet
-        }
-    );
-    
+        });
+
     // Register recovery handler for rendering errors
-    ErrorHandler::GetInstance().RegisterRecoveryHandler(
-        ErrorCategory::Rendering,
-        [](const ErrorInfo& error) -> bool {
-            std::cout << "Attempting rendering error recovery..." << std::endl;
+    gimp::error::ErrorHandler::GetInstance().RegisterRecoveryHandler(
+        gimp::error::ErrorCategory::Rendering, [](const gimp::error::ErrorInfo& /*error*/) -> bool {
+            std::cout << "Attempting rendering error recovery...\n";
             // In a real implementation, could try to reinitialize renderer,
             // fall back to software rendering, etc.
             return false;  // No automatic recovery implemented yet
-        }
-    );
-    
+        });
+
     // Register callback to show errors in UI
-    ErrorHandler::GetInstance().RegisterCallback(
-        [](const ErrorInfo& error) {
-            if (error.GetSeverity() >= ErrorSeverity::Recoverable) {
-                std::cerr << error.ToString() << std::endl;
+    gimp::error::ErrorHandler::GetInstance().RegisterCallback(
+        [](const gimp::error::ErrorInfo& error) {
+            if (error.GetSeverity() >= gimp::error::ErrorSeverity::Recoverable) {
+                std::cerr << error.ToString() << '\n';
             }
-        }
-    );
+        });
 }
 
 /**
@@ -66,64 +60,65 @@ void SetupErrorRecoveryHandlers() {
  * @param argv Argument values
  * @return Exit code
  */
-int RunApplication(int argc, char* argv[]) {
+int runApplication(int argc, char** argv)
+{
     const QApplication app(argc, argv);
 
     gimp::MainWindow window;
-    
+
     window.show();
 
     return QApplication::exec();
 }
 
-int main(int argc, char* argv[])
+// NOLINTNEXTLINE(bugprone-exception-escape)
+int main(int argc, char** argv)
 {
-    using namespace gimp::error;
-    
     // Initialize error handling system first
-    ErrorHandler::GetInstance().Initialize();
-    ErrorHandler::GetInstance().SetLogFilePath("gimp_remake_errors.log");
-    
+    gimp::error::ErrorHandler::GetInstance().Initialize();
+    gimp::error::ErrorHandler::GetInstance().SetLogFilePath("gimp_remake_errors.log");
+
     // Set up recovery handlers
-    SetupErrorRecoveryHandlers();
-    
-    int exit_code = 0;
-    
+    setupErrorRecoveryHandlers();
+
+    int exitCode = 0;
+
     try {
         // Run application with top-level exception handling
-        exit_code = RunApplication(argc, argv);
-        
-    } catch (const GimpException& e) {
+        exitCode = runApplication(argc, argv);
+
+    } catch (const gimp::error::GimpException& e) {
         // Handle GIMP-specific exceptions
-        std::cerr << "Caught GIMP exception: " << e.what() << std::endl;
-        
-        if (e.GetSeverity() == ErrorSeverity::Fatal) {
+        std::cerr << "Caught GIMP exception: " << e.what() << '\n';
+
+        if (e.GetSeverity() == gimp::error::ErrorSeverity::Fatal) {
             // Fatal error - must terminate
-            ErrorHandler::GetInstance().HandleFatalError(e.GetErrorInfo());
+            gimp::error::ErrorHandler::GetInstance().HandleFatalError(e.GetErrorInfo());
         } else {
             // Recoverable error - report and exit
-            ErrorHandler::GetInstance().ReportError(e.GetErrorInfo());
-            exit_code = 1;
+            gimp::error::ErrorHandler::GetInstance().ReportError(e.GetErrorInfo());
+            exitCode = 1;
         }
-        
+
     } catch (const std::exception& e) {
         // Handle standard exceptions
-        std::cerr << "Caught standard exception: " << e.what() << std::endl;
-        
-        ErrorInfo error(ErrorCode::SystemUnknownError, 
-                       std::string("Unhandled exception: ") + e.what());
-        ErrorHandler::GetInstance().HandleFatalError(error);
-        
+        std::cerr << "Caught standard exception: " << e.what() << '\n';
+
+        const gimp::error::ErrorInfo error(gimp::error::ErrorCode::SystemUnknownError,
+                                           std::string("Unhandled exception: ") + e.what());
+        gimp::error::ErrorHandler::GetInstance().HandleFatalError(error);
+
     } catch (...) {
         // Catch-all for unknown exceptions
-        std::cerr << "Caught unknown exception" << std::endl;
-        
-        ErrorInfo error(ErrorCode::Unknown, "Unknown exception caught in main");
-        ErrorHandler::GetInstance().HandleFatalError(error);
+        std::cerr << "Caught unknown exception\n";
+
+        const gimp::error::ErrorInfo error(gimp::error::ErrorCode::Unknown,
+                                           "Unknown exception caught in main");
+        gimp::error::ErrorHandler::GetInstance().HandleFatalError(error);
     }
-    
+
     // Shutdown error handling system
-    ErrorHandler::GetInstance().Shutdown();
-    
-    return exit_code;
+    gimp::error::ErrorHandler::GetInstance().Shutdown();
+
+    return exitCode;
 }

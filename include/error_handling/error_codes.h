@@ -15,37 +15,37 @@ namespace error {
 
 /**
  * @brief Error category enumeration
- * 
+ *
  * Categories help organize errors by subsystem and determine handling strategy.
  */
 enum class ErrorCategory {
     None = 0,
-    IO,                  ///< File I/O and disk operations
-    Rendering,           ///< Graphics rendering and GPU operations
-    InvalidArgument,     ///< Invalid function parameters or state
-    Brush,               ///< Brush engine failures
-    Transform,           ///< Image transformation failures
-    Filter,              ///< Filter application failures
-    Memory,              ///< Memory allocation and management
-    System,              ///< System-level errors (OS, drivers)
-    Unknown              ///< Unclassified errors
+    IO,               ///< File I/O and disk operations
+    Rendering,        ///< Graphics rendering and GPU operations
+    InvalidArgument,  ///< Invalid function parameters or state
+    Brush,            ///< Brush engine failures
+    Transform,        ///< Image transformation failures
+    Filter,           ///< Filter application failures
+    Memory,           ///< Memory allocation and management
+    System,           ///< System-level errors (OS, drivers)
+    Unknown           ///< Unclassified errors
 };
 
 /**
  * @brief Error severity level
- * 
+ *
  * Determines whether an error is recoverable or requires application termination.
  */
 enum class ErrorSeverity {
-    Info,        ///< Informational, no error
-    Warning,     ///< Warning, operation may continue with degraded behavior
-    Recoverable, ///< Error occurred but application can recover
-    Fatal        ///< Fatal error, application cannot continue safely
+    Info,         ///< Informational, no error
+    Warning,      ///< Warning, operation may continue with degraded behavior
+    Recoverable,  ///< Error occurred but application can recover
+    Fatal         ///< Fatal error, application cannot continue safely
 };
 
 /**
  * @brief Standardized error codes
- * 
+ *
  * Each error code is uniquely identified and categorized. Error codes are
  * grouped by category for easy maintenance.
  */
@@ -132,19 +132,29 @@ enum class ErrorCode {
  * @param code The error code to categorize
  * @return The error category
  */
-constexpr ErrorCategory GetErrorCategory(ErrorCode code) {
+constexpr ErrorCategory GetErrorCategory(ErrorCode code)
+{
     const int codeValue = static_cast<int>(code);
-    
-    if (codeValue == 0) return ErrorCategory::None;
-    if (codeValue >= 1000 && codeValue < 2000) return ErrorCategory::IO;
-    if (codeValue >= 2000 && codeValue < 3000) return ErrorCategory::Rendering;
-    if (codeValue >= 3000 && codeValue < 4000) return ErrorCategory::InvalidArgument;
-    if (codeValue >= 4000 && codeValue < 4100) return ErrorCategory::Brush;
-    if (codeValue >= 4100 && codeValue < 4200) return ErrorCategory::Transform;
-    if (codeValue >= 4200 && codeValue < 4300) return ErrorCategory::Filter;
-    if (codeValue >= 5000 && codeValue < 6000) return ErrorCategory::Memory;
-    if (codeValue >= 6000 && codeValue < 7000) return ErrorCategory::System;
-    
+
+    if (codeValue == 0)
+        return ErrorCategory::None;
+    if (codeValue >= 1000 && codeValue < 2000)
+        return ErrorCategory::IO;
+    if (codeValue >= 2000 && codeValue < 3000)
+        return ErrorCategory::Rendering;
+    if (codeValue >= 3000 && codeValue < 4000)
+        return ErrorCategory::InvalidArgument;
+    if (codeValue >= 4000 && codeValue < 4100)
+        return ErrorCategory::Brush;
+    if (codeValue >= 4100 && codeValue < 4200)
+        return ErrorCategory::Transform;
+    if (codeValue >= 4200 && codeValue < 4300)
+        return ErrorCategory::Filter;
+    if (codeValue >= 5000 && codeValue < 6000)
+        return ErrorCategory::Memory;
+    if (codeValue >= 6000 && codeValue < 7000)
+        return ErrorCategory::System;
+
     return ErrorCategory::Unknown;
 }
 
@@ -153,11 +163,12 @@ constexpr ErrorCategory GetErrorCategory(ErrorCode code) {
  * @param code The error code to evaluate
  * @return The error severity
  */
-constexpr ErrorSeverity GetErrorSeverity(ErrorCode code) {
+constexpr ErrorSeverity GetErrorSeverity(ErrorCode code)
+{
     if (code == ErrorCode::Success) {
         return ErrorSeverity::Info;
     }
-    
+
     // Fatal errors
     switch (code) {
         case ErrorCode::OutOfMemory:
@@ -168,12 +179,12 @@ constexpr ErrorSeverity GetErrorSeverity(ErrorCode code) {
         case ErrorCode::SystemInitializationFailed:
         case ErrorCode::SystemDriverError:
             return ErrorSeverity::Fatal;
-        
+
         // Warnings
         case ErrorCode::MemoryLeakDetected:
         case ErrorCode::SystemTimeout:
             return ErrorSeverity::Warning;
-        
+
         // All others are recoverable
         default:
             return ErrorSeverity::Recoverable;
@@ -185,11 +196,12 @@ constexpr ErrorSeverity GetErrorSeverity(ErrorCode code) {
  * @param code The error code
  * @return A string describing the error
  */
-inline std::string GetErrorDescription(ErrorCode code) {
+inline std::string GetErrorDescription(ErrorCode code)
+{
     switch (code) {
         case ErrorCode::Success:
             return "Operation completed successfully";
-        
+
         // I/O Errors
         case ErrorCode::IOFileNotFound:
             return "File not found";
@@ -213,7 +225,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "File already exists";
         case ErrorCode::IODirectoryNotFound:
             return "Directory not found";
-        
+
         // Rendering Errors
         case ErrorCode::RenderInitializationFailed:
             return "Failed to initialize rendering system";
@@ -235,7 +247,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Rendering device not found";
         case ErrorCode::RenderDriverError:
             return "Graphics driver error";
-        
+
         // Invalid Argument Errors
         case ErrorCode::InvalidArgumentNull:
             return "Null argument provided";
@@ -253,7 +265,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Invalid operation state";
         case ErrorCode::InvalidOperation:
             return "Invalid operation";
-        
+
         // Brush Errors
         case ErrorCode::BrushNotFound:
             return "Brush not found";
@@ -265,7 +277,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Brush rendering failed";
         case ErrorCode::BrushUnsupportedType:
             return "Brush type not supported";
-        
+
         // Transform Errors
         case ErrorCode::TransformInvalidMatrix:
             return "Invalid transformation matrix";
@@ -275,7 +287,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Transformation operation failed";
         case ErrorCode::TransformUnsupportedMode:
             return "Transformation mode not supported";
-        
+
         // Filter Errors
         case ErrorCode::FilterNotFound:
             return "Filter not found";
@@ -287,7 +299,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Filter execution failed";
         case ErrorCode::FilterUnsupportedFormat:
             return "Filter does not support this format";
-        
+
         // Memory Errors
         case ErrorCode::OutOfMemory:
             return "Out of memory";
@@ -299,7 +311,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Memory corruption detected";
         case ErrorCode::MemoryLeakDetected:
             return "Memory leak detected";
-        
+
         // System Errors
         case ErrorCode::SystemInitializationFailed:
             return "System initialization failed";
@@ -313,7 +325,7 @@ inline std::string GetErrorDescription(ErrorCode code) {
             return "Operation timed out";
         case ErrorCode::SystemUnknownError:
             return "Unknown system error";
-        
+
         // Unknown
         case ErrorCode::Unknown:
         default:
@@ -326,19 +338,31 @@ inline std::string GetErrorDescription(ErrorCode code) {
  * @param category The error category
  * @return A string naming the category
  */
-inline std::string_view GetCategoryName(ErrorCategory category) {
+inline std::string_view GetCategoryName(ErrorCategory category)
+{
     switch (category) {
-        case ErrorCategory::None: return "None";
-        case ErrorCategory::IO: return "I/O";
-        case ErrorCategory::Rendering: return "Rendering";
-        case ErrorCategory::InvalidArgument: return "InvalidArgument";
-        case ErrorCategory::Brush: return "Brush";
-        case ErrorCategory::Transform: return "Transform";
-        case ErrorCategory::Filter: return "Filter";
-        case ErrorCategory::Memory: return "Memory";
-        case ErrorCategory::System: return "System";
-        case ErrorCategory::Unknown: return "Unknown";
-        default: return "Unknown";
+        case ErrorCategory::None:
+            return "None";
+        case ErrorCategory::IO:
+            return "I/O";
+        case ErrorCategory::Rendering:
+            return "Rendering";
+        case ErrorCategory::InvalidArgument:
+            return "InvalidArgument";
+        case ErrorCategory::Brush:
+            return "Brush";
+        case ErrorCategory::Transform:
+            return "Transform";
+        case ErrorCategory::Filter:
+            return "Filter";
+        case ErrorCategory::Memory:
+            return "Memory";
+        case ErrorCategory::System:
+            return "System";
+        case ErrorCategory::Unknown:
+            return "Unknown";
+        default:
+            return "Unknown";
     }
 }
 
@@ -347,15 +371,21 @@ inline std::string_view GetCategoryName(ErrorCategory category) {
  * @param severity The error severity
  * @return A string naming the severity
  */
-inline std::string_view GetSeverityName(ErrorSeverity severity) {
+inline std::string_view GetSeverityName(ErrorSeverity severity)
+{
     switch (severity) {
-        case ErrorSeverity::Info: return "Info";
-        case ErrorSeverity::Warning: return "Warning";
-        case ErrorSeverity::Recoverable: return "Recoverable";
-        case ErrorSeverity::Fatal: return "Fatal";
-        default: return "Unknown";
+        case ErrorSeverity::Info:
+            return "Info";
+        case ErrorSeverity::Warning:
+            return "Warning";
+        case ErrorSeverity::Recoverable:
+            return "Recoverable";
+        case ErrorSeverity::Fatal:
+            return "Fatal";
+        default:
+            return "Unknown";
     }
 }
 
-} // namespace error
-} // namespace gimp
+}  // namespace error
+}  // namespace gimp

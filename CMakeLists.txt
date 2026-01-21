@@ -20,39 +20,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(GIMP_REMAKE_BUILD_TESTS "Build tests" ON)
 
 add_executable(gimp-remake
-    src/main.cpp
-    core/document.h
-    core/layer.h
-    core/layer_stack.h
-    core/layer_stack.cpp
-    core/command.h
-    core/history_manager.h
-    core/command_bus.h
-    core/command_bus.cpp
-    core/commands/add_layer_command.h
-    core/commands/add_layer_command.cpp
-    core/commands/fill_color_command.h
-    core/commands/fill_color_command.cpp
-    core/event_bus.h
-    core/tile_store.h
-    core/image.h
-    io/io_interface.h
-    io/io_manager.h
-    io/opencv_image.h
-    io/opencv_image.cpp
-    render/renderer.h
-    render/skia_renderer.h
-    render/skia_renderer.cpp
-    render/skia_compositor.h
-    render/skia_compositor.cpp
-    ui/skia_canvas_widget.h
-    src/ui/skia_canvas_widget.cpp
-    ui/main_window.h
-    src/ui/main_window.cpp
-    src/io/io_manager.cpp
+    "src/main.cpp"
+    "src/ui/main_window.cpp"
+    "src/ui/skia_canvas_widget.cpp"
+    "src/io/io_manager.cpp"
+    "include/ui/main_window.h"
+    "include/ui/skia_canvas_widget.h"
+    "include/core/command_bus.cpp"
+    "include/core/layer_stack.cpp"
+    "include/core/commands/add_layer_command.cpp"
+    "include/core/commands/fill_color_command.cpp"
+    "include/render/skia_renderer.cpp"
+    "include/render/skia_compositor.cpp"
 )
 
-target_include_directories(gimp-remake PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(gimp-remake PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OpenCV_INCLUDE_DIRS}
+)
 
 find_package(spdlog CONFIG REQUIRED)
 
@@ -65,20 +50,18 @@ if(WIN32)
     set(z_vcpkg_skia_link_libs_Usp10_lib_DEBUG "Usp10.lib" CACHE FILEPATH "Fix for skia warning" FORCE)
 endif()
 
-find_package(OpenCV REQUIRED)
 find_package(unofficial-skia CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(OpenCV REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
     spdlog::spdlog 
     unofficial::skia::skia
-    ${OpenCV_LIBS}
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    ${OpenCV_LIBS}
 )
-
-target_include_directories(gimp-remake PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 if(WIN32)
     # Automatically deploy Qt platform plugin for Windows
@@ -138,15 +121,14 @@ if(GIMP_REMAKE_BUILD_TESTS)
     FetchContent_MakeAvailable(Catch2)
 
     add_executable(unit_tests
-        tests/test_compositor.cpp
-        core/layer_stack.cpp
-        render/skia_compositor.cpp
-        tests/test_io_manager.cpp
-        src/io/io_manager.cpp
-        io/opencv_image.cpp
+        "tests/test_compositor.cpp"
+        "include/core/layer_stack.cpp"
+        "include/render/skia_compositor.cpp"
     )
-    
-    target_include_directories(unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+    target_include_directories(unit_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
 
     target_link_libraries(unit_tests PRIVATE 
         Catch2::Catch2
@@ -154,7 +136,6 @@ if(GIMP_REMAKE_BUILD_TESTS)
         unofficial::skia::skia
         Qt6::Core
         spdlog::spdlog
-        ${OpenCV_LIBS}
     )
     
     # Ensure tests use C++20

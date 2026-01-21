@@ -29,6 +29,8 @@ add_executable(gimp-remake
     "src/ui/history_panel.cpp"
     "src/ui/command_palette.cpp"
     "src/ui/debug_hud.cpp"
+    "src/history/history_stack.cpp"
+    "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
     "src/error_handling/error_handler.cpp"
     "src/core/command_bus.cpp"

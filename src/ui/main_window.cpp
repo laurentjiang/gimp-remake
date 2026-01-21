@@ -86,8 +86,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
 void MainWindow::set_document(std::shared_ptr<Document> document)
 {
-    m_document = document;
-    if (m_canvasWidget) {
+    m_document = std::move(document);
+    if (m_canvasWidget != nullptr) {
         m_canvasWidget->update();
     }
 }

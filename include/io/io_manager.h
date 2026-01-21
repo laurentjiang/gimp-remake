@@ -24,11 +24,11 @@ namespace gimp {
             ProjectFile importProject(const std::string& file_path);
             bool exportProject(const ProjectFile& project, const std::string& file_path);
 
-            ImageFile readImage(const std::string& input_path);
-            bool writeImage(const cv::Mat& image, const std::string& output_path);
-            void toGrayscale(cv::Mat& image);
-            void toRgb(cv::Mat& image);
-            void toRgba(cv::Mat& image);
+            ImageFile readImage(const std::string& file_path);
+            bool writeImage(const cv::Mat& mat, const std::string& file_path);
+            void toGrayscale(cv::Mat& mat);
+            void toRgb(cv::Mat& mat);
+            void toRgba(cv::Mat& mat);
     }; // class IOManager
 
 } // namespace gimp

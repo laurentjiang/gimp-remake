@@ -8,9 +8,6 @@
 #include "core/layer.h"
 #include "render/skia_compositor.h"
 
-#include "../core/layer.h"
-#include "../render/skia_compositor.h"
-
 #include <include/core/SkBitmap.h>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkColor.h>

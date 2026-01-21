@@ -124,3 +124,7 @@ HEADER_FORMAT.txt
 RULES.md
 COMMIT_FORMAT.txt
 logs
+
+# Ignore jpg and png files generated during testing
+tests/img/*.jpg
+tests/img/*.png

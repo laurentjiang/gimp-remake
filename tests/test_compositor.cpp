@@ -13,6 +13,8 @@
 #include <include/core/SkColor.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include "core/layer.h"
+#include "render/skia_compositor.h"
 
 using namespace gimp;
 

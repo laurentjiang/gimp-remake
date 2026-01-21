@@ -6,19 +6,24 @@
  */
 
 #include "ui/skia_canvas_widget.h"
-#include <include/core/SkImage.h>
-#include <include/core/SkPixmap.h>
-#include <QImage>
-#include <QPainter>
+
 #include "core/document.h"
 #include "render/skia_renderer.h"
+
+#include <QImage>
+#include <QPainter>
+
+#include <include/core/SkImage.h>
+#include <include/core/SkPixmap.h>
 
 namespace gimp {
 
 SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
                                    std::shared_ptr<SkiaRenderer> renderer,
                                    QWidget* parent)
-    : QWidget(parent), m_document(std::move(document)), m_renderer(std::move(renderer))
+    : QWidget(parent),
+      m_document(std::move(document)),
+      m_renderer(std::move(renderer))
 {
     setMouseTracking(true);
 }

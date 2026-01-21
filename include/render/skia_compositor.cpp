@@ -6,12 +6,14 @@
  */
 
 #include "skia_compositor.h"
+
+#include "../core/layer.h"
+
 #include <include/core/SkBitmap.h>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkImageInfo.h>
 #include <include/core/SkPaint.h>
-#include "core/layer.h"
 
 namespace gimp {
 

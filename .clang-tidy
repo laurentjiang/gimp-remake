@@ -1,17 +1,67 @@
+---
+# GIMP Remake - Clang-Tidy Configuration
+# Requires: clang-tidy 18+
+
 Checks: >
   -*,
   bugprone-*,
   performance-*,
   modernize-*,
+  readability-*,
   misc-const-correctness,
+  misc-redundant-expression,
+  -misc-unused-parameters,
   cppcoreguidelines-pro-type-cstyle-cast,
+  cppcoreguidelines-avoid-non-const-global-variables,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-slicing,
+  concurrency-*,
   -modernize-use-trailing-return-type,
   -modernize-use-ranges,
   -modernize-use-auto,
-  -bugprone-easily-swappable-parameters
+  -bugprone-easily-swappable-parameters,
+  -bugprone-branch-clone,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-else-after-return,
+  -readability-braces-around-statements,
+  -readability-convert-member-functions-to-static,
+  -readability-named-parameter
 
 WarningsAsErrors: ""
-HeaderFilterRegex: "^(?!.*/(build|vcpkg_installed)/)"
+
+HeaderFilterRegex: "^(?!.*/(build|vcpkg_installed|vcpkg)/)"
+
 InheritParentConfig: false
+
 FormatStyle: file
+
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalConstantCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalConstantPointerCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberPrefix
+    value: m_
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.StaticConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: "QString;QStringView"
+  - key: bugprone-argument-comment.StrictMode
+    value: "false"
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+    value: "true"
 

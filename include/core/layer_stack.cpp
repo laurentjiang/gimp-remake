@@ -6,6 +6,7 @@
  */
 
 #include "layer_stack.h"
+
 #include <algorithm>
 
 namespace gimp {

@@ -6,6 +6,7 @@
  */
 
 #include "ui/main_window.h"
+
 #include "core/document.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
@@ -73,8 +74,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         for (int x = 0; x < 800; ++x) {
             const int dx = x - cx;
             const int dy = y - cy;
-            if (dx * dx + dy * dy < r * r) {
-                fgPixels[y * 800 + x] = 0xFF0000FF;
+            if ((dx * dx) + (dy * dy) < r * r) {
+                fgPixels[(y * 800) + x] = 0xFF0000FF;
             }
         }
     }
@@ -85,8 +86,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
 void MainWindow::set_document(std::shared_ptr<Document> document)
 {
-    m_document = document;
-    if (m_canvasWidget) {
+    m_document = std::move(document);
+    if (m_canvasWidget != nullptr) {
         m_canvasWidget->update();
     }
 }

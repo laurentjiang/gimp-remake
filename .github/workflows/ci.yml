@@ -2,32 +2,100 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite"
+  VCPKG_COMMIT: '594ad8871e1e8e45f8e626c015fd611163430207'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOBS
+# ─────────────────────────────────────────────────────────────────────────────
+
 jobs:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Code Quality (Fast - runs in parallel with build)
+  # ───────────────────────────────────────────────────────────────────────────
+  
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install clang-format & clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-18 clang-tidy-18
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+          sudo update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-18 100
+
+      - name: Check formatting
+        run: |
+          echo "Checking code formatting..."
+          find src core render ui tests -name '*.cpp' -o -name '*.h' 2>/dev/null | head -100 | while read file; do
+            if [ -f "$file" ]; then
+              clang-format --dry-run --Werror "$file" || echo "::error file=$file::Formatting issues found"
+            fi
+          done
+
+      - name: Verify clang-tidy config
+        run: |
+          echo "Validating .clang-tidy configuration..."
+          clang-tidy --dump-config > /dev/null && echo "✓ .clang-tidy is valid"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Windows Build & Test (combined to avoid rebuilding)
+  # ───────────────────────────────────────────────────────────────────────────
+  
   build-windows:
+    name: Build & Test (Windows)
     runs-on: windows-latest
+    timeout-minutes: 60
+    needs: []
     
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Ninja
-        uses: ashutoshvarma/setup-ninja@master
+        uses: ashutoshvarma/setup-ninja@v1.1
         with:
-          version: 1.10.0
+          version: 1.11.1
 
       - name: Setup MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@v1.13.0
 
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
-        id: runvcpkg
         with:
           vcpkgDirectory: ${{ github.workspace }}/vcpkg
-          vcpkgJsonGlob: 'vcpkg.json'
-          vcpkgGitCommitId: '594ad8871e1e8e45f8e626c015fd611163430207'
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT }}
+          doNotCache: true
+          runVcpkgInstall: false
+
+      - name: Configure NuGet for GitHub Packages
+        shell: pwsh
+        run: |
+          $nuget = & "${{ github.workspace }}/vcpkg/vcpkg" fetch nuget | Select-Object -Last 1
+          & $nuget sources add -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" -StorePasswordInClearText -Name "GitHubPackages" -UserName "${{ github.repository_owner }}" -Password "${{ secrets.GITHUB_TOKEN }}" -NonInteractive
+          & $nuget setapikey "${{ secrets.GITHUB_TOKEN }}" -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" -NonInteractive
 
       - name: Configure CMake
         shell: pwsh
@@ -36,10 +104,94 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release `
             -DVCPKG_TARGET_TRIPLET=x64-windows-release `
             -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}/triplets" `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
-        run: cmake --build build --config Release
+        run: cmake --build build --config Release --parallel
 
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+      - name: Run Tests
+        run: ctest --test-dir build --output-on-failure --verbose
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gimp-remake-windows-${{ github.sha }}
+          path: |
+            build/gimp-remake.exe
+            build/platforms/
+          retention-days: 14
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-windows
+          path: build/Testing/
+          retention-days: 7
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Release (Only on tags)
+  # ───────────────────────────────────────────────────────────────────────────
+  
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [lint, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gimp-remake-windows-${{ github.sha }}
+          path: release/windows
+
+      - name: Create Release Package
+        run: |
+          cd release/windows
+          zip -r ../../gimp-remake-${{ github.ref_name }}-windows-x64.zip .
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          echo "## Changes in ${{ github.ref_name }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md 2>/dev/null || echo "- Initial release" >> CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          files: |
+            gimp-remake-${{ github.ref_name }}-windows-x64.zip
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # CI Status Summary
+  # ───────────────────────────────────────────────────────────────────────────
+  
+  ci-status:
+    name: CI Status
+    runs-on: ubuntu-latest
+    needs: [lint, build-windows]
+    if: always()
+    
+    steps:
+      - name: Check CI Status
+        run: |
+          if [ "${{ needs.lint.result }}" == "failure" ] || \
+             [ "${{ needs.build-windows.result }}" == "failure" ]; then
+            echo "::error::CI pipeline failed"
+            exit 1
+          fi
+          echo "All CI checks passed"

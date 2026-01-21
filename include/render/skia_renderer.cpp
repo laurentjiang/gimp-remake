@@ -6,9 +6,12 @@
  */
 
 #include "skia_renderer.h"
-#include <include/core/SkCanvas.h>
-#include <iostream>
+
 #include "../core/document.h"
+
+#include <iostream>
+
+#include <include/core/SkCanvas.h>
 
 namespace gimp {
 

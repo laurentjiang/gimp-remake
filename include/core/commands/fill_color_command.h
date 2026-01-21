@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include "../command.h"
+
 #include <cstdint>
 #include <memory>
-#include "../command.h"
 
 namespace gimp {
 class Document;

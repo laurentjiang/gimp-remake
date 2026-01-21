@@ -7,10 +7,11 @@
 
 #pragma once
 
-#include <include/core/SkImage.h>
-#include <include/core/SkSurface.h>
 #include "renderer.h"
 #include "skia_compositor.h"
+
+#include <include/core/SkImage.h>
+#include <include/core/SkSurface.h>
 
 namespace gimp {
 class Document;

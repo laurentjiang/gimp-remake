@@ -5,12 +5,13 @@
  * @date 2025-12-08
  */
 
-#include <QApplication>
 #include "ui/main_window.h"
+
+#include <QApplication>
 
 int main(int argc, char* argv[])
 {
-    const QApplication app(argc, argv);
+    const QApplication APP(argc, argv);
 
     gimp::MainWindow window;
     window.show();

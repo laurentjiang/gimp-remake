@@ -6,12 +6,14 @@
  */
 
 #include "skia_compositor.h"
+
+#include "../core/layer.h"
+
 #include <include/core/SkBitmap.h>
 #include <include/core/SkCanvas.h>
 #include <include/core/SkImage.h>
 #include <include/core/SkImageInfo.h>
 #include <include/core/SkPaint.h>
-#include "../core/layer.h"
 
 namespace gimp {
 
@@ -21,15 +23,15 @@ void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers)
         if (!layer->visible())
             continue;
 
-        const SkImageInfo info = SkImageInfo::Make(
+        const SkImageInfo INFO = SkImageInfo::Make(
             layer->width(), layer->height(), kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
 
         SkBitmap bitmap;
         // Use const_cast because installPixels expects void* but we are reading
         if (!bitmap.installPixels(
-                info,
+                INFO,
                 const_cast<void*>(reinterpret_cast<const void*>(layer->data().data())),
-                info.minRowBytes())) {
+                INFO.minRowBytes())) {
             continue;
         }
 

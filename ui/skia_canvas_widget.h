@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QWidget>
+
 #include <memory>
 
 namespace gimp {

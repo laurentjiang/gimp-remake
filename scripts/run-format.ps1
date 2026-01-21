@@ -3,10 +3,10 @@
 # Locate clang-format (try common names)
 $clangFormat = Get-Command clang-format -ErrorAction SilentlyContinue
 if (-not $clangFormat) {
-    $clangFormat = Get-Command clang-format-17 -ErrorAction SilentlyContinue
+    $clangFormat = Get-Command clang-format-18 -ErrorAction SilentlyContinue
 }
 if (-not $clangFormat) {
-    Write-Error "clang-format not found. Install via choco (clang-format) or llvm." 
+    Write-Error "clang-format not found. Install LLVM 18+ via: choco install llvm" 
     exit 1
 }
 

@@ -6,6 +6,7 @@
  */
 
 #include "ui/main_window.h"
+
 #include "core/document.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
@@ -66,15 +67,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     auto fg = m_document->add_layer();
     fg->set_name("Circle");
     auto* fgPixels = reinterpret_cast<uint32_t*>(fg->data().data());
-    const int cx = 400;
-    const int cy = 300;
-    const int r = 100;
+    const int CX = 400;
+    const int CY = 300;
+    const int R = 100;
     for (int y = 0; y < 600; ++y) {
         for (int x = 0; x < 800; ++x) {
-            const int dx = x - cx;
-            const int dy = y - cy;
-            if (dx * dx + dy * dy < r * r) {
-                fgPixels[y * 800 + x] = 0xFF0000FF;
+            const int DX = x - CX;
+            const int DY = y - CY;
+            if ((DX * DX) + (DY * DY) < R * R) {
+                fgPixels[(y * 800) + x] = 0xFF0000FF;
             }
         }
     }

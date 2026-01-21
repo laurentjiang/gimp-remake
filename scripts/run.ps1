@@ -10,11 +10,9 @@ $buildDir = Join-Path $rootDir "build"
 $exePath = Join-Path $buildDir "$Config/gimp-remake.exe"
 
 # Set QT_PLUGIN_PATH dynamically based on vcpkg location in build dir
-# This helps it work on different machines assuming vcpkg is used
+# Local dev uses x64-windows triplet (debug+release), CI uses x64-windows-release
 if ($Config -eq "Debug") {
     $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/debug/Qt6/plugins"
-} elseif ($Config -eq "Release") {
-    $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/release/Qt6/plugins"
 } else {
     $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/Qt6/plugins"
 }

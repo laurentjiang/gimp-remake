@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include "layer_stack.h"
+
 #include <memory>
 #include <vector>
-#include "layer_stack.h"
 
 namespace gimp {
 class Layer;

@@ -1,5 +1,5 @@
 Param(
-    [string]$Config = "Release"
+    [string]$Config = "Debug"
 )
 
 $ErrorActionPreference = "Stop"
@@ -7,50 +7,54 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = Resolve-Path (Join-Path $scriptDir "..")
 $buildDir = Join-Path $rootDir "build"
-$exePath = Join-Path $buildDir "$Config/gimp-remake.exe"
 
-# Set QT_PLUGIN_PATH dynamically based on vcpkg location in build dir
-# Local dev uses x64-windows triplet (debug+release), CI uses x64-windows-release
-if ($Config -eq "Debug") {
-    $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/debug/Qt6/plugins"
-} else {
-    $qtPlugins = Join-Path $buildDir "vcpkg_installed/x64-windows/Qt6/plugins"
+# With Ninja, exe is in build root, not build/Config
+$exePath = Join-Path $buildDir "gimp-remake.exe"
+if (-not (Test-Path $exePath)) {
+    # Fallback for multi-config generators (Visual Studio)
+    $exePath = Join-Path $buildDir "$Config/gimp-remake.exe"
+    if (-not (Test-Path $exePath)) {
+        Write-Error "Executable not found. Please run .\scripts\build.ps1 first."
+        exit 1
+    }
 }
 
+$exeDir = Split-Path $exePath
+
+# Set QT_PLUGIN_PATH dynamically based on vcpkg location in build dir
+# Local dev uses x64-windows triplet (debug+release)
+$vcpkgRoot = Join-Path $buildDir "vcpkg_installed/x64-windows"
+if ($Config -eq "Debug") {
+    $qtPlugins = Join-Path $vcpkgRoot "debug/Qt6/plugins"
+    $binDir = Join-Path $vcpkgRoot "debug/bin"
+} else {
+    $qtPlugins = Join-Path $vcpkgRoot "Qt6/plugins"
+    $binDir = Join-Path $vcpkgRoot "bin"
+}
+
+# Copy platforms folder next to exe - most reliable for Qt on Windows
 if (Test-Path $qtPlugins) {
-    # Instead of setting env var, let's copy the platforms folder next to the exe
-    # This is the most reliable way for Qt on Windows
     $platformsSource = Join-Path $qtPlugins "platforms"
-    $platformsDest = Join-Path (Split-Path $exePath) "platforms"
+    $platformsDest = Join-Path $exeDir "platforms"
     
-    if ((Test-Path $platformsSource) -and -not (Test-Path $platformsDest)) {
-        Write-Host "Deploying Qt platforms plugin to $platformsDest..."
+    # Always refresh to ensure correct debug/release version
+    if (Test-Path $platformsDest) {
+        Remove-Item -Path $platformsDest -Recurse -Force
+    }
+    if (Test-Path $platformsSource) {
+        Write-Host "Deploying Qt platforms plugin..."
         Copy-Item -Path $platformsSource -Destination $platformsDest -Recurse
     }
 }
 
 # Add vcpkg bin directory to PATH so DLLs can be found
-$vcpkgRoot = Join-Path $buildDir "vcpkg_installed/x64-windows"
-if ($Config -eq "Debug") {
-    $binDir = Join-Path $vcpkgRoot "debug/bin"
-} else {
-    $binDir = Join-Path $vcpkgRoot "bin"
-}
-
 if (Test-Path $binDir) {
     $env:PATH = "$binDir;$env:PATH"
     Write-Host "Added $binDir to PATH"
 }
 
-if (-not (Test-Path $exePath)) {
-    # Fallback to root if not found (e.g. Ninja generator)
-    $exePathRoot = Join-Path $buildDir "gimp-remake.exe"
-    if (Test-Path $exePathRoot) { 
-        $exePath = $exePathRoot 
-    } else {
-        Write-Error "Executable not found at $exePath or $exePathRoot. Please build the project first."
-        exit 1
-    }
-}
+# Set QT_PLUGIN_PATH as backup
+$env:QT_PLUGIN_PATH = $exeDir
 
+Write-Host "Starting $exePath..."
 & $exePath

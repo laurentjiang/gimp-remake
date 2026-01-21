@@ -7,11 +7,12 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "io_interface.h"
+
 #include <opencv2/imgcodecs.hpp>
 
-#include "io_interface.h"
+#include <memory>
+#include <string>
 
 namespace gimp {
 
@@ -27,4 +28,4 @@ class IOManager : public IOInterface {
     bool export_project(const Document& document, const std::string& file_path) override;
 };
 
-} // namespace gimp
+}  // namespace gimp

@@ -5,13 +5,13 @@
  * @date 2025-12-15
  */
 
-#include "skia_renderer.H"
+#include "skia_renderer.h"
 
-#include "../core/document.H"
+#include "../core/document.h"
 
 #include <iostream>
 
-#include <include/core/SkCanvas.H>
+#include <include/core/SkCanvas.h>
 
 namespace gimp {
 
@@ -21,15 +21,15 @@ SkiaRenderer::~SkiaRenderer() = default;
 
 void SkiaRenderer::render(const Document& document)
 {
-    const int W = document.width();
-    const int H = document.height();
+    const int w = document.width();
+    const int h = document.height();
 
-    if (W <= 0 || H <= 0)
+    if (w <= 0 || h <= 0)
         return;
 
-    if (!m_surface || m_surface->width() != W || m_surface->height() != H) {
-        const SkImageInfo INFO = SkImageInfo::MakeN32Premul(W, H);
-        m_surface = SkSurfaces::Raster(INFO);
+    if (!m_surface || m_surface->width() != w || m_surface->height() != h) {
+        const SkImageInfo info = SkImageInfo::MakeN32Premul(w, h);
+        m_surface = SkSurfaces::Raster(info);
     }
 
     if (!m_surface)

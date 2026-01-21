@@ -24,7 +24,7 @@ class OpenCVImage : public Image {
     int channels() const override { return m_mat.channels(); }
     int depth() const override { return m_mat.depth(); }
     bool empty() const override { return m_mat.empty(); }
-    
+
     void to_grayscale() override;
     void to_rgb() override;
     void to_rgba() override;
@@ -34,4 +34,4 @@ class OpenCVImage : public Image {
     std::string m_path;
 };
 
-} // namespace gimp
+}  // namespace gimp

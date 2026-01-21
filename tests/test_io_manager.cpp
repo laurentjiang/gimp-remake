@@ -5,14 +5,17 @@
  * @date 2025-12-17
  */
 
-#include <catch2/catch_test_macros.hpp>
 #include "io/io_manager.h"
 #include "io/opencv_image.h"
+
 #include <filesystem>
+
+#include <catch2/catch_test_macros.hpp>
 
 using namespace gimp;
 
-TEST_CASE("IOManager reads and writes JPG image files", "[io]") {
+TEST_CASE("IOManager reads and writes JPG image files", "[io]")
+{
     IOManager io_manager;
 
     // Use the provided starry_night.jpg for testing
@@ -27,7 +30,8 @@ TEST_CASE("IOManager reads and writes JPG image files", "[io]") {
     // We check that the image is not empty
     REQUIRE(!image->empty());
 
-    SECTION("Write grayscale") {
+    SECTION("Write grayscale")
+    {
         auto img_gray = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to Grayscale (1 channel)
         img_gray->to_grayscale();
@@ -41,7 +45,8 @@ TEST_CASE("IOManager reads and writes JPG image files", "[io]") {
         REQUIRE(gray->channels() == 1);
     }
 
-    SECTION("Write RGB") {
+    SECTION("Write RGB")
+    {
         auto img_rgb = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to RGB (3 channels)
         img_rgb->to_rgb();
@@ -55,7 +60,8 @@ TEST_CASE("IOManager reads and writes JPG image files", "[io]") {
         REQUIRE(rgb->channels() == 3);
     }
 
-    SECTION("Write RGBA") {
+    SECTION("Write RGBA")
+    {
         auto img_rgba = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to RGBA (4 channels)
         img_rgba->to_rgba();
@@ -70,7 +76,8 @@ TEST_CASE("IOManager reads and writes JPG image files", "[io]") {
     }
 }
 
-TEST_CASE("IOManager reads and writes PNG image files", "[io]") {
+TEST_CASE("IOManager reads and writes PNG image files", "[io]")
+{
     IOManager io_manager;
 
     // Use the provided starry_night.png for testing
@@ -85,7 +92,8 @@ TEST_CASE("IOManager reads and writes PNG image files", "[io]") {
     // We check that the image is not empty
     REQUIRE(!image->empty());
 
-    SECTION("Write grayscale") {
+    SECTION("Write grayscale")
+    {
         auto img_gray = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to Grayscale (1 channel)
         img_gray->to_grayscale();
@@ -99,7 +107,8 @@ TEST_CASE("IOManager reads and writes PNG image files", "[io]") {
         REQUIRE(gray->channels() == 1);
     }
 
-    SECTION("Write RGB") {
+    SECTION("Write RGB")
+    {
         auto img_rgb = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to RGB (3 channels)
         img_rgb->to_rgb();
@@ -113,7 +122,8 @@ TEST_CASE("IOManager reads and writes PNG image files", "[io]") {
         REQUIRE(rgb->channels() == 3);
     }
 
-    SECTION("Write RGBA") {
+    SECTION("Write RGBA")
+    {
         auto img_rgba = std::make_shared<OpenCVImage>(image->mat().clone(), image->file_path());
         // We test conversion to RGBA (4 channels)
         img_rgba->to_rgba();

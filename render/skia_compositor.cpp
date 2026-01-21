@@ -23,15 +23,15 @@ void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers)
         if (!layer->visible())
             continue;
 
-        const SkImageInfo INFO = SkImageInfo::Make(
+        const SkImageInfo info = SkImageInfo::Make(
             layer->width(), layer->height(), kRGBA_8888_SkColorType, kUnpremul_SkAlphaType);
 
         SkBitmap bitmap;
         // Use const_cast because installPixels expects void* but we are reading
         if (!bitmap.installPixels(
-                INFO,
+                info,
                 const_cast<void*>(reinterpret_cast<const void*>(layer->data().data())),
-                INFO.minRowBytes())) {
+                info.minRowBytes())) {
             continue;
         }
 

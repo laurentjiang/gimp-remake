@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include "../core/document.h"
+#include "../core/image.h"
+
 #include <memory>
 #include <string>
-
-#include "../core/image.h"
-#include "../core/document.h"
 
 namespace gimp {
 

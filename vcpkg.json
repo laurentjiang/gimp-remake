@@ -29,6 +29,5 @@
     },
     "nlohmann-json",
     "spdlog"
-    "spdlog"
   ]
 }

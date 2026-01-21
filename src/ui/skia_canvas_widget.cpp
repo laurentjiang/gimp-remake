@@ -45,11 +45,11 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         return;
     }
 
-    const SkImageInfo INFO = skImage->imageInfo();
-    QImage qImage(INFO.width(), INFO.height(), QImage::Format_ARGB32_Premultiplied);
+    const SkImageInfo info = skImage->imageInfo();
+    QImage qImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
 
-    const SkPixmap PIXMAP(INFO, qImage.bits(), qImage.bytesPerLine());
-    if (skImage->readPixels(PIXMAP, 0, 0)) {
+    const SkPixmap pixmap(info, qImage.bits(), qImage.bytesPerLine());
+    if (skImage->readPixels(pixmap, 0, 0)) {
         QPainter painter(this);
         painter.drawImage(0, 0, qImage);
     }

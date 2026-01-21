@@ -5,8 +5,9 @@
  * @date 2025-12-17
  */
 
-#include <opencv2/imgproc.hpp>
 #include "io/opencv_image.h"
+
+#include <opencv2/imgproc.hpp>
 
 namespace gimp {
 
@@ -17,6 +18,7 @@ void OpenCVImage::to_grayscale()
     } else if (m_mat.channels() == 4) {
         cv::cvtColor(m_mat, m_mat, cv::COLOR_RGBA2GRAY);
     }
+    // 1 channel (already grayscale): no-op
 }
 
 void OpenCVImage::to_rgb()
@@ -26,6 +28,7 @@ void OpenCVImage::to_rgb()
     } else if (m_mat.channels() == 4) {
         cv::cvtColor(m_mat, m_mat, cv::COLOR_RGBA2RGB);
     }
+    // 3 channels (already RGB): no-op
 }
 
 void OpenCVImage::to_rgba()
@@ -35,6 +38,7 @@ void OpenCVImage::to_rgba()
     } else if (m_mat.channels() == 3) {
         cv::cvtColor(m_mat, m_mat, cv::COLOR_RGB2RGBA);
     }
+    // 4 channels (already RGBA): no-op
 }
 
-} // namespace gimp
+}  // namespace gimp

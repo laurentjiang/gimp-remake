@@ -11,7 +11,7 @@
 
 int main(int argc, char* argv[])
 {
-    const QApplication APP(argc, argv);
+    const QApplication app(argc, argv);
 
     gimp::MainWindow window;
     window.show();

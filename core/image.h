@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include <string>
 #include <opencv2/core.hpp>
+
+#include <string>
 
 namespace gimp {
 

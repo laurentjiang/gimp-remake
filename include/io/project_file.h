@@ -2,7 +2,7 @@
  * @file image_file.h
  * @brief gimp::ProjectFile class definition.
  * @author Aless Tosi
- * @date 2025-01-08
+ * @date 2026-01-08
  */
 
 #pragma once

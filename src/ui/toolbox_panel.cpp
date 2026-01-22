@@ -11,12 +11,10 @@
 #include "core/events.h"
 #include "core/tool_registry.h"
 
-#include <QApplication>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QScrollArea>
-#include <QStyle>
 
 namespace gimp {
 
@@ -69,8 +67,8 @@ void ToolboxPanel::populateTools()
     for (const auto& tool : tools) {
         auto* button = new QToolButton(this);
 
-        const QIcon icon = getIconForTool(tool.id);
-        if (!icon.isNull()) {
+        const QIcon icon(QString::fromStdString(tool.iconName));
+        if (!icon.isNull() && !icon.availableSizes().isEmpty()) {
             button->setIcon(icon);
             button->setIconSize(QSize(20, 20));
         } else {
@@ -135,29 +133,6 @@ void ToolboxPanel::onToolButtonClicked(int id)
 
         emit toolSelected(QString::fromStdString(toolId));
     }
-}
-
-QIcon ToolboxPanel::getIconForTool(const std::string& toolId)
-{
-    auto* style = QApplication::style();
-
-    // Map tool IDs to Qt standard pixmaps where available
-    // NOLINTNEXTLINE(readability-identifier-naming)
-    static const std::unordered_map<std::string, QStyle::StandardPixmap> kIconMap = {
-        {"move",         QStyle::SP_ArrowUp               },
-        {"zoom",         QStyle::SP_FileDialogContentsView},
-        {"text",         QStyle::SP_FileDialogDetailedView},
-        {"color_picker", QStyle::SP_DialogResetButton     },
-    };
-
-    auto it = kIconMap.find(toolId);
-    if (it != kIconMap.end()) {
-        return style->standardIcon(it->second);
-    }
-
-    // Return empty icon for tools without standard Qt icons
-    // These will fall back to text labels
-    return {};
 }
 
 }  // namespace gimp

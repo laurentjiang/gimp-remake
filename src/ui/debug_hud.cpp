@@ -12,9 +12,11 @@
 #include "core/layer_stack.h"
 
 #ifdef _WIN32
+// clang-format off
 #define WIN32_LEAN_AND_MEAN
-#include <psapi.h>
 #include <windows.h>
+#include <psapi.h>
+// clang-format on
 #endif
 
 namespace gimp {

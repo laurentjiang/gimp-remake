@@ -91,6 +91,7 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
     }
 
     if (tool->category == "Paint") {
+        // Size option group
         auto* sizeLabel = new QLabel("Size:", optionsContainer_);
         auto* sizeSpinner = new QSpinBox(optionsContainer_);
         sizeSpinner->setRange(1, 1000);
@@ -98,15 +99,21 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
         sizeSpinner->setSuffix(" px");
         layout->addWidget(sizeLabel);
         layout->addWidget(sizeSpinner);
-        layout->setSpacing(4);
 
+        // Separator
+        auto* sep1 = new QFrame(optionsContainer_);
+        sep1->setFrameShape(QFrame::VLine);
+        sep1->setFrameShadow(QFrame::Sunken);
+        layout->addWidget(sep1);
+
+        // Opacity option group
         auto* opacityLabel = new QLabel("Opacity:", optionsContainer_);
         auto* opacitySlider = new QSlider(Qt::Horizontal, optionsContainer_);
         opacitySlider->setRange(0, 100);
         opacitySlider->setValue(100);
         opacitySlider->setFixedWidth(80);
         auto* opacityValue = new QLabel("100%", optionsContainer_);
-        opacityValue->setFixedWidth(35);
+        opacityValue->setFixedWidth(40);
         layout->addWidget(opacityLabel);
         layout->addWidget(opacitySlider);
         layout->addWidget(opacityValue);
@@ -115,13 +122,20 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
             opacityValue->setText(QString::number(value) + "%");
         });
 
+        // Separator
+        auto* sep2 = new QFrame(optionsContainer_);
+        sep2->setFrameShape(QFrame::VLine);
+        sep2->setFrameShadow(QFrame::Sunken);
+        layout->addWidget(sep2);
+
+        // Hardness option group
         auto* hardnessLabel = new QLabel("Hardness:", optionsContainer_);
         auto* hardnessSlider = new QSlider(Qt::Horizontal, optionsContainer_);
         hardnessSlider->setRange(0, 100);
         hardnessSlider->setValue(100);
         hardnessSlider->setFixedWidth(80);
         auto* hardnessValue = new QLabel("100%", optionsContainer_);
-        hardnessValue->setFixedWidth(35);
+        hardnessValue->setFixedWidth(40);
         layout->addWidget(hardnessLabel);
         layout->addWidget(hardnessSlider);
         layout->addWidget(hardnessValue);

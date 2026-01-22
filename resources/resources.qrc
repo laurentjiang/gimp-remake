@@ -1,0 +1,22 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>icons/select-rect.svg</file>
+        <file>icons/select-ellipse.svg</file>
+        <file>icons/select-lasso.svg</file>
+        <file>icons/move.svg</file>
+        <file>icons/rotate.svg</file>
+        <file>icons/scale.svg</file>
+        <file>icons/crop.svg</file>
+        <file>icons/paintbrush.svg</file>
+        <file>icons/pencil.svg</file>
+        <file>icons/eraser.svg</file>
+        <file>icons/bucket-fill.svg</file>
+        <file>icons/gradient.svg</file>
+        <file>icons/text.svg</file>
+        <file>icons/color-picker.svg</file>
+        <file>icons/zoom.svg</file>
+        <file>icons/eye-visible.svg</file>
+        <file>icons/eye-hidden.svg</file>
+    </qresource>
+</RCC>

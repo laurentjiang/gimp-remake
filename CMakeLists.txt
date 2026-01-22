@@ -49,6 +49,7 @@ add_executable(gimp-remake
     "include/core/commands/fill_color_command.cpp"
     "include/render/skia_renderer.cpp"
     "include/render/skia_compositor.cpp"
+    "resources/resources.qrc"
 )
 
 target_include_directories(gimp-remake PRIVATE

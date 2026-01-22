@@ -82,24 +82,32 @@ class ToolRegistry {
 
     void registerDefaultTools()
     {
-        registerTool({"select_rect", "Rectangle Select", "select-rectangular", "R", "Selection"});
-        registerTool({"select_ellipse", "Ellipse Select", "select-elliptical", "E", "Selection"});
-        registerTool({"select_free", "Free Select", "select-lasso", "F", "Selection"});
+        registerTool(
+            {"select_rect", "Rectangle Select", ":/icons/icons/select-rect.svg", "R", "Selection"});
+        registerTool({"select_ellipse",
+                      "Ellipse Select",
+                      ":/icons/icons/select-ellipse.svg",
+                      "E",
+                      "Selection"});
+        registerTool(
+            {"select_free", "Free Select", ":/icons/icons/select-lasso.svg", "F", "Selection"});
 
-        registerTool({"move", "Move", "move", "M", "Transform"});
-        registerTool({"rotate", "Rotate", "rotate", "", "Transform"});
-        registerTool({"scale", "Scale", "scale", "", "Transform"});
-        registerTool({"crop", "Crop", "crop", "C", "Transform"});
+        registerTool({"move", "Move", ":/icons/icons/move.svg", "M", "Transform"});
+        registerTool({"rotate", "Rotate", ":/icons/icons/rotate.svg", "", "Transform"});
+        registerTool({"scale", "Scale", ":/icons/icons/scale.svg", "", "Transform"});
+        registerTool({"crop", "Crop", ":/icons/icons/crop.svg", "C", "Transform"});
 
-        registerTool({"paintbrush", "Paintbrush", "paintbrush", "P", "Paint"});
-        registerTool({"pencil", "Pencil", "pencil", "N", "Paint"});
-        registerTool({"eraser", "Eraser", "eraser", "Shift+E", "Paint"});
-        registerTool({"bucket_fill", "Bucket Fill", "bucket-fill", "Shift+B", "Paint"});
-        registerTool({"gradient", "Gradient", "gradient", "G", "Paint"});
+        registerTool({"paintbrush", "Paintbrush", ":/icons/icons/paintbrush.svg", "P", "Paint"});
+        registerTool({"pencil", "Pencil", ":/icons/icons/pencil.svg", "N", "Paint"});
+        registerTool({"eraser", "Eraser", ":/icons/icons/eraser.svg", "Shift+E", "Paint"});
+        registerTool(
+            {"bucket_fill", "Bucket Fill", ":/icons/icons/bucket-fill.svg", "Shift+B", "Paint"});
+        registerTool({"gradient", "Gradient", ":/icons/icons/gradient.svg", "G", "Paint"});
 
-        registerTool({"text", "Text", "text", "T", "Other"});
-        registerTool({"color_picker", "Color Picker", "color-picker", "O", "Other"});
-        registerTool({"zoom", "Zoom", "zoom", "Z", "Other"});
+        registerTool({"text", "Text", ":/icons/icons/text.svg", "T", "Other"});
+        registerTool(
+            {"color_picker", "Color Picker", ":/icons/icons/color-picker.svg", "O", "Other"});
+        registerTool({"zoom", "Zoom", ":/icons/icons/zoom.svg", "Z", "Other"});
 
         activeToolId_ = "paintbrush";
     }

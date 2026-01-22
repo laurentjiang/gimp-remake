@@ -12,10 +12,8 @@
 #include "core/layer.h"
 #include "core/layer_stack.h"
 
-#include <QApplication>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QStyle>
 
 namespace gimp {
 
@@ -110,25 +108,18 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
 {
     QString text = QString::fromStdString(layer->name());
 
-    if (!layer->visible()) {
-        text = "[H] " + text;
-        item->setForeground(Qt::gray);
-    } else {
-        text = "[V] " + text;
-        item->setForeground(palette().text().color());
-    }
-
     if (layer->opacity() < 1.0F) {
         text += QString(" (%1%)").arg(static_cast<int>(layer->opacity() * 100));
     }
 
     item->setText(text);
 
-    auto* style = QApplication::style();
     if (layer->visible()) {
-        item->setIcon(style->standardIcon(QStyle::SP_DialogApplyButton));
+        item->setIcon(QIcon(":/icons/icons/eye-visible.svg"));
+        item->setForeground(palette().text().color());
     } else {
-        item->setIcon(style->standardIcon(QStyle::SP_DialogCancelButton));
+        item->setIcon(QIcon(":/icons/icons/eye-hidden.svg"));
+        item->setForeground(Qt::gray);
     }
 }
 

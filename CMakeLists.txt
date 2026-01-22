@@ -90,23 +90,45 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:gimp-remake>/iconengines"
     )
 
-    # Locate plugins from vcpkg installed directory
-    set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows")
+    # Locate plugins from vcpkg installed directory using the actual triplet
+    # VCPKG_TARGET_TRIPLET is set by the vcpkg toolchain file
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+        set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+    else()
+        set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows")
+    endif()
 
-    # For Debug builds, plugins are in debug/Qt6/plugins, for Release in Qt6/plugins
-    add_custom_command(TARGET gimp-remake POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/platforms/qwindowsd.dll,${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll>"
-            "$<TARGET_FILE_DIR:gimp-remake>/platforms/$<IF:$<CONFIG:Debug>,qwindowsd.dll,qwindows.dll>"
-        COMMENT "Deploying Qt platform plugin"
-    )
-
-    add_custom_command(TARGET gimp-remake POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/iconengines/qsvgicond.dll,${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll>"
-            "$<TARGET_FILE_DIR:gimp-remake>/iconengines/$<IF:$<CONFIG:Debug>,qsvgicond.dll,qsvgicon.dll>"
-        COMMENT "Deploying Qt SVG icon engine plugin"
-    )
+    # Check if this is a release-only triplet (no debug subfolder)
+    # Release-only triplets like x64-windows-release have plugins directly in Qt6/plugins
+    if(VCPKG_TARGET_TRIPLET MATCHES "-release$")
+        # Release-only triplet: plugins are in Qt6/plugins (no debug variant)
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll"
+                "$<TARGET_FILE_DIR:gimp-remake>/platforms/qwindows.dll"
+            COMMENT "Deploying Qt platform plugin"
+        )
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll"
+                "$<TARGET_FILE_DIR:gimp-remake>/iconengines/qsvgicon.dll"
+            COMMENT "Deploying Qt SVG icon engine plugin"
+        )
+    else()
+        # Standard triplet with debug/release: select based on build config
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/platforms/qwindowsd.dll,${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll>"
+                "$<TARGET_FILE_DIR:gimp-remake>/platforms/$<IF:$<CONFIG:Debug>,qwindowsd.dll,qwindows.dll>"
+            COMMENT "Deploying Qt platform plugin"
+        )
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/iconengines/qsvgicond.dll,${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll>"
+                "$<TARGET_FILE_DIR:gimp-remake>/iconengines/$<IF:$<CONFIG:Debug>,qsvgicond.dll,qsvgicon.dll>"
+            COMMENT "Deploying Qt SVG icon engine plugin"
+        )
+    endif()
 endif()
 
 # Enable modern C++ warnings; extend per-platform as we add code.

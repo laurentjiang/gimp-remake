@@ -12,8 +12,10 @@
 #include "core/layer.h"
 #include "core/layer_stack.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QStyle>
 
 namespace gimp {
 
@@ -45,7 +47,8 @@ void LayersPanel::setupUi()
     layerList_->setDragDropMode(QAbstractItemView::InternalMove);
     mainLayout_->addWidget(layerList_);
 
-    connect(layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
+    connect(
+        layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
 
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(2);
@@ -108,11 +111,11 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
     QString text = QString::fromStdString(layer->name());
 
     if (!layer->visible()) {
-        text = "👁 " + text;
+        text = "[H] " + text;
         item->setForeground(Qt::gray);
     } else {
-        text = "👁 " + text;
-        item->setForeground(Qt::black);
+        text = "[V] " + text;
+        item->setForeground(palette().text().color());
     }
 
     if (layer->opacity() < 1.0F) {
@@ -120,6 +123,13 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
     }
 
     item->setText(text);
+
+    auto* style = QApplication::style();
+    if (layer->visible()) {
+        item->setIcon(style->standardIcon(QStyle::SP_DialogApplyButton));
+    } else {
+        item->setIcon(style->standardIcon(QStyle::SP_DialogCancelButton));
+    }
 }
 
 void LayersPanel::onItemSelectionChanged()
@@ -147,8 +157,9 @@ void LayersPanel::onAddLayerClicked()
 {
     if (document_) {
         auto layer = document_->add_layer();
-        // NOLINTNEXTLINE(modernize-use-designated-initializers)
-        EventBus::instance().publish(LayerStackChangedEvent{LayerStackChangedEvent::Action::Added, layer});
+        EventBus::instance().publish(
+            // NOLINTNEXTLINE(modernize-use-designated-initializers)
+            LayerStackChangedEvent{LayerStackChangedEvent::Action::Added, layer});
         refreshLayerList();
     }
     emit addLayerRequested();
@@ -188,7 +199,8 @@ void LayersPanel::onMoveUpClicked()
 
     const int row = layerList_->row(items.first());
     if (row > 0) {
-        const std::size_t fromIndex = document_->layers().count() - 1 - static_cast<std::size_t>(row);
+        const std::size_t fromIndex =
+            document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex + 1;
         // TODO(layers): Wire to LayerStack::move_layer when available
         static_cast<void>(toIndex);
@@ -205,7 +217,8 @@ void LayersPanel::onMoveDownClicked()
 
     const int row = layerList_->row(items.first());
     if (row < layerList_->count() - 1) {
-        const std::size_t fromIndex = document_->layers().count() - 1 - static_cast<std::size_t>(row);
+        const std::size_t fromIndex =
+            document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex - 1;
         // TODO(layers): Wire to LayerStack::move_layer when available
         static_cast<void>(toIndex);

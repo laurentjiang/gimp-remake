@@ -78,10 +78,7 @@ class ToolRegistry {
     [[nodiscard]] const std::string& getActiveTool() const { return activeToolId_; }
 
   private:
-    ToolRegistry()
-    {
-        registerDefaultTools();
-    }
+    ToolRegistry() { registerDefaultTools(); }
 
     void registerDefaultTools()
     {

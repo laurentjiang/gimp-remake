@@ -104,7 +104,7 @@ void HistoryPanel::refreshList()
         // NOLINTNEXTLINE(modernize-use-integer-sign-comparison)
         if (static_cast<int>(i) > currentIndex_) {
             item->setForeground(Qt::gray);
-        // NOLINTNEXTLINE(modernize-use-integer-sign-comparison)
+            // NOLINTNEXTLINE(modernize-use-integer-sign-comparison)
         } else if (static_cast<int>(i) == currentIndex_) {
             item->setBackground(QColor(200, 220, 255));
         }

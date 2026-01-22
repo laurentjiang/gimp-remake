@@ -37,7 +37,11 @@ struct LayerPropertyChangedEvent {
  * @brief Event fired when the layer stack changes (add, remove, reorder).
  */
 struct LayerStackChangedEvent {
-    enum class Action { Added, Removed, Reordered };
+    enum class Action {
+        Added,
+        Removed,
+        Reordered
+    };
     Action action = Action::Added;
     std::shared_ptr<Layer> affectedLayer;
 };

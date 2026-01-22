@@ -8,6 +8,7 @@
 #pragma once
 
 #include <QButtonGroup>
+#include <QIcon>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -41,6 +42,7 @@ class ToolboxPanel : public QWidget {
   private:
     void setupUi();
     void populateTools();
+    [[nodiscard]] static QIcon getIconForTool(const std::string& toolId);
 
     QVBoxLayout* mainLayout_ = nullptr;
     QButtonGroup* buttonGroup_ = nullptr;

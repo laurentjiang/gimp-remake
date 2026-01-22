@@ -91,32 +91,44 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
     }
 
     if (tool->category == "Paint") {
-        layout->addWidget(new QLabel("Size:", optionsContainer_));
+        auto* sizeLabel = new QLabel("Size:", optionsContainer_);
         auto* sizeSpinner = new QSpinBox(optionsContainer_);
         sizeSpinner->setRange(1, 1000);
         sizeSpinner->setValue(20);
         sizeSpinner->setSuffix(" px");
+        layout->addWidget(sizeLabel);
         layout->addWidget(sizeSpinner);
+        layout->setSpacing(4);
 
-        layout->addWidget(new QLabel("Opacity:", optionsContainer_));
+        auto* opacityLabel = new QLabel("Opacity:", optionsContainer_);
         auto* opacitySlider = new QSlider(Qt::Horizontal, optionsContainer_);
         opacitySlider->setRange(0, 100);
         opacitySlider->setValue(100);
-        opacitySlider->setMaximumWidth(100);
-        layout->addWidget(opacitySlider);
-        auto* opacityLabel = new QLabel("100%", optionsContainer_);
-        opacityLabel->setMinimumWidth(35);
+        opacitySlider->setFixedWidth(80);
+        auto* opacityValue = new QLabel("100%", optionsContainer_);
+        opacityValue->setFixedWidth(35);
         layout->addWidget(opacityLabel);
+        layout->addWidget(opacitySlider);
+        layout->addWidget(opacityValue);
 
-        connect(opacitySlider, &QSlider::valueChanged,
-                [opacityLabel](int value) { opacityLabel->setText(QString::number(value) + "%"); });
+        connect(opacitySlider, &QSlider::valueChanged, [opacityValue](int value) {
+            opacityValue->setText(QString::number(value) + "%");
+        });
 
-        layout->addWidget(new QLabel("Hardness:", optionsContainer_));
+        auto* hardnessLabel = new QLabel("Hardness:", optionsContainer_);
         auto* hardnessSlider = new QSlider(Qt::Horizontal, optionsContainer_);
         hardnessSlider->setRange(0, 100);
         hardnessSlider->setValue(100);
-        hardnessSlider->setMaximumWidth(100);
+        hardnessSlider->setFixedWidth(80);
+        auto* hardnessValue = new QLabel("100%", optionsContainer_);
+        hardnessValue->setFixedWidth(35);
+        layout->addWidget(hardnessLabel);
         layout->addWidget(hardnessSlider);
+        layout->addWidget(hardnessValue);
+
+        connect(hardnessSlider, &QSlider::valueChanged, [hardnessValue](int value) {
+            hardnessValue->setText(QString::number(value) + "%");
+        });
 
     } else if (tool->category == "Selection") {
         auto* featherCheck = new QCheckBox("Feather edges", optionsContainer_);

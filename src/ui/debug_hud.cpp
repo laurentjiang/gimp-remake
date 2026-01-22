@@ -12,8 +12,9 @@
 #include "core/layer_stack.h"
 
 #ifdef _WIN32
-#include <windows.h>
+#define WIN32_LEAN_AND_MEAN
 #include <psapi.h>
+#include <windows.h>
 #endif
 
 namespace gimp {
@@ -27,7 +28,9 @@ DebugHud::DebugHud(QWidget* parent) : QWidget(parent)
     updateTimer_->start(500);
 
     mousePosSub_ = EventBus::instance().subscribe<MousePositionChangedEvent>(
-        [this](const MousePositionChangedEvent& event) { updateMousePosition(event.canvasX, event.canvasY); });
+        [this](const MousePositionChangedEvent& event) {
+            updateMousePosition(event.canvasX, event.canvasY);
+        });
 
     zoomSub_ = EventBus::instance().subscribe<CanvasViewChangedEvent>(
         [this](const CanvasViewChangedEvent& event) {
@@ -46,9 +49,9 @@ DebugHud::~DebugHud()
 
 void DebugHud::setupUi()
 {
-    setStyleSheet(
-        "DebugHud { background-color: rgba(0, 0, 0, 180); border-radius: 6px; }"
-        "QLabel { color: #00ff00; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; }");
+    setStyleSheet("DebugHud { background-color: rgba(0, 0, 0, 180); border-radius: 6px; }"
+                  "QLabel { color: #00ff00; font-family: 'Consolas', 'Monaco', monospace; "
+                  "font-size: 11px; }");
 
     mainLayout_ = new QVBoxLayout(this);
     mainLayout_->setContentsMargins(10, 8, 10, 8);
@@ -135,20 +138,23 @@ double DebugHud::calculateFps()
         return 0.0;
     }
 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(frameTimes_.back() - frameTimes_.front());
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(frameTimes_.back() -
+                                                                          frameTimes_.front());
 
     if (duration.count() == 0) {
         return 0.0;
     }
 
-    return static_cast<double>(frameTimes_.size() - 1) * 1000.0 / static_cast<double>(duration.count());
+    return static_cast<double>(frameTimes_.size() - 1) * 1000.0 /
+           static_cast<double>(duration.count());
 }
 
 std::size_t DebugHud::getMemoryUsage()
 {
 #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS_EX pmc;
-    if (GetProcessMemoryInfo(GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc))) {
+    if (GetProcessMemoryInfo(
+            GetCurrentProcess(), reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&pmc), sizeof(pmc))) {
         return static_cast<std::size_t>(pmc.WorkingSetSize);
     }
 #endif

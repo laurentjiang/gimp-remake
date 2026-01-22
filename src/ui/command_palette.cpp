@@ -153,8 +153,9 @@ void CommandPalette::filterCommands(const std::string& query)
     resultsList_->clear();
 
     std::string lowerQuery = query;
-    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
+    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
 
     for (const auto& cmd : commands_) {
         if (query.empty()) {
@@ -163,12 +164,15 @@ void CommandPalette::filterCommands(const std::string& query)
         }
 
         std::string lowerName = cmd.name;
-        std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
+        std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
 
         std::string lowerCategory = cmd.category;
-        std::transform(lowerCategory.begin(), lowerCategory.end(), lowerCategory.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
+        std::transform(
+            lowerCategory.begin(), lowerCategory.end(), lowerCategory.begin(), [](unsigned char c) {
+                return std::tolower(c);
+            });
 
         if (lowerName.find(lowerQuery) != std::string::npos ||
             lowerCategory.find(lowerQuery) != std::string::npos) {
@@ -177,8 +181,8 @@ void CommandPalette::filterCommands(const std::string& query)
     }
 
     for (const auto* cmd : filteredCommands_) {
-        QString displayText =
-            QString("%1: %2").arg(QString::fromStdString(cmd->category), QString::fromStdString(cmd->name));
+        QString displayText = QString("%1: %2").arg(QString::fromStdString(cmd->category),
+                                                    QString::fromStdString(cmd->name));
         if (!cmd->shortcut.empty()) {
             displayText += QString("  [%1]").arg(QString::fromStdString(cmd->shortcut));
         }

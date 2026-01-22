@@ -23,10 +23,22 @@ add_executable(gimp-remake
     "src/main.cpp"
     "src/ui/main_window.cpp"
     "src/ui/skia_canvas_widget.cpp"
+    "src/ui/toolbox_panel.cpp"
+    "src/ui/tool_options_bar.cpp"
+    "src/ui/layers_panel.cpp"
+    "src/ui/history_panel.cpp"
+    "src/ui/command_palette.cpp"
+    "src/ui/debug_hud.cpp"
     "src/io/io_manager.cpp"
     "src/error_handling/error_handler.cpp"
     "include/ui/main_window.h"
     "include/ui/skia_canvas_widget.h"
+    "include/ui/toolbox_panel.h"
+    "include/ui/tool_options_bar.h"
+    "include/ui/layers_panel.h"
+    "include/ui/history_panel.h"
+    "include/ui/command_palette.h"
+    "include/ui/debug_hud.h"
     "include/error_handling/error_codes.h"
     "include/error_handling/error_result.h"
     "include/error_handling/error_handler.h"
@@ -37,6 +49,7 @@ add_executable(gimp-remake
     "include/core/commands/fill_color_command.cpp"
     "include/render/skia_renderer.cpp"
     "include/render/skia_compositor.cpp"
+    "resources/resources.qrc"
 )
 
 target_include_directories(gimp-remake PRIVATE
@@ -56,7 +69,7 @@ if(WIN32)
 endif()
 
 find_package(unofficial-skia CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
@@ -65,6 +78,7 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Svg
     ${OpenCV_LIBS}
 )
 
@@ -73,32 +87,46 @@ if(WIN32)
     # This ensures the app runs without setting QT_PLUGIN_PATH manually
     add_custom_command(TARGET gimp-remake POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:gimp-remake>/platforms"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:gimp-remake>/iconengines"
     )
 
-    # Attempt to locate the plugins directory relative to Qt6::Core
-    # Vcpkg layout: bin/Qt6Core.dll -> ../Qt6/plugins/platforms/qwindows.dll
-    get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION_RELEASE)
-    if(NOT _qt_core_lib)
-        get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION_DEBUG)
-    endif()
-    if(NOT _qt_core_lib)
-        get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION)
+    # Locate plugins from vcpkg installed directory using the actual triplet
+    # VCPKG_TARGET_TRIPLET is set by the vcpkg toolchain file
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+        set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+    else()
+        set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows")
     endif()
 
-    if(_qt_core_lib)
-        get_filename_component(_qt_bin_dir "${_qt_core_lib}" DIRECTORY)
-        set(_qt_plugins_dir "${_qt_bin_dir}/../Qt6/plugins")
-        
-        # Fallback for standard Qt layout
-        if(NOT EXISTS "${_qt_plugins_dir}")
-            set(_qt_plugins_dir "${_qt_bin_dir}/../plugins")
-        endif()
-
+    # Check if this is a release-only triplet (no debug subfolder)
+    # Release-only triplets like x64-windows-release have plugins directly in Qt6/plugins
+    if(VCPKG_TARGET_TRIPLET MATCHES "-release$")
+        # Release-only triplet: plugins are in Qt6/plugins (no debug variant)
         add_custom_command(TARGET gimp-remake POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${_qt_plugins_dir}/platforms/qwindows.dll"
+                "${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll"
                 "$<TARGET_FILE_DIR:gimp-remake>/platforms/qwindows.dll"
-            COMMENT "Deploying Qt platform plugin (qwindows.dll)"
+            COMMENT "Deploying Qt platform plugin"
+        )
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll"
+                "$<TARGET_FILE_DIR:gimp-remake>/iconengines/qsvgicon.dll"
+            COMMENT "Deploying Qt SVG icon engine plugin"
+        )
+    else()
+        # Standard triplet with debug/release: select based on build config
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/platforms/qwindowsd.dll,${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll>"
+                "$<TARGET_FILE_DIR:gimp-remake>/platforms/$<IF:$<CONFIG:Debug>,qwindowsd.dll,qwindows.dll>"
+            COMMENT "Deploying Qt platform plugin"
+        )
+        add_custom_command(TARGET gimp-remake POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/iconengines/qsvgicond.dll,${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll>"
+                "$<TARGET_FILE_DIR:gimp-remake>/iconengines/$<IF:$<CONFIG:Debug>,qsvgicond.dll,qsvgicon.dll>"
+            COMMENT "Deploying Qt SVG icon engine plugin"
         )
     endif()
 endif()

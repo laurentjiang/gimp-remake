@@ -69,7 +69,7 @@ if(WIN32)
 endif()
 
 find_package(unofficial-skia CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
@@ -78,6 +78,7 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
+    Qt6::Svg
     ${OpenCV_LIBS}
 )
 
@@ -86,34 +87,26 @@ if(WIN32)
     # This ensures the app runs without setting QT_PLUGIN_PATH manually
     add_custom_command(TARGET gimp-remake POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:gimp-remake>/platforms"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:gimp-remake>/iconengines"
     )
 
-    # Attempt to locate the plugins directory relative to Qt6::Core
-    # Vcpkg layout: bin/Qt6Core.dll -> ../Qt6/plugins/platforms/qwindows.dll
-    get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION_RELEASE)
-    if(NOT _qt_core_lib)
-        get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION_DEBUG)
-    endif()
-    if(NOT _qt_core_lib)
-        get_target_property(_qt_core_lib Qt6::Core IMPORTED_LOCATION)
-    endif()
+    # Locate plugins from vcpkg installed directory
+    set(_vcpkg_installed "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows")
 
-    if(_qt_core_lib)
-        get_filename_component(_qt_bin_dir "${_qt_core_lib}" DIRECTORY)
-        set(_qt_plugins_dir "${_qt_bin_dir}/../Qt6/plugins")
-        
-        # Fallback for standard Qt layout
-        if(NOT EXISTS "${_qt_plugins_dir}")
-            set(_qt_plugins_dir "${_qt_bin_dir}/../plugins")
-        endif()
+    # For Debug builds, plugins are in debug/Qt6/plugins, for Release in Qt6/plugins
+    add_custom_command(TARGET gimp-remake POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/platforms/qwindowsd.dll,${_vcpkg_installed}/Qt6/plugins/platforms/qwindows.dll>"
+            "$<TARGET_FILE_DIR:gimp-remake>/platforms/$<IF:$<CONFIG:Debug>,qwindowsd.dll,qwindows.dll>"
+        COMMENT "Deploying Qt platform plugin"
+    )
 
-        add_custom_command(TARGET gimp-remake POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${_qt_plugins_dir}/platforms/qwindows.dll"
-                "$<TARGET_FILE_DIR:gimp-remake>/platforms/qwindows.dll"
-            COMMENT "Deploying Qt platform plugin (qwindows.dll)"
-        )
-    endif()
+    add_custom_command(TARGET gimp-remake POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<IF:$<CONFIG:Debug>,${_vcpkg_installed}/debug/Qt6/plugins/iconengines/qsvgicond.dll,${_vcpkg_installed}/Qt6/plugins/iconengines/qsvgicon.dll>"
+            "$<TARGET_FILE_DIR:gimp-remake>/iconengines/$<IF:$<CONFIG:Debug>,qsvgicond.dll,qsvgicon.dll>"
+        COMMENT "Deploying Qt SVG icon engine plugin"
+    )
 endif()
 
 # Enable modern C++ warnings; extend per-platform as we add code.

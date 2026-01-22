@@ -73,6 +73,66 @@ void ToolOptionsBar::clearOptions()
     }
 }
 
+void ToolOptionsBar::addSeparator(QHBoxLayout* layout)
+{
+    auto* sep = new QFrame(optionsContainer_);
+    sep->setFrameShape(QFrame::VLine);
+    sep->setFrameShadow(QFrame::Sunken);
+    layout->addWidget(sep);
+}
+
+void ToolOptionsBar::addSliderWithLabel(QHBoxLayout* layout,
+                                        const QString& labelText,
+                                        int minVal,
+                                        int maxVal,
+                                        int defaultVal)
+{
+    auto* label = new QLabel(labelText, optionsContainer_);
+    auto* slider = new QSlider(Qt::Horizontal, optionsContainer_);
+    slider->setRange(minVal, maxVal);
+    slider->setValue(defaultVal);
+    slider->setFixedWidth(80);
+    auto* valueLabel = new QLabel(QString::number(defaultVal) + "%", optionsContainer_);
+    valueLabel->setFixedWidth(40);
+
+    layout->addWidget(label);
+    layout->addWidget(slider);
+    layout->addWidget(valueLabel);
+
+    connect(slider, &QSlider::valueChanged, [valueLabel](int value) {
+        valueLabel->setText(QString::number(value) + "%");
+    });
+}
+
+void ToolOptionsBar::addSpinBox(QHBoxLayout* layout,
+                                const QString& labelText,
+                                int minVal,
+                                int maxVal,
+                                int defaultVal,
+                                const QString& suffix)
+{
+    auto* label = new QLabel(labelText, optionsContainer_);
+    auto* spinner = new QSpinBox(optionsContainer_);
+    spinner->setRange(minVal, maxVal);
+    spinner->setValue(defaultVal);
+    spinner->setSuffix(suffix);
+    layout->addWidget(label);
+    layout->addWidget(spinner);
+}
+
+void ToolOptionsBar::addComboBox(QHBoxLayout* layout,
+                                 const QString& labelText,
+                                 const QStringList& items,
+                                 int defaultIndex)
+{
+    auto* label = new QLabel(labelText, optionsContainer_);
+    auto* combo = new QComboBox(optionsContainer_);
+    combo->addItems(items);
+    combo->setCurrentIndex(defaultIndex);
+    layout->addWidget(label);
+    layout->addWidget(combo);
+}
+
 void ToolOptionsBar::updateForTool(const std::string& toolId)
 {
     clearOptions();
@@ -92,57 +152,15 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
 
     if (tool->category == "Paint") {
         // Size option group
-        auto* sizeLabel = new QLabel("Size:", optionsContainer_);
-        auto* sizeSpinner = new QSpinBox(optionsContainer_);
-        sizeSpinner->setRange(1, 1000);
-        sizeSpinner->setValue(20);
-        sizeSpinner->setSuffix(" px");
-        layout->addWidget(sizeLabel);
-        layout->addWidget(sizeSpinner);
-
-        // Separator
-        auto* sep1 = new QFrame(optionsContainer_);
-        sep1->setFrameShape(QFrame::VLine);
-        sep1->setFrameShadow(QFrame::Sunken);
-        layout->addWidget(sep1);
+        addSpinBox(layout, "Size:", 1, 1000, 20, " px");
+        addSeparator(layout);
 
         // Opacity option group
-        auto* opacityLabel = new QLabel("Opacity:", optionsContainer_);
-        auto* opacitySlider = new QSlider(Qt::Horizontal, optionsContainer_);
-        opacitySlider->setRange(0, 100);
-        opacitySlider->setValue(100);
-        opacitySlider->setFixedWidth(80);
-        auto* opacityValue = new QLabel("100%", optionsContainer_);
-        opacityValue->setFixedWidth(40);
-        layout->addWidget(opacityLabel);
-        layout->addWidget(opacitySlider);
-        layout->addWidget(opacityValue);
-
-        connect(opacitySlider, &QSlider::valueChanged, [opacityValue](int value) {
-            opacityValue->setText(QString::number(value) + "%");
-        });
-
-        // Separator
-        auto* sep2 = new QFrame(optionsContainer_);
-        sep2->setFrameShape(QFrame::VLine);
-        sep2->setFrameShadow(QFrame::Sunken);
-        layout->addWidget(sep2);
+        addSliderWithLabel(layout, "Opacity:", 0, 100, 100);
+        addSeparator(layout);
 
         // Hardness option group
-        auto* hardnessLabel = new QLabel("Hardness:", optionsContainer_);
-        auto* hardnessSlider = new QSlider(Qt::Horizontal, optionsContainer_);
-        hardnessSlider->setRange(0, 100);
-        hardnessSlider->setValue(100);
-        hardnessSlider->setFixedWidth(80);
-        auto* hardnessValue = new QLabel("100%", optionsContainer_);
-        hardnessValue->setFixedWidth(40);
-        layout->addWidget(hardnessLabel);
-        layout->addWidget(hardnessSlider);
-        layout->addWidget(hardnessValue);
-
-        connect(hardnessSlider, &QSlider::valueChanged, [hardnessValue](int value) {
-            hardnessValue->setText(QString::number(value) + "%");
-        });
+        addSliderWithLabel(layout, "Hardness:", 0, 100, 100);
 
     } else if (tool->category == "Selection") {
         auto* featherCheck = new QCheckBox("Feather edges", optionsContainer_);
@@ -174,34 +192,15 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
 
             connect(aspectCheck, &QCheckBox::toggled, ratioCombo, &QWidget::setEnabled);
         } else {
-            auto* interpolationLabel = new QLabel("Interpolation:", optionsContainer_);
-            layout->addWidget(interpolationLabel);
-
-            auto* interpolationCombo = new QComboBox(optionsContainer_);
-            interpolationCombo->addItems({"None", "Linear", "Cubic", "Sinc"});
-            interpolationCombo->setCurrentIndex(2);
-            layout->addWidget(interpolationCombo);
+            addComboBox(layout, "Interpolation:", {"None", "Linear", "Cubic", "Sinc"}, 2);
         }
 
     } else if (toolId == "text") {
-        layout->addWidget(new QLabel("Font:", optionsContainer_));
-        auto* fontCombo = new QComboBox(optionsContainer_);
-        fontCombo->addItems({"Sans", "Serif", "Monospace"});
-        layout->addWidget(fontCombo);
-
-        layout->addWidget(new QLabel("Size:", optionsContainer_));
-        auto* fontSizeSpinner = new QSpinBox(optionsContainer_);
-        fontSizeSpinner->setRange(6, 200);
-        fontSizeSpinner->setValue(24);
-        fontSizeSpinner->setSuffix(" pt");
-        layout->addWidget(fontSizeSpinner);
+        addComboBox(layout, "Font:", {"Sans", "Serif", "Monospace"}, 0);
+        addSpinBox(layout, "Size:", 6, 200, 24, " pt");
 
     } else if (toolId == "zoom") {
-        layout->addWidget(new QLabel("Zoom Level:", optionsContainer_));
-        auto* zoomCombo = new QComboBox(optionsContainer_);
-        zoomCombo->addItems({"25%", "50%", "100%", "200%", "400%", "800%"});
-        zoomCombo->setCurrentIndex(2);
-        layout->addWidget(zoomCombo);
+        addComboBox(layout, "Zoom Level:", {"25%", "50%", "100%", "200%", "400%", "800%"}, 2);
 
         auto* fitWindowBtn = new QCheckBox("Fit in window", optionsContainer_);
         layout->addWidget(fitWindowBtn);

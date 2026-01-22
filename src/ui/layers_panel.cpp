@@ -115,10 +115,10 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
     item->setText(text);
 
     if (layer->visible()) {
-        item->setIcon(QIcon(":/icons/icons/eye-visible.svg"));
+        item->setIcon(QIcon(":/icons/eye-visible.svg"));
         item->setForeground(palette().text().color());
     } else {
-        item->setIcon(QIcon(":/icons/icons/eye-hidden.svg"));
+        item->setIcon(QIcon(":/icons/eye-hidden.svg"));
         item->setForeground(Qt::gray);
     }
 }

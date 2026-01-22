@@ -68,7 +68,9 @@ void ToolboxPanel::populateTools()
         auto* button = new QToolButton(this);
 
         const QIcon icon(QString::fromStdString(tool.iconName));
-        if (!icon.isNull() && !icon.availableSizes().isEmpty()) {
+        // For SVG icons, availableSizes() is empty but pixmap generation works
+        const QPixmap testPixmap = icon.pixmap(20, 20);
+        if (!testPixmap.isNull()) {
             button->setIcon(icon);
             button->setIconSize(QSize(20, 20));
         } else {

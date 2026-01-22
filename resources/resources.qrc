@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
-    <qresource prefix="/icons">
+    <qresource prefix="/">
         <file>icons/select-rect.svg</file>
         <file>icons/select-ellipse.svg</file>
         <file>icons/select-lasso.svg</file>

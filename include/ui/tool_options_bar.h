@@ -11,6 +11,7 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QStringList>
 #include <QWidget>
 
 #include <string>
@@ -34,6 +35,24 @@ class ToolOptionsBar : public QWidget {
     void setupUi();
     void updateForTool(const std::string& toolId);
     void clearOptions();
+
+    // UI helper methods
+    void addSeparator(QHBoxLayout* layout);
+    void addSliderWithLabel(QHBoxLayout* layout,
+                            const QString& labelText,
+                            int minVal,
+                            int maxVal,
+                            int defaultVal);
+    void addSpinBox(QHBoxLayout* layout,
+                    const QString& labelText,
+                    int minVal,
+                    int maxVal,
+                    int defaultVal,
+                    const QString& suffix);
+    void addComboBox(QHBoxLayout* layout,
+                     const QString& labelText,
+                     const QStringList& items,
+                     int defaultIndex = 0);
 
     QHBoxLayout* mainLayout_ = nullptr;
     QLabel* toolNameLabel_ = nullptr;

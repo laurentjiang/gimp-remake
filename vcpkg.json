@@ -15,6 +15,7 @@
         "jpeg"
       ]
     },
+    "qtsvg",
     {
       "name": "skia",
       "default-features": false

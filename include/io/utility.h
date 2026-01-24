@@ -36,6 +36,7 @@ inline std::string blend_mode_to_string(BlendMode mode)
         default:
             return "Normal";
     }
+}
 
 /**
  * @brief Convert string to BlendMode enum.

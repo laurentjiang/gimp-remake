@@ -36,6 +36,7 @@ namespace gimp {
                 return "Normal";
         }
     }
+}
 
     /**
      * @brief Convert string to BlendMode enum.

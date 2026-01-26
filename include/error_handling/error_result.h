@@ -70,9 +70,21 @@ class ErrorInfo {
     }
 
     // Accessors
+    /*! @brief Returns the error code.
+     *  @return The error code.
+     */
     ErrorCode GetCode() const { return code_; }
+    /*! @brief Returns the error category.
+     *  @return The error category.
+     */
     ErrorCategory GetCategory() const { return category_; }
+    /*! @brief Returns the error severity.
+     *  @return The error severity.
+     */
     ErrorSeverity GetSeverity() const { return severity_; }
+    /*! @brief Returns the error message.
+     *  @return The error message string.
+     */
     const std::string& GetMessage() const { return message_; }
 
     /**
@@ -207,9 +219,8 @@ class Result {
     const ErrorInfo& Error() const { return std::get<ErrorInfo>(data_); }
 
     /**
-     * @brief Get the value or a default if error
+     * @brief Get the value if Ok, otherwise return the default value.
      * @param default_value The default value to return on error
-     * @return The value or default
      */
     T ValueOr(T default_value) const&
     {
@@ -220,9 +231,8 @@ class Result {
     }
 
     /**
-     * @brief Get the value or a default if error (move version)
+     * @brief Get the value if Ok, otherwise return the default value (move version).
      * @param default_value The default value to return on error
-     * @return The value or default
      */
     T ValueOr(T default_value) &&
     {

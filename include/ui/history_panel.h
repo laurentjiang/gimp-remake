@@ -22,8 +22,8 @@ namespace gimp {
  * @brief Represents a single history entry for display.
  */
 struct HistoryEntry {
-    std::string actionName;
-    bool isUndone = false;
+    std::string actionName; ///< Name of the action (e.g., "Add Layer", "Fill Color").
+    bool isUndone = false;  ///< True if this action has been undone.
 };
 
 /**
@@ -36,13 +36,23 @@ class HistoryPanel : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the history panel.
+     *  @param parent Optional parent widget.
+     */
     explicit HistoryPanel(QWidget* parent = nullptr);
     ~HistoryPanel() override;
 
+    /*! @brief Adds a new history entry.
+     *  @param actionName The name of the action.
+     */
     void addEntry(const std::string& actionName);
+    /*! @brief Clears all history entries. */
     void clear();
 
   signals:
+    /*! @brief Emitted when the user wants to jump to a history point.
+     *  @param index The target history index.
+     */
     void historyJumpRequested(int index);
 
   private slots:

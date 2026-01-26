@@ -128,3 +128,6 @@ logs
 # Ignore jpg and png files generated during testing
 tests/img/*.jpg
 tests/img/*.png
+
+# Generated Doxygen documentation (deployed via CI to GitHub Pages)
+docs/api/

@@ -18,7 +18,7 @@
 
 namespace gimp::error {
 
-// Static context stack for error context tracking
+/*! @brief Thread-local context stack for error context tracking. */
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static thread_local std::vector<std::string> gContextStack;
 

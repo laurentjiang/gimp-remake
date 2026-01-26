@@ -42,13 +42,25 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the main application window.
+     *  @param parent Optional parent widget.
+     */
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() override;
 
+    /*! @brief Sets the active document.
+     *  @param document The document to display and edit.
+     */
     void set_document(std::shared_ptr<Document> document);
 
   protected:
+    /*! @brief Handles key press events.
+     *  @param event The key event.
+     */
     void keyPressEvent(QKeyEvent* event) override;
+    /*! @brief Handles window resize events.
+     *  @param event The resize event.
+     */
     void resizeEvent(QResizeEvent* event) override;
 
   private slots:

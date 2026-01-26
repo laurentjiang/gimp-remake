@@ -32,14 +32,28 @@ class DebugHud : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the debug HUD overlay.
+     *  @param parent Optional parent widget.
+     */
     explicit DebugHud(QWidget* parent = nullptr);
     ~DebugHud() override;
 
+    /*! @brief Sets the document to display statistics for.
+     *  @param document The active document.
+     */
     void setDocument(std::shared_ptr<Document> document);
+    /*! @brief Shows or hides the debug HUD.
+     *  @param visible True to show, false to hide.
+     */
     void setVisible(bool visible) override;
 
   public slots:
+    /*! @brief Updates the mouse position display.
+     *  @param canvasX X coordinate in canvas space.
+     *  @param canvasY Y coordinate in canvas space.
+     */
     void updateMousePosition(int canvasX, int canvasY);
+    /*! @brief Called when a frame is rendered to update FPS. */
     void frameRendered();
 
   private slots:

@@ -28,6 +28,9 @@ class ToolOptionsBar : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the tool options bar.
+     *  @param parent Optional parent widget.
+     */
     explicit ToolOptionsBar(QWidget* parent = nullptr);
     ~ToolOptionsBar() override;
 

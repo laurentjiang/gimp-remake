@@ -71,6 +71,12 @@ int runApplication(int argc, char** argv)
     return QApplication::exec();
 }
 
+/*!
+ * @brief Application entry point.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return Exit code.
+ */
 // NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, char** argv)
 {

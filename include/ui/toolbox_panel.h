@@ -26,13 +26,25 @@ class ToolboxPanel : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the toolbox panel.
+     *  @param parent Optional parent widget.
+     */
     explicit ToolboxPanel(QWidget* parent = nullptr);
     ~ToolboxPanel() override;
 
+    /*! @brief Sets the active tool by ID.
+     *  @param toolId The tool identifier to activate.
+     */
     void setActiveTool(const std::string& toolId);
+    /*! @brief Returns the currently active tool ID.
+     *  @return The active tool identifier.
+     */
     [[nodiscard]] std::string activeTool() const { return activeToolId_; }
 
   signals:
+    /*! @brief Emitted when a tool is selected.
+     *  @param toolId The selected tool identifier.
+     */
     void toolSelected(const QString& toolId);
 
   private slots:

@@ -26,8 +26,12 @@ namespace gimp {
  */
 class EventBus {
   public:
+    /*! @brief Subscription handle type for unsubscribing. */
     using SubscriptionId = std::size_t;
 
+    /*! @brief Returns the singleton EventBus instance.
+     *  @return Reference to the global EventBus.
+     */
     static EventBus& instance()
     {
         static EventBus bus;

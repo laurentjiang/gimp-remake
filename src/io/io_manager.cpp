@@ -16,6 +16,7 @@
 #include <iostream>
 #include <stdexcept>
 
+/*! @brief Alias for nlohmann::json for convenience. */
 using json = nlohmann::json;
 
 namespace gimp {

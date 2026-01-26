@@ -39,16 +39,24 @@ class Document {
      */
     virtual void remove_layer(const std::shared_ptr<Layer>& layer) = 0;
 
-    /*! @brief Returns the layer stack. */
+    /*! @brief Returns the layer stack.
+     *  @return Reference to the document's layer stack.
+     */
     virtual const LayerStack& layers() const = 0;
 
-    /*! @brief Returns the tile store for dirty region tracking. */
+    /*! @brief Returns the tile store for dirty region tracking.
+     *  @return Reference to the tile store.
+     */
     virtual TileStore& tile_store() = 0;
 
-    /*! @brief Returns the document width in pixels. */
+    /*! @brief Returns the document width in pixels.
+     *  @return Width in pixels.
+     */
     virtual int width() const = 0;
 
-    /*! @brief Returns the document height in pixels. */
+    /*! @brief Returns the document height in pixels.
+     *  @return Height in pixels.
+     */
     virtual int height() const = 0;
 };  // class Document
 }  // namespace gimp

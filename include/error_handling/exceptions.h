@@ -78,8 +78,8 @@ class GimpException : public std::exception {
     ErrorSeverity GetSeverity() const { return error_info_.GetSeverity(); }
 
   protected:
-    ErrorInfo error_info_;
-    mutable std::string cached_what_;
+    ErrorInfo error_info_;           ///< The underlying error information.
+    mutable std::string cached_what_; ///< Cached what() string for lifetime management.
 };
 
 /**
@@ -89,6 +89,10 @@ class GimpException : public std::exception {
  */
 class IOException : public GimpException {
   public:
+    /*! @brief Constructs an IOException.
+     *  @param code The error code (should be an I/O category code).
+     *  @param context Additional context about the error.
+     */
     explicit IOException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -136,6 +140,10 @@ class IOException : public GimpException {
  */
 class RenderException : public GimpException {
   public:
+    /*! @brief Constructs a RenderException.
+     *  @param code The error code (should be a Rendering category code).
+     *  @param context Additional context about the error.
+     */
     explicit RenderException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -173,6 +181,10 @@ class RenderException : public GimpException {
  */
 class InvalidArgumentException : public GimpException {
   public:
+    /*! @brief Constructs an InvalidArgumentException.
+     *  @param code The error code (should be an InvalidArgument category code).
+     *  @param context Additional context about the error.
+     */
     explicit InvalidArgumentException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -213,6 +225,10 @@ class InvalidArgumentException : public GimpException {
  */
 class BrushException : public GimpException {
   public:
+    /*! @brief Constructs a BrushException.
+     *  @param code The error code (should be a Brush category code).
+     *  @param context Additional context about the error.
+     */
     explicit BrushException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -239,6 +255,10 @@ class BrushException : public GimpException {
  */
 class TransformException : public GimpException {
   public:
+    /*! @brief Constructs a TransformException.
+     *  @param code The error code (should be a Transform category code).
+     *  @param context Additional context about the error.
+     */
     explicit TransformException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -265,6 +285,10 @@ class TransformException : public GimpException {
  */
 class FilterException : public GimpException {
   public:
+    /*! @brief Constructs a FilterException.
+     *  @param code The error code (should be a Filter category code).
+     *  @param context Additional context about the error.
+     */
     explicit FilterException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {
@@ -301,6 +325,10 @@ class FilterException : public GimpException {
  */
 class MemoryException : public GimpException {
   public:
+    /*! @brief Constructs a MemoryException.
+     *  @param code The error code (should be a Memory category code).
+     *  @param context Additional context about the error.
+     */
     explicit MemoryException(ErrorCode code, const std::string& context = "")
         : GimpException(code, context)
     {

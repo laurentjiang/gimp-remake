@@ -27,7 +27,9 @@ class CommandBus {
      */
     virtual void dispatch(std::shared_ptr<Command> command) = 0;
 
-    /*! @brief Returns the history manager for undo/redo. */
+    /*! @brief Returns the history manager for undo/redo.
+     *  @return Reference to the history manager.
+     */
     virtual HistoryManager& history() = 0;
 };
 

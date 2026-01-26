@@ -26,33 +26,52 @@ class ImageFile {
      */
     ImageFile(const cv::Mat& m, const std::string& path) : m_mat(m), m_path(path) {}
 
-    /*! @brief Copy constructor. */
+    /*!
+     * @brief Copy constructor.
+     * @param other The ImageFile to copy from.
+     */
     ImageFile(const ImageFile& other) : m_mat(other.m_mat), m_path(other.m_path) {}
 
     ~ImageFile() = default;
 
-    /*! @brief Returns a const reference to the image matrix. */
+    /*! @brief Returns a const reference to the image matrix.
+     *  @return Const reference to the OpenCV Mat.
+     */
     const cv::Mat& mat() const { return m_mat; }
 
-    /*! @brief Returns a mutable reference to the image matrix. */
+    /*! @brief Returns a mutable reference to the image matrix.
+     *  @return Mutable reference to the OpenCV Mat.
+     */
     cv::Mat& mat() { return m_mat; }
 
-    /*! @brief Returns the source file path. */
+    /*! @brief Returns the source file path.
+     *  @return The file path string.
+     */
     const std::string& file_path() const { return m_path; }
 
-    /*! @brief Returns the image width in pixels. */
+    /*! @brief Returns the image width in pixels.
+     *  @return Width in pixels.
+     */
     int width() const { return m_mat.cols; }
 
-    /*! @brief Returns the image height in pixels. */
+    /*! @brief Returns the image height in pixels.
+     *  @return Height in pixels.
+     */
     int height() const { return m_mat.rows; }
 
-    /*! @brief Returns the number of color channels. */
+    /*! @brief Returns the number of color channels.
+     *  @return Number of channels (e.g., 3 for RGB, 4 for RGBA).
+     */
     int channels() const { return m_mat.channels(); }
 
-    /*! @brief Returns the bit depth of the image. */
+    /*! @brief Returns the bit depth of the image.
+     *  @return OpenCV depth constant (e.g., CV_8U, CV_16U).
+     */
     int depth() const { return m_mat.depth(); }
 
-    /*! @brief Returns true if the image contains no data. */
+    /*! @brief Returns true if the image contains no data.
+     *  @return True if empty.
+     */
     bool empty() const { return m_mat.empty(); }
 
   private:

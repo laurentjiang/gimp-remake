@@ -31,14 +31,25 @@ class LayersPanel : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the layers panel.
+     *  @param parent Optional parent widget.
+     */
     explicit LayersPanel(QWidget* parent = nullptr);
     ~LayersPanel() override;
 
+    /*! @brief Sets the document to display layers for.
+     *  @param document The active document.
+     */
     void setDocument(std::shared_ptr<Document> document);
 
   signals:
+    /*! @brief Emitted when a layer is selected.
+     *  @param layer The selected layer.
+     */
     void layerSelected(std::shared_ptr<Layer> layer);
+    /*! @brief Emitted when the user requests to add a layer. */
     void addLayerRequested();
+    /*! @brief Emitted when the user requests to remove a layer. */
     void removeLayerRequested();
 
   private slots:

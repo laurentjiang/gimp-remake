@@ -51,16 +51,24 @@ class ProjectFile : public Document {
         m_layers.remove_layer(layer);
     }
 
-    /*! @brief Returns the layer stack. */
+    /*! @brief Returns the layer stack.
+     *  @return Const reference to the layer stack.
+     */
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
 
-    /*! @brief Returns the tile store for dirty region tracking. */
+    /*! @brief Returns the tile store for dirty region tracking.
+     *  @return Reference to the tile store.
+     */
     gimp::TileStore& tile_store() override { return m_dummyTileStore; }
 
-    /*! @brief Returns the canvas width in pixels. */
+    /*! @brief Returns the canvas width in pixels.
+     *  @return Width in pixels.
+     */
     [[nodiscard]] int width() const override { return m_width; }
 
-    /*! @brief Returns the canvas height in pixels. */
+    /*! @brief Returns the canvas height in pixels.
+     *  @return Height in pixels.
+     */
     [[nodiscard]] int height() const override { return m_height; }
 
   private:

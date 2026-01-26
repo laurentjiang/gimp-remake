@@ -35,7 +35,9 @@ class SkiaCanvasWidget : public QWidget {
     ~SkiaCanvasWidget() override;
 
   protected:
-    /*! @brief Paints the rendered document to the widget. */
+    /*! @brief Paints the rendered document to the widget.
+     *  @param event The paint event.
+     */
     void paintEvent(QPaintEvent* event) override;
 
   private:

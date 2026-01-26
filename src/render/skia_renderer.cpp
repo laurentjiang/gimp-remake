@@ -5,9 +5,9 @@
  * @date 2025-12-15
  */
 
-#include "skia_renderer.h"
+#include "render/skia_renderer.h"
 
-#include "../core/document.h"
+#include "core/document.h"
 
 #include <iostream>
 

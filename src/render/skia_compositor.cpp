@@ -5,9 +5,9 @@
  * @date 2025-12-16
  */
 
-#include "skia_compositor.h"
+#include "render/skia_compositor.h"
 
-#include "../core/layer.h"
+#include "core/layer.h"
 
 #include <include/core/SkBitmap.h>
 #include <include/core/SkCanvas.h>

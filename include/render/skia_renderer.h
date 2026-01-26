@@ -41,7 +41,7 @@ class SkiaRenderer : public Renderer {
     sk_sp<SkImage> get_result();
 
   private:
-    SkiaCompositor m_compositor; ///< Compositor for layer blending.
-    sk_sp<SkSurface> m_surface;  ///< Offscreen render surface.
+    SkiaCompositor m_compositor;  ///< Compositor for layer blending.
+    sk_sp<SkSurface> m_surface;   ///< Offscreen render surface.
 };
 }  // namespace gimp

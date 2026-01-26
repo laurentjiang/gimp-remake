@@ -20,10 +20,14 @@ namespace gimp {
  */
 class LayerStack {
   public:
-    using iterator = std::vector<std::shared_ptr<Layer>>::iterator; ///< Mutable iterator type.
-    using const_iterator = std::vector<std::shared_ptr<Layer>>::const_iterator; ///< Const iterator type.
-    using reverse_iterator = std::vector<std::shared_ptr<Layer>>::reverse_iterator; ///< Mutable reverse iterator type.
-    using const_reverse_iterator = std::vector<std::shared_ptr<Layer>>::const_reverse_iterator; ///< Const reverse iterator type.
+    using iterator = std::vector<std::shared_ptr<Layer>>::iterator;  ///< Mutable iterator type.
+    using const_iterator =
+        std::vector<std::shared_ptr<Layer>>::const_iterator;  ///< Const iterator type.
+    using reverse_iterator =
+        std::vector<std::shared_ptr<Layer>>::reverse_iterator;  ///< Mutable reverse iterator type.
+    using const_reverse_iterator =
+        std::vector<std::shared_ptr<Layer>>::const_reverse_iterator;  ///< Const reverse iterator
+                                                                      ///< type.
 
     /*!
      * @brief Adds a layer to the top of the stack.
@@ -109,7 +113,7 @@ class LayerStack {
     const_reverse_iterator rend() const { return m_layers.rend(); }
 
   private:
-    std::vector<std::shared_ptr<Layer>> m_layers; ///< Layer storage.
+    std::vector<std::shared_ptr<Layer>> m_layers;  ///< Layer storage.
 };
 
 }  // namespace gimp

@@ -78,8 +78,8 @@ class GimpException : public std::exception {
     ErrorSeverity GetSeverity() const { return error_info_.GetSeverity(); }
 
   protected:
-    ErrorInfo error_info_;           ///< The underlying error information.
-    mutable std::string cached_what_; ///< Cached what() string for lifetime management.
+    ErrorInfo error_info_;             ///< The underlying error information.
+    mutable std::string cached_what_;  ///< Cached what() string for lifetime management.
 };
 
 /**

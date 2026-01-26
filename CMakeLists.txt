@@ -45,6 +45,11 @@ add_executable(gimp-remake
     "include/error_handling/exceptions.h"
     "include/core/command_bus.cpp"
     "include/core/layer_stack.cpp"
+    "include/core/tool.cpp"
+    "include/core/tool_factory.cpp"
+    "include/core/brush_strategy.cpp"
+    "include/core/tools/pencil_tool.cpp"
+    "include/core/tools/move_tool.cpp"
     "include/core/commands/add_layer_command.cpp"
     "include/core/commands/fill_color_command.cpp"
     "include/render/skia_renderer.cpp"
@@ -155,7 +160,12 @@ if(GIMP_REMAKE_BUILD_TESTS)
 
     add_executable(unit_tests
         "tests/test_compositor.cpp"
+        "tests/test_tool_state_machine.cpp"
         "include/core/layer_stack.cpp"
+        "include/core/tool.cpp"
+        "include/core/tool_factory.cpp"
+        "include/core/tools/pencil_tool.cpp"
+        "include/core/tools/move_tool.cpp"
         "include/render/skia_compositor.cpp"
     )
 

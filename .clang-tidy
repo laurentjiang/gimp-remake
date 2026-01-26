@@ -19,15 +19,20 @@ Checks: >
   -modernize-use-trailing-return-type,
   -modernize-use-ranges,
   -modernize-use-auto,
+  -modernize-use-designated-initializers,
   -bugprone-easily-swappable-parameters,
   -bugprone-branch-clone,
+  -bugprone-implicit-widening-of-multiplication-result,
   -readability-identifier-length,
   -readability-magic-numbers,
   -readability-function-cognitive-complexity,
   -readability-else-after-return,
   -readability-braces-around-statements,
   -readability-convert-member-functions-to-static,
-  -readability-named-parameter
+  -readability-named-parameter,
+  -readability-math-missing-parentheses,
+  -readability-implicit-bool-conversion,
+  -misc-const-correctness
 
 WarningsAsErrors: ""
 

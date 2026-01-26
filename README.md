@@ -3,7 +3,6 @@
 [![CI](https://github.com/laurentjiang/gimp-remake/actions/workflows/ci.yml/badge.svg)](https://github.com/laurentjiang/gimp-remake/actions/workflows/ci.yml)
 [![Documentation](https://github.com/laurentjiang/gimp-remake/actions/workflows/docs.yml/badge.svg)](https://github.com/laurentjiang/gimp-remake/actions/workflows/docs.yml)
 [![API Docs](https://img.shields.io/badge/docs-API%20Reference-blue)](https://laurentjiang.github.io/gimp-remake/)
-[![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
 
 A modern C++20/Qt6/Skia reimplementation of GIMP (GNU Image Manipulation Program).
 

@@ -16,17 +16,32 @@
 namespace gimp {
 class Document;
 
+/*!
+ * @class SkiaRenderer
+ * @brief Renders documents using the Skia graphics library.
+ */
 class SkiaRenderer : public Renderer {
   public:
     SkiaRenderer();
     ~SkiaRenderer() override;
 
+    /*!
+     * @brief Renders the document to an internal surface.
+     * @param document The document to render.
+     * @pre document.width() > 0 and document.height() > 0.
+     * @post get_result() returns the rendered image.
+     */
     void render(const Document& document) override;
 
+    /*!
+     * @brief Returns the rendered result as a Skia image.
+     * @return The composited image, or nullptr if render() was not called.
+     * @pre render() must have been called at least once.
+     */
     sk_sp<SkImage> get_result();
 
   private:
-    SkiaCompositor m_compositor;
-    sk_sp<SkSurface> m_surface;
+    SkiaCompositor m_compositor; ///< Compositor for layer blending.
+    sk_sp<SkSurface> m_surface;  ///< Offscreen render surface.
 };
 }  // namespace gimp

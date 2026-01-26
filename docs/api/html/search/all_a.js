@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['factory_20methods_0',['Static Factory Methods',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md17',1,'']]],
+  ['fatal_1',['Fatal',['../error__codes_8h.html#a79c20b0eb93b241daa0981758c7a5bd5a882384ec38ce8d9582b57e70861730e4',1,'gimp::error']]],
+  ['fatal_20error_2',['Fatal Error',['../md_docs_2ERROR__HANDLING__QUICK__REFERENCE.html#autotoc_md95',1,'']]],
+  ['fatal_20errors_3',['Reporting Fatal Errors',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md55',1,'']]],
+  ['fatal_5ferror_4',['FATAL_ERROR',['../error__handler_8h.html#ab3f1c3b6089362052b9f491610a835c8',1,'error_handler.h']]],
+  ['file_20i_20o_5',['File I/O',['../md_docs_2ERROR__HANDLING__QUICK__REFERENCE.html#autotoc_md110',1,'']]],
+  ['file_20i_20o_20with_20result_6',['Pattern 1: File I/O with Result',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md70',1,'']]],
+  ['file_5fpath_7',['file_path',['../classgimp_1_1ImageFile.html#a89320b4d732d2a829f188591fd6a6cdb',1,'gimp::ImageFile']]],
+  ['filenotfound_8',['FileNotFound',['../classgimp_1_1error_1_1IOException.html#aa82bc13acd87c300b1c1492e9a389259',1,'gimp::error::IOException']]],
+  ['fill_5fcolor_5fcommand_2ecpp_9',['fill_color_command.cpp',['../fill__color__command_8cpp.html',1,'']]],
+  ['fill_5fcolor_5fcommand_2eh_10',['fill_color_command.h',['../fill__color__command_8h.html',1,'']]],
+  ['fillcolorcommand_11',['FillColorCommand',['../classgimp_1_1FillColorCommand.html',1,'gimp::FillColorCommand'],['../classgimp_1_1FillColorCommand.html#abb0e39903f556545b3b2991923bda133',1,'gimp::FillColorCommand::FillColorCommand()']]],
+  ['filter_12',['Filter',['../error__codes_8h.html#a810430fca6f6c0288605750338048c54ad7778d0c64b6ba21494c97f77a66885a',1,'gimp::error']]],
+  ['filterexception_13',['FilterException',['../classgimp_1_1error_1_1FilterException.html',1,'gimp::error']]],
+  ['flow_14',['Error Flow',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md12',1,'']]],
+  ['for_20defaults_15',['Using ValueOr for Defaults',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md46',1,'']]],
+  ['for_20expected_20errors_16',['Strategy 1: Result&amp;lt;T&amp;gt; (Recommended for Expected Errors)',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md20',1,'']]],
+  ['for_20i_20o_20errors_17',['Recovery for I/O Errors',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md58',1,'']]],
+  ['for_20logging_18',['Strategy 3: Direct Error Handler (For Logging)',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md22',1,'']]],
+  ['for_20memory_20errors_19',['Recovery for Memory Errors',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md59',1,'']]],
+  ['for_20operations_20without_20return_20value_20',['Result&amp;lt;void&amp;gt; for Operations Without Return Value',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md44',1,'']]],
+  ['for_20unexpected_20errors_21',['Strategy 2: Exceptions (For Unexpected Errors)',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md21',1,'']]],
+  ['function_22',['Add Context to Function',['../md_docs_2ERROR__HANDLING__QUICK__REFERENCE.html#autotoc_md97',1,'']]],
+  ['function_20calls_23',['Adding Context to Function Calls',['../md_docs_2ERROR__HANDLING__GUIDE.html#autotoc_md61',1,'']]],
+  ['future_20enhancements_24',['Future Enhancements',['../md_docs_2ERROR__HANDLING__ARCHITECTURE.html#autotoc_md30',1,'']]]
+];

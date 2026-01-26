@@ -14,6 +14,10 @@
 
 namespace gimp {
 
+/*!
+ * @class LayerStack
+ * @brief Ordered collection of layers with iteration and manipulation methods.
+ */
 class LayerStack {
   public:
     using iterator = std::vector<std::shared_ptr<Layer>>::iterator;
@@ -21,15 +25,46 @@ class LayerStack {
     using reverse_iterator = std::vector<std::shared_ptr<Layer>>::reverse_iterator;
     using const_reverse_iterator = std::vector<std::shared_ptr<Layer>>::const_reverse_iterator;
 
+    /*!
+     * @brief Adds a layer to the top of the stack.
+     * @param layer The layer to add.
+     * @pre layer must not be nullptr.
+     * @post count() is incremented by 1.
+     */
     void add_layer(const std::shared_ptr<Layer>& layer);
+
+    /*!
+     * @brief Removes a layer from the stack.
+     * @param layer The layer to remove.
+     * @post If layer was in the stack, count() is decremented by 1.
+     */
     void remove_layer(const std::shared_ptr<Layer>& layer);
+
+    /*!
+     * @brief Inserts a layer at a specific index.
+     * @param index Insertion position.
+     * @param layer The layer to insert.
+     * @pre layer must not be nullptr.
+     * @post count() is incremented by 1.
+     */
     void insert_layer(size_t index, const std::shared_ptr<Layer>& layer);
 
+    /*!
+     * @brief Moves a layer from one index to another.
+     * @param from_index Source position.
+     * @param to_index Destination position.
+     * @return True if the move succeeded.
+     * @pre from_index must be less than count().
+     */
     bool move_layer(size_t from_index, size_t to_index);
 
+    /*! @brief Returns the number of layers. */
     size_t count() const { return m_layers.size(); }
+
+    /*! @brief Returns true if the stack is empty. */
     bool empty() const { return m_layers.empty(); }
 
+    /*! @brief Access layer by index. */
     std::shared_ptr<Layer> operator[](size_t index) const { return m_layers[index]; }
 
     iterator begin() { return m_layers.begin(); }
@@ -43,7 +78,7 @@ class LayerStack {
     const_reverse_iterator rend() const { return m_layers.rend(); }
 
   private:
-    std::vector<std::shared_ptr<Layer>> m_layers;
+    std::vector<std::shared_ptr<Layer>> m_layers; ///< Layer storage.
 };
 
 }  // namespace gimp

@@ -15,8 +15,16 @@ namespace gimp {
 class Document;
 class Layer;
 
+/*!
+ * @class AddLayerCommand
+ * @brief Command to add a new layer to a document (undoable).
+ */
 class AddLayerCommand : public Command {
   public:
+    /*!
+     * @brief Constructs the command for the given document.
+     * @param document The document to add a layer to.
+     */
     explicit AddLayerCommand(std::shared_ptr<Document> document);
 
     void apply() override;

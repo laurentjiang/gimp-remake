@@ -15,8 +15,17 @@
 namespace gimp {
 class Document;
 
+/*!
+ * @class FillColorCommand
+ * @brief Command to fill a document with a solid color (undoable).
+ */
 class FillColorCommand : public Command {
   public:
+    /*!
+     * @brief Constructs the command with target document and fill color.
+     * @param document The document to fill.
+     * @param rgba The fill color in RGBA format (0xRRGGBBAA).
+     */
     FillColorCommand(std::shared_ptr<Document> document, std::uint32_t rgba);
 
     void apply() override;

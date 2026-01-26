@@ -41,8 +41,8 @@ class SkiaCanvasWidget : public QWidget {
     void paintEvent(QPaintEvent* event) override;
 
   private:
-    std::shared_ptr<Document> m_document;   ///< Document to display.
-    std::shared_ptr<SkiaRenderer> m_renderer; ///< Skia renderer.
+    std::shared_ptr<Document> m_document;      ///< Document to display.
+    std::shared_ptr<SkiaRenderer> m_renderer;  ///< Skia renderer.
 };
 
 }  // namespace gimp

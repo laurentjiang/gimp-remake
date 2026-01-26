@@ -22,8 +22,8 @@ namespace gimp {
  * @brief Represents a single history entry for display.
  */
 struct HistoryEntry {
-    std::string actionName; ///< Name of the action (e.g., "Add Layer", "Fill Color").
-    bool isUndone = false;  ///< True if this action has been undone.
+    std::string actionName;  ///< Name of the action (e.g., "Add Layer", "Fill Color").
+    bool isUndone = false;   ///< True if this action has been undone.
 };
 
 /**

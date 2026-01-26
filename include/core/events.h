@@ -20,16 +20,16 @@ class Document;
  * @brief Event fired when the active layer selection changes.
  */
 struct LayerSelectionChangedEvent {
-    std::shared_ptr<Layer> previousLayer; ///< The previously selected layer, or nullptr.
-    std::shared_ptr<Layer> currentLayer;  ///< The newly selected layer, or nullptr.
-    std::size_t layerIndex = 0;           ///< Index of the current layer in the stack.
+    std::shared_ptr<Layer> previousLayer;  ///< The previously selected layer, or nullptr.
+    std::shared_ptr<Layer> currentLayer;   ///< The newly selected layer, or nullptr.
+    std::size_t layerIndex = 0;            ///< Index of the current layer in the stack.
 };
 
 /**
  * @brief Event fired when a layer property changes (name, visibility, opacity, blend mode).
  */
 struct LayerPropertyChangedEvent {
-    std::shared_ptr<Layer> layer; ///< The layer whose property changed.
+    std::shared_ptr<Layer> layer;  ///< The layer whose property changed.
     std::string propertyName;      ///< Name of the changed property (e.g., "opacity", "visible").
 };
 
@@ -39,12 +39,12 @@ struct LayerPropertyChangedEvent {
 struct LayerStackChangedEvent {
     /*! @brief Type of change that occurred. */
     enum class Action {
-        Added,    ///< A layer was added.
-        Removed,  ///< A layer was removed.
-        Reordered ///< Layers were reordered.
+        Added,     ///< A layer was added.
+        Removed,   ///< A layer was removed.
+        Reordered  ///< Layers were reordered.
     };
-    Action action = Action::Added;        ///< The action that occurred.
-    std::shared_ptr<Layer> affectedLayer; ///< The layer affected by the action.
+    Action action = Action::Added;         ///< The action that occurred.
+    std::shared_ptr<Layer> affectedLayer;  ///< The layer affected by the action.
 };
 
 /**
@@ -60,42 +60,42 @@ struct HistoryChangedEvent {
  * @brief Event fired when the active tool changes.
  */
 struct ToolChangedEvent {
-    std::string previousToolId; ///< ID of the previously active tool.
-    std::string currentToolId;  ///< ID of the newly active tool.
+    std::string previousToolId;  ///< ID of the previously active tool.
+    std::string currentToolId;   ///< ID of the newly active tool.
 };
 
 /**
  * @brief Event fired when a tool property changes.
  */
 struct ToolPropertyChangedEvent {
-    std::string toolId;       ///< ID of the tool whose property changed.
-    std::string propertyName; ///< Name of the changed property.
+    std::string toolId;        ///< ID of the tool whose property changed.
+    std::string propertyName;  ///< Name of the changed property.
 };
 
 /**
  * @brief Event fired when the active document changes.
  */
 struct DocumentChangedEvent {
-    std::shared_ptr<Document> document; ///< The newly active document, or nullptr.
+    std::shared_ptr<Document> document;  ///< The newly active document, or nullptr.
 };
 
 /**
  * @brief Event fired when the canvas view changes (pan, zoom).
  */
 struct CanvasViewChangedEvent {
-    float zoomLevel = 1.0F; ///< Current zoom level (1.0 = 100%).
-    float panX = 0.0F;      ///< Horizontal pan offset in pixels.
-    float panY = 0.0F;      ///< Vertical pan offset in pixels.
+    float zoomLevel = 1.0F;  ///< Current zoom level (1.0 = 100%).
+    float panX = 0.0F;       ///< Horizontal pan offset in pixels.
+    float panY = 0.0F;       ///< Vertical pan offset in pixels.
 };
 
 /**
  * @brief Event fired when the mouse position changes on the canvas.
  */
 struct MousePositionChangedEvent {
-    int canvasX = 0; ///< Mouse X position in canvas coordinates.
-    int canvasY = 0; ///< Mouse Y position in canvas coordinates.
-    int screenX = 0; ///< Mouse X position in screen coordinates.
-    int screenY = 0; ///< Mouse Y position in screen coordinates.
+    int canvasX = 0;  ///< Mouse X position in canvas coordinates.
+    int canvasY = 0;  ///< Mouse Y position in canvas coordinates.
+    int screenX = 0;  ///< Mouse X position in screen coordinates.
+    int screenY = 0;  ///< Mouse Y position in screen coordinates.
 };
 
 }  // namespace gimp

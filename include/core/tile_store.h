@@ -16,10 +16,10 @@ namespace gimp {
  * @brief Axis-aligned rectangle for region specification.
  */
 struct Rect {
-    std::int32_t x; ///< Left edge.
-    std::int32_t y; ///< Top edge.
-    std::int32_t w; ///< Width.
-    std::int32_t h; ///< Height.
+    std::int32_t x;  ///< Left edge.
+    std::int32_t y;  ///< Top edge.
+    std::int32_t w;  ///< Width.
+    std::int32_t h;  ///< Height.
 };
 
 /*!

@@ -18,12 +18,12 @@ namespace gimp {
  * @brief Blending modes for compositing layers.
  */
 enum class BlendMode {
-    Normal,   ///< No blending, top layer replaces bottom.
-    Multiply, ///< Darkens by multiplying colors.
-    Overlay,  ///< Combines Multiply and Screen.
-    Screen,   ///< Lightens by inverting, multiplying, inverting.
-    Darken,   ///< Keeps the darker pixel.
-    Lighten   ///< Keeps the lighter pixel.
+    Normal,    ///< No blending, top layer replaces bottom.
+    Multiply,  ///< Darkens by multiplying colors.
+    Overlay,   ///< Combines Multiply and Screen.
+    Screen,    ///< Lightens by inverting, multiplying, inverting.
+    Darken,    ///< Keeps the darker pixel.
+    Lighten    ///< Keeps the lighter pixel.
 };
 
 /*!
@@ -105,14 +105,14 @@ class Layer {
     const std::vector<uint8_t>& data() const { return m_data; }
 
   private:
-    std::string m_name = "Layer";           ///< Layer display name.
-    bool m_visible = true;                  ///< Visibility flag.
-    float m_opacity = 1.0f;                 ///< Opacity (0.0 to 1.0).
-    BlendMode m_blend_mode = BlendMode::Normal; ///< Blend mode.
+    std::string m_name = "Layer";                ///< Layer display name.
+    bool m_visible = true;                       ///< Visibility flag.
+    float m_opacity = 1.0f;                      ///< Opacity (0.0 to 1.0).
+    BlendMode m_blend_mode = BlendMode::Normal;  ///< Blend mode.
 
-    int m_width = 0;                        ///< Width in pixels.
-    int m_height = 0;                       ///< Height in pixels.
-    std::vector<uint8_t> m_data;            ///< RGBA pixel buffer.
+    int m_width = 0;              ///< Width in pixels.
+    int m_height = 0;             ///< Height in pixels.
+    std::vector<uint8_t> m_data;  ///< RGBA pixel buffer.
 };
 
 }  // namespace gimp

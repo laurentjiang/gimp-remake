@@ -72,9 +72,9 @@ class ProjectFile : public Document {
     [[nodiscard]] int height() const override { return m_height; }
 
   private:
-    int m_width;               ///< Canvas width.
-    int m_height;              ///< Canvas height.
-    gimp::LayerStack m_layers; ///< Layer stack.
+    int m_width;                ///< Canvas width.
+    int m_height;               ///< Canvas height.
+    gimp::LayerStack m_layers;  ///< Layer stack.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

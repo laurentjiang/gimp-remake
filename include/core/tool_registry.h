@@ -19,11 +19,11 @@ namespace gimp {
  * @brief Describes a tool available in the application.
  */
 struct ToolDescriptor {
-    std::string id;       ///< Unique tool identifier.
-    std::string name;     ///< Human-readable tool name.
-    std::string iconName; ///< Resource path to the tool icon.
-    std::string shortcut; ///< Keyboard shortcut (e.g., "P" for paintbrush).
-    std::string category; ///< Tool category (e.g., "Paint", "Selection").
+    std::string id;        ///< Unique tool identifier.
+    std::string name;      ///< Human-readable tool name.
+    std::string iconName;  ///< Resource path to the tool icon.
+    std::string shortcut;  ///< Keyboard shortcut (e.g., "P" for paintbrush).
+    std::string category;  ///< Tool category (e.g., "Paint", "Selection").
 };
 
 /**

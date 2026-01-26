@@ -1,0 +1,26 @@
+{
+  "name": "Fine Pencil",
+  "toolId": "pencil",
+  "version": 1,
+  "description": "Sharp pencil for detailed line work",
+  "brush": {
+    "size": 3,
+    "hardness": 1.0,
+    "opacity": 1.0,
+    "flow": 1.0,
+    "spacing": 10.0,
+    "strategy": "solid"
+  },
+  "color": {
+    "foreground": "#000000FF",
+    "background": "#FFFFFFFF"
+  },
+  "dynamics": {
+    "sizeByPressure": false,
+    "opacityByPressure": true,
+    "pressureCurve": [
+      { "x": 0.0, "y": 0.0 },
+      { "x": 1.0, "y": 1.0 }
+    ]
+  }
+}

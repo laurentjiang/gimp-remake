@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gimp-remake.example.com/schemas/tool-preset.json",
+  "title": "Tool Preset",
+  "description": "Schema for tool presets that define tool settings",
+  "type": "object",
+  "required": ["name", "toolId", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name for the preset",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "toolId": {
+      "type": "string",
+      "description": "ID of the tool this preset applies to",
+      "enum": ["pencil", "paintbrush", "eraser", "move", "select_rect", "select_ellipse"]
+    },
+    "version": {
+      "type": "integer",
+      "description": "Preset schema version for migration",
+      "minimum": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the preset",
+      "maxLength": 256
+    },
+    "brush": {
+      "type": "object",
+      "description": "Brush settings for paint tools",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "description": "Brush diameter in pixels",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 10
+        },
+        "hardness": {
+          "type": "number",
+          "description": "Edge hardness (0.0 = soft, 1.0 = hard)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 1.0
+        },
+        "opacity": {
+          "type": "number",
+          "description": "Brush opacity (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 1.0
+        },
+        "flow": {
+          "type": "number",
+          "description": "Paint flow rate (0.0 to 1.0)",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 1.0
+        },
+        "spacing": {
+          "type": "number",
+          "description": "Spacing between dabs as percentage of brush size",
+          "minimum": 1.0,
+          "maximum": 200.0,
+          "default": 25.0
+        },
+        "strategy": {
+          "type": "string",
+          "description": "Brush rendering strategy",
+          "enum": ["solid", "stamp", "airbrush"],
+          "default": "solid"
+        },
+        "stampFile": {
+          "type": "string",
+          "description": "Path to stamp texture (for stamp strategy)"
+        }
+      }
+    },
+    "color": {
+      "type": "object",
+      "description": "Default color settings",
+      "properties": {
+        "foreground": {
+          "type": "string",
+          "description": "Foreground color in hex format",
+          "pattern": "^#[0-9A-Fa-f]{6,8}$",
+          "default": "#000000FF"
+        },
+        "background": {
+          "type": "string",
+          "description": "Background color in hex format",
+          "pattern": "^#[0-9A-Fa-f]{6,8}$",
+          "default": "#FFFFFFFF"
+        }
+      }
+    },
+    "dynamics": {
+      "type": "object",
+      "description": "Pressure and tilt dynamics",
+      "properties": {
+        "sizeByPressure": {
+          "type": "boolean",
+          "description": "Scale brush size by pen pressure",
+          "default": false
+        },
+        "opacityByPressure": {
+          "type": "boolean",
+          "description": "Scale opacity by pen pressure",
+          "default": true
+        },
+        "pressureCurve": {
+          "type": "array",
+          "description": "Pressure response curve control points",
+          "items": {
+            "type": "object",
+            "properties": {
+              "x": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+              "y": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+            },
+            "required": ["x", "y"]
+          },
+          "minItems": 2,
+          "maxItems": 10
+        }
+      }
+    }
+  }
+}

@@ -5,9 +5,9 @@
  * @date 2025-12-09
  */
 
-#include "add_layer_command.h"
+#include "core/commands/add_layer_command.h"
 
-#include "../document.h"
+#include "core/document.h"
 
 namespace gimp {
 AddLayerCommand::AddLayerCommand(std::shared_ptr<Document> document)

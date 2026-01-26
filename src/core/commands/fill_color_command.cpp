@@ -5,9 +5,9 @@
  * @date 2025-12-09
  */
 
-#include "fill_color_command.h"
+#include "core/commands/fill_color_command.h"
 
-#include "../document.h"
+#include "core/document.h"
 
 namespace gimp {
 FillColorCommand::FillColorCommand(std::shared_ptr<Document> document, std::uint32_t rgba)

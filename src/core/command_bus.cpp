@@ -5,10 +5,10 @@
  * @date 2025-12-09
  */
 
-#include "command_bus.h"
+#include "core/command_bus.h"
 
-#include "command.h"
-#include "history_manager.h"
+#include "core/command.h"
+#include "core/history_manager.h"
 
 namespace gimp {
 BasicCommandBus::BasicCommandBus(HistoryManager& history) : history_{&history} {}

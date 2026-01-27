@@ -29,7 +29,7 @@ class Document {
      * @post layers().count() is incremented by 1.
      * @post Returned pointer is non-null.
      */
-    virtual std::shared_ptr<Layer> add_layer() = 0;
+    virtual std::shared_ptr<Layer> addLayer() = 0;
 
     /*!
      * @brief Removes a layer from the document.
@@ -37,26 +37,26 @@ class Document {
      * @pre layer must exist in the document.
      * @post layers().count() is decremented by 1.
      */
-    virtual void remove_layer(const std::shared_ptr<Layer>& layer) = 0;
+    virtual void removeLayer(const std::shared_ptr<Layer>& layer) = 0;
 
     /*! @brief Returns the layer stack.
      *  @return Reference to the document's layer stack.
      */
-    virtual const LayerStack& layers() const = 0;
+    [[nodiscard]] virtual const LayerStack& layers() const = 0;
 
     /*! @brief Returns the tile store for dirty region tracking.
      *  @return Reference to the tile store.
      */
-    virtual TileStore& tile_store() = 0;
+    virtual TileStore& tileStore() = 0;
 
     /*! @brief Returns the document width in pixels.
      *  @return Width in pixels.
      */
-    virtual int width() const = 0;
+    [[nodiscard]] virtual int width() const = 0;
 
     /*! @brief Returns the document height in pixels.
      *  @return Height in pixels.
      */
-    virtual int height() const = 0;
+    [[nodiscard]] virtual int height() const = 0;
 };  // class Document
 }  // namespace gimp

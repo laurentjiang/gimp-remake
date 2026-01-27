@@ -232,9 +232,9 @@ class ErrorContext {
   public:
     /**
      * @brief Create an error context
-     * @param context_name Name of this context (e.g., function name)
+     * @param contextName Name of this context (e.g., function name)
      */
-    explicit ErrorContext(std::string context_name);
+    explicit ErrorContext(std::string contextName);
 
     /**
      * @brief Destructor removes this context from the stack

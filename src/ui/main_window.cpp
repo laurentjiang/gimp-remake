@@ -7,10 +7,15 @@
 
 #include "ui/main_window.h"
 
+#include "core/command_bus.h"
 #include "core/document.h"
+#include "core/events.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
+#include "core/tool_factory.h"
+#include "core/tools/move_tool.h"
+#include "core/tools/pencil_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/command_palette.h"
 #include "ui/debug_hud.h"
@@ -19,6 +24,8 @@
 #include "ui/skia_canvas_widget.h"
 #include "ui/tool_options_bar.h"
 #include "ui/toolbox_panel.h"
+
+#include "history/simple_history_manager.h"
 
 #include <QKeyEvent>
 #include <QStatusBar>
@@ -30,21 +37,21 @@ class SimpleDocument : public gimp::Document {
   public:
     SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
 
-    std::shared_ptr<gimp::Layer> add_layer() override
+    std::shared_ptr<gimp::Layer> addLayer() override
     {
         auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
-        m_layers.add_layer(layer);
+        m_layers.addLayer(layer);
         return layer;
     }
 
-    void remove_layer(const std::shared_ptr<gimp::Layer>& layer) override
+    void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
-        m_layers.remove_layer(layer);
+        m_layers.removeLayer(layer);
     }
 
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
 
-    gimp::TileStore& tile_store() override { return m_dummyTileStore; }
+    gimp::TileStore& tileStore() override { return m_dummyTileStore; }
 
     [[nodiscard]] int width() const override { return m_width; }
     [[nodiscard]] int height() const override { return m_height; }
@@ -65,10 +72,23 @@ namespace gimp {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
-    setWindowTitle("GIMP Remake - Pre-Alpha");
+    setWindowTitle("GIMP Remake - Alpha");
     resize(1280, 900);
 
     m_renderer = std::make_shared<SkiaRenderer>();
+    m_historyManager = std::make_unique<SimpleHistoryManager>();
+    m_commandBus = std::make_unique<BasicCommandBus>(*m_historyManager);
+
+    // Register tools with the factory
+    auto& factory = ToolFactory::instance();
+    factory.registerTool("pencil", []() { return std::make_unique<PencilTool>(); });
+    factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
+
+    // Subscribe to tool changes to update ToolFactory
+    m_toolChangedSubscription =
+        EventBus::instance().subscribe<ToolChangedEvent>([](const ToolChangedEvent& event) {
+            ToolFactory::instance().setActiveTool(event.currentToolId);
+        });
 
     setupMenuBar();
     setupDockWidgets();
@@ -78,7 +98,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusBar()->showMessage("Ready");
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    EventBus::instance().unsubscribe(m_toolChangedSubscription);
+}
 
 void MainWindow::setupMenuBar()
 {
@@ -170,28 +193,18 @@ void MainWindow::createDocument()
 {
     m_document = std::make_shared<SimpleDocument>(800, 600);
 
-    auto bg = m_document->add_layer();
-    bg->set_name("Background");
+    auto bg = m_document->addLayer();
+    bg->setName("Background");
     auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;
     }
 
-    auto fg = m_document->add_layer();
-    fg->set_name("Circle");
-    auto* fgPixels = reinterpret_cast<uint32_t*>(fg->data().data());
-    const int cx = 400;
-    const int cy = 300;
-    const int radius = 100;
-    for (int y = 0; y < 600; ++y) {
-        for (int x = 0; x < 800; ++x) {
-            const int dx = x - cx;
-            const int dy = y - cy;
-            if ((dx * dx) + (dy * dy) < radius * radius) {
-                fgPixels[(y * 800) + x] = 0xFF0000FF;
-            }
-        }
-    }
+    // Configure ToolFactory with document and command bus
+    auto& factory = ToolFactory::instance();
+    factory.setDocument(m_document);
+    factory.setCommandBus(m_commandBus.get());
+    factory.setActiveTool("pencil");
 
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "core/event_bus.h"
+
 #include <QAction>
 #include <QDockWidget>
 #include <QMainWindow>
@@ -18,11 +20,13 @@
 
 namespace gimp {
 
+class BasicCommandBus;
 class CommandPalette;
 class DebugHud;
 class Document;
 class HistoryPanel;
 class LayersPanel;
+class SimpleHistoryManager;
 class SkiaCanvasWidget;
 class SkiaRenderer;
 class ToolboxPanel;
@@ -77,6 +81,10 @@ class MainWindow : public QMainWindow {
 
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
+    std::unique_ptr<SimpleHistoryManager> m_historyManager;
+    std::unique_ptr<BasicCommandBus> m_commandBus;
+
+    EventBus::SubscriptionId m_toolChangedSubscription = 0;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

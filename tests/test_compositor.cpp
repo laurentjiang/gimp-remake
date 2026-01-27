@@ -21,22 +21,22 @@ TEST_CASE("SkiaCompositor blends layers correctly", "[render]")
 
     // Layer 1: Red background (R=255, A=255)
     auto layer1 = std::make_shared<gimp::Layer>(100, 100);
-    layer1->set_name("Background");
+    layer1->setName("Background");
     auto* pixels1 = reinterpret_cast<uint32_t*>(layer1->data().data());
     for (int i = 0; i < 100 * 100; ++i) {
         pixels1[i] = 0xFF0000FF;
     }
-    stack.add_layer(layer1);
+    stack.addLayer(layer1);
 
     // Layer 2: Blue semi-transparent overlay (B=255, A=255, Opacity=0.5)
     auto layer2 = std::make_shared<gimp::Layer>(100, 100);
-    layer2->set_name("Overlay");
-    layer2->set_opacity(0.5f);
+    layer2->setName("Overlay");
+    layer2->setOpacity(0.5F);
     auto* pixels2 = reinterpret_cast<uint32_t*>(layer2->data().data());
     for (int i = 0; i < 100 * 100; ++i) {
         pixels2[i] = 0xFFFF0000;
     }
-    stack.add_layer(layer2);
+    stack.addLayer(layer2);
 
     // Destination bitmap
     SkBitmap destBitmap;

@@ -39,7 +39,7 @@ void SkiaCompositor::compose(SkCanvas* canvas, const LayerStack& layers)
         paint.setAlphaf(layer->opacity());
 
         SkBlendMode mode = SkBlendMode::kSrcOver;
-        switch (layer->blend_mode()) {
+        switch (layer->blendMode()) {
             case BlendMode::Normal:
                 mode = SkBlendMode::kSrcOver;
                 break;

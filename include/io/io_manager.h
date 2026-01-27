@@ -28,38 +28,38 @@ class IOManager {
 
     /*!
      * @brief Imports a project from a JSON file.
-     * @param file_path Path to the project file.
+     * @param filePath Path to the project file.
      * @return The loaded ProjectFile.
      * @throws std::runtime_error If file cannot be opened or data is invalid.
      */
-    ProjectFile importProject(const std::string& file_path);
+    ProjectFile importProject(const std::string& filePath);
 
     /*!
      * @brief Exports a project to a JSON file.
      * @param project The project to export.
-     * @param file_path Destination file path.
+     * @param filePath Destination file path.
      * @return True on success, false on failure.
      */
-    bool exportProject(const ProjectFile& project, const std::string& file_path);
+    bool exportProject(const ProjectFile& project, const std::string& filePath);
 
     /*!
      * @brief Reads an image file from disk.
-     * @param file_path Path to the image file.
+     * @param filePath Path to the image file.
      * @return ImageFile containing the loaded image data.
-     * @pre file_path must be a valid, accessible file path.
+     * @pre filePath must be a valid, accessible file path.
      * @post If successful, returned ImageFile::empty() is false.
      */
-    ImageFile readImage(const std::string& file_path);
+    ImageFile readImage(const std::string& filePath);
 
     /*!
      * @brief Writes an image to disk.
      * @param mat The image matrix to write.
-     * @param file_path Destination file path.
+     * @param filePath Destination file path.
      * @return True on success, false on failure.
      * @pre mat must not be empty.
-     * @pre file_path must be a writable location.
+     * @pre filePath must be a writable location.
      */
-    bool writeImage(const cv::Mat& mat, const std::string& file_path);
+    bool writeImage(const cv::Mat& mat, const std::string& filePath);
 
     /*!
      * @brief Converts an image to grayscale in-place.

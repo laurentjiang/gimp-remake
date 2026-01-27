@@ -8,6 +8,7 @@ Checks: >
   performance-*,
   modernize-*,
   readability-*,
+  readability-identifier-naming,
   misc-const-correctness,
   misc-redundant-expression,
   -misc-unused-parameters,
@@ -47,14 +48,24 @@ CheckOptions:
     value: CamelCase
   - key: readability-identifier-naming.FunctionCase
     value: camelBack
+  - key: readability-identifier-naming.MethodCase
+    value: camelBack
   - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
     value: camelBack
   - key: readability-identifier-naming.LocalConstantCase
     value: camelBack
   - key: readability-identifier-naming.LocalConstantPointerCase
     value: camelBack
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: camelBack
   - key: readability-identifier-naming.PrivateMemberPrefix
     value: m_
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: _
   - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.GlobalConstantCase
@@ -63,6 +74,10 @@ CheckOptions:
     value: UPPER_CASE
   - key: readability-identifier-naming.NamespaceCase
     value: lower_case
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumConstantCase
+    value: CamelCase
   - key: performance-unnecessary-value-param.AllowedTypes
     value: "QString;QStringView"
   - key: bugprone-argument-comment.StrictMode

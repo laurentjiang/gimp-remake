@@ -308,7 +308,7 @@ void ErrorHandler::FlushLogs()
 
 // ErrorContext Implementation
 
-ErrorContext::ErrorContext(std::string context_name) : context_name_(std::move(context_name))
+ErrorContext::ErrorContext(std::string contextName) : context_name_(std::move(contextName))
 {
     GetContextStack().push_back(context_name_);
 }

@@ -66,21 +66,21 @@ TEST_CASE("IOManager exports and imports ProjectFile", "[io]")
     // Create a test project
     gimp::ProjectFile project(800, 600);
 
-    auto layer1 = project.add_layer();
-    layer1->set_name("Background");
-    layer1->set_opacity(1.0f);
-    layer1->set_blend_mode(gimp::BlendMode::Normal);
+    auto layer1 = project.addLayer();
+    layer1->setName("Background");
+    layer1->setOpacity(1.0F);
+    layer1->setBlendMode(gimp::BlendMode::Normal);
 
-    auto layer2 = project.add_layer();
-    layer2->set_name("Foreground");
-    layer2->set_opacity(0.75f);
-    layer2->set_blend_mode(gimp::BlendMode::Multiply);
-    layer2->set_visible(false);
+    auto layer2 = project.addLayer();
+    layer2->setName("Foreground");
+    layer2->setOpacity(0.75F);
+    layer2->setBlendMode(gimp::BlendMode::Multiply);
+    layer2->setVisible(false);
 
-    auto layer3 = project.add_layer();
-    layer3->set_name("Overlay");
-    layer3->set_opacity(0.5f);
-    layer3->set_blend_mode(gimp::BlendMode::Overlay);
+    auto layer3 = project.addLayer();
+    layer3->setName("Overlay");
+    layer3->setOpacity(0.5F);
+    layer3->setBlendMode(gimp::BlendMode::Overlay);
 
     SECTION("Export project to JSON")
     {
@@ -104,22 +104,22 @@ TEST_CASE("IOManager exports and imports ProjectFile", "[io]")
         // Check layer 1 properties
         auto importedLayer1 = imported.layers()[0];
         REQUIRE(importedLayer1->name() == "Background");
-        REQUIRE(importedLayer1->opacity() == 1.0f);
-        REQUIRE(importedLayer1->blend_mode() == gimp::BlendMode::Normal);
+        REQUIRE(importedLayer1->opacity() == 1.0F);
+        REQUIRE(importedLayer1->blendMode() == gimp::BlendMode::Normal);
         REQUIRE(importedLayer1->visible() == true);
 
         // Check layer 2 properties
         auto importedLayer2 = imported.layers()[1];
         REQUIRE(importedLayer2->name() == "Foreground");
-        REQUIRE(importedLayer2->opacity() == 0.75f);
-        REQUIRE(importedLayer2->blend_mode() == gimp::BlendMode::Multiply);
+        REQUIRE(importedLayer2->opacity() == 0.75F);
+        REQUIRE(importedLayer2->blendMode() == gimp::BlendMode::Multiply);
         REQUIRE(importedLayer2->visible() == false);
 
         // Check layer 3 properties
         auto importedLayer3 = imported.layers()[2];
         REQUIRE(importedLayer3->name() == "Overlay");
-        REQUIRE(importedLayer3->opacity() == 0.5f);
-        REQUIRE(importedLayer3->blend_mode() == gimp::BlendMode::Overlay);
+        REQUIRE(importedLayer3->opacity() == 0.5F);
+        REQUIRE(importedLayer3->blendMode() == gimp::BlendMode::Overlay);
         REQUIRE(importedLayer3->visible() == true);
     }
 }

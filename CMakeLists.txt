@@ -32,8 +32,6 @@ add_executable(gimp-remake
     "src/history/history_stack.cpp"
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
-    "src/history/history_stack.cpp"
-    "src/history/simple_history_manager.cpp"
     "src/error_handling/error_handler.cpp"
     "src/core/command_bus.cpp"
     "src/core/layer_stack.cpp"
@@ -163,13 +161,17 @@ if(GIMP_REMAKE_BUILD_TESTS)
     add_executable(unit_tests
         "tests/test_compositor.cpp"
         "tests/test_tool_state_machine.cpp"
+        "tests/test_canvas_viewport.cpp"
         "src/core/layer_stack.cpp"
         "src/core/tool.cpp"
         "src/core/tool_factory.cpp"
+        "src/core/brush_strategy.cpp"
         "src/core/tools/pencil_tool.cpp"
         "src/core/tools/move_tool.cpp"
         "src/core/commands/draw_command.cpp"
         "src/render/skia_compositor.cpp"
+        # Headers with Q_OBJECT for AUTOMOC
+        "include/ui/skia_canvas_widget.h"
     )
 
     target_include_directories(unit_tests PRIVATE
@@ -181,6 +183,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Catch2::Catch2WithMain 
         unofficial::skia::skia
         Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
         spdlog::spdlog
     )
     

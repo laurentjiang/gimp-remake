@@ -7,21 +7,135 @@
 
 #include "core/tools/pencil_tool.h"
 
+#include "core/brush_strategy.h"
 #include "core/command_bus.h"
 #include "core/commands/draw_command.h"
 #include "core/document.h"
+#include "core/layer.h"
+
+#include <cmath>
 
 namespace gimp {
+
+namespace {
+
+/**
+ * @brief Interpolates points along a line between two stroke points.
+ *
+ * Uses linear interpolation to ensure smooth, continuous strokes without gaps.
+ *
+ * @param fromX Starting X position.
+ * @param fromY Starting Y position.
+ * @param fromPressure Starting pressure.
+ * @param toX Ending X position.
+ * @param toY Ending Y position.
+ * @param toPressure Ending pressure.
+ * @param brushSize Spacing is approximately 1/4 the brush size.
+ * @return Vector of interpolated points including endpoints.
+ */
+std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
+                                                           int fromY,
+                                                           float fromPressure,
+                                                           int toX,
+                                                           int toY,
+                                                           float toPressure,
+                                                           int brushSize)
+{
+    std::vector<std::tuple<int, int, float>> result;
+
+    int dx = toX - fromX;
+    int dy = toY - fromY;
+    float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
+
+    // Spacing: at most 1/4 the brush size for smooth strokes
+    float spacing = std::max(1.0F, static_cast<float>(brushSize) / 4.0F);
+    int steps = std::max(1, static_cast<int>(distance / spacing));
+
+    for (int i = 0; i <= steps; ++i) {
+        float t = static_cast<float>(i) / static_cast<float>(steps);
+        int x = fromX + static_cast<int>(static_cast<float>(dx) * t);
+        int y = fromY + static_cast<int>(static_cast<float>(dy) * t);
+        float pressure = fromPressure + (toPressure - fromPressure) * t;
+        result.emplace_back(x, y, pressure);
+    }
+
+    return result;
+}
+
+}  // namespace
+
+void PencilTool::renderSegment(int fromX,
+                               int fromY,
+                               float fromPressure,
+                               int toX,
+                               int toY,
+                               float toPressure)
+{
+    if (!document_ || document_->layers().count() == 0) {
+        return;
+    }
+
+    auto layer = document_->layers()[0];
+    auto* pixelData = layer->data().data();
+    int layerWidth = layer->width();
+    int layerHeight = layer->height();
+
+    SolidBrush brush;
+
+    auto interpolated =
+        interpolatePoints(fromX, fromY, fromPressure, toX, toY, toPressure, brushSize_);
+
+    for (const auto& [x, y, pressure] : interpolated) {
+        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color_, pressure);
+    }
+}
 
 void PencilTool::beginStroke(const ToolInputEvent& event)
 {
     strokePoints_.clear();
+    beforeState_.clear();
+
+    if (!document_ || document_->layers().count() == 0) {
+        return;
+    }
+
+    // Capture the layer state before we start drawing
+    auto layer = document_->layers()[0];
+    beforeState_ = layer->data();
+
+    // Add first point and render it
     strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+
+    auto* pixelData = layer->data().data();
+    int layerWidth = layer->width();
+    int layerHeight = layer->height();
+
+    SolidBrush brush;
+    brush.renderDab(pixelData,
+                    layerWidth,
+                    layerHeight,
+                    event.canvasPos.x(),
+                    event.canvasPos.y(),
+                    brushSize_,
+                    color_,
+                    event.pressure);
 }
 
 void PencilTool::continueStroke(const ToolInputEvent& event)
 {
-    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+    if (strokePoints_.empty()) {
+        return;
+    }
+
+    const auto& lastPoint = strokePoints_.back();
+    int newX = event.canvasPos.x();
+    int newY = event.canvasPos.y();
+
+    // Only render if the mouse moved
+    if (newX != lastPoint.x || newY != lastPoint.y) {
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
+        strokePoints_.push_back({newX, newY, event.pressure});
+    }
 }
 
 std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, int minY, int maxY)
@@ -47,29 +161,51 @@ std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, in
 
 void PencilTool::endStroke(const ToolInputEvent& event)
 {
-    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
-
-    if (!document_ || !commandBus_ || strokePoints_.empty()) {
+    if (strokePoints_.empty() || beforeState_.empty()) {
         strokePoints_.clear();
+        beforeState_.clear();
         return;
     }
 
-    // Create command
+    // Render the final segment
+    const auto& lastPoint = strokePoints_.back();
+    int newX = event.canvasPos.x();
+    int newY = event.canvasPos.y();
+    if (newX != lastPoint.x || newY != lastPoint.y) {
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
+        strokePoints_.push_back({newX, newY, event.pressure});
+    }
+
+    if (!document_ || !commandBus_) {
+        strokePoints_.clear();
+        beforeState_.clear();
+        return;
+    }
+
+    // Create command for the affected region
     auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
     if (!drawCmd) {
+        beforeState_.clear();
         return;
     }
 
-    // Capture before state
+    // The layer now has the "after" state (with the stroke)
+    // We need to swap in the "before" state, capture it, then swap back
+    auto layer = document_->layers()[0];
+    std::vector<uint8_t> afterState = layer->data();
+
+    // Temporarily restore before state
+    layer->data() = beforeState_;
     drawCmd->captureBeforeState();
 
-    // TODO: Render the stroke to the layer using BrushStrategy
-
-    // Capture after state and dispatch
+    // Restore after state (the drawn stroke)
+    layer->data() = afterState;
     drawCmd->captureAfterState();
+
     commandBus_->dispatch(drawCmd);
 
     strokePoints_.clear();
+    beforeState_.clear();
 }
 
 void PencilTool::cancelStroke()

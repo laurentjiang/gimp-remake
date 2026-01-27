@@ -183,7 +183,7 @@ void SkiaCanvasWidget::updateCacheFromLayer()
 
     // Direct copy from layer BGRA data to QImage
     const auto& layerData = layer->data();
-    if (layerData.size() == static_cast<size_t>(w * h * 4)) {
+    if (layerData.size() == static_cast<size_t>(w) * static_cast<size_t>(h) * 4U) {
         std::memcpy(m_cachedImage.bits(), layerData.data(), layerData.size());
         m_cacheValid = true;
     }

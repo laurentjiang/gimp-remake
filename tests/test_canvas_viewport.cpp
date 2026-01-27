@@ -30,7 +30,8 @@ TEST_CASE("ViewportState zoom limits", "[canvas][viewport]")
 
 TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport]")
 {
-    SECTION("screenToCanvas formula: canvas = (screen - pan) / zoom") {
+    SECTION("screenToCanvas formula: canvas = (screen - pan) / zoom")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 1.0F;
         viewport.panX = 0.0F;
@@ -46,7 +47,8 @@ TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport]")
         REQUIRE_THAT(canvasY, WithinAbs(200.0, 0.001));
     }
 
-    SECTION("canvasToScreen formula: screen = (canvas * zoom) + pan") {
+    SECTION("canvasToScreen formula: screen = (canvas * zoom) + pan")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 1.0F;
         viewport.panX = 0.0F;
@@ -65,7 +67,8 @@ TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport]")
 
 TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport]")
 {
-    SECTION("2x zoom: screen coords are 2x canvas coords") {
+    SECTION("2x zoom: screen coords are 2x canvas coords")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 2.0F;
         viewport.panX = 0.0F;
@@ -81,7 +84,8 @@ TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport]")
         REQUIRE_THAT(screenY, WithinAbs(150.0, 0.001));
     }
 
-    SECTION("0.5x zoom: screen coords are 0.5x canvas coords") {
+    SECTION("0.5x zoom: screen coords are 0.5x canvas coords")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 0.5F;
         viewport.panX = 0.0F;
@@ -100,7 +104,8 @@ TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport]")
 
 TEST_CASE("Coordinate transformation with pan", "[canvas][viewport]")
 {
-    SECTION("Pan offset adds to screen coordinates") {
+    SECTION("Pan offset adds to screen coordinates")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 1.0F;
         viewport.panX = 50.0F;
@@ -116,7 +121,8 @@ TEST_CASE("Coordinate transformation with pan", "[canvas][viewport]")
         REQUIRE_THAT(screenY, WithinAbs(300.0, 0.001));
     }
 
-    SECTION("Negative pan offset") {
+    SECTION("Negative pan offset")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 1.0F;
         viewport.panX = -50.0F;
@@ -135,7 +141,8 @@ TEST_CASE("Coordinate transformation with pan", "[canvas][viewport]")
 
 TEST_CASE("Coordinate transformation with zoom and pan combined", "[canvas][viewport]")
 {
-    SECTION("2x zoom with pan offset") {
+    SECTION("2x zoom with pan offset")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 2.0F;
         viewport.panX = 100.0F;
@@ -160,7 +167,8 @@ TEST_CASE("Coordinate transformation with zoom and pan combined", "[canvas][view
 
 TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport]")
 {
-    SECTION("Screen -> Canvas -> Screen preserves coordinates") {
+    SECTION("Screen -> Canvas -> Screen preserves coordinates")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 1.5F;
         viewport.panX = 75.0F;
@@ -179,7 +187,8 @@ TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport]")
         REQUIRE_THAT(finalScreenY, WithinAbs(originalScreenY, 0.001));
     }
 
-    SECTION("Canvas -> Screen -> Canvas preserves coordinates") {
+    SECTION("Canvas -> Screen -> Canvas preserves coordinates")
+    {
         gimp::ViewportState viewport;
         viewport.zoomLevel = 0.75F;
         viewport.panX = -100.0F;
@@ -201,19 +210,22 @@ TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport]")
 
 TEST_CASE("Zoom clamping", "[canvas][viewport]")
 {
-    SECTION("Zoom below minimum should clamp") {
+    SECTION("Zoom below minimum should clamp")
+    {
         float zoom = 0.01F;
         zoom = std::clamp(zoom, gimp::ViewportState::MIN_ZOOM, gimp::ViewportState::MAX_ZOOM);
         REQUIRE(zoom == gimp::ViewportState::MIN_ZOOM);
     }
 
-    SECTION("Zoom above maximum should clamp") {
+    SECTION("Zoom above maximum should clamp")
+    {
         float zoom = 100.0F;
         zoom = std::clamp(zoom, gimp::ViewportState::MIN_ZOOM, gimp::ViewportState::MAX_ZOOM);
         REQUIRE(zoom == gimp::ViewportState::MAX_ZOOM);
     }
 
-    SECTION("Zoom within range should not change") {
+    SECTION("Zoom within range should not change")
+    {
         float zoom = 2.0F;
         zoom = std::clamp(zoom, gimp::ViewportState::MIN_ZOOM, gimp::ViewportState::MAX_ZOOM);
         REQUIRE(zoom == 2.0F);
@@ -222,17 +234,20 @@ TEST_CASE("Zoom clamping", "[canvas][viewport]")
 
 TEST_CASE("Zoom step calculations", "[canvas][viewport]")
 {
-    SECTION("Zoom in by one step from 1.0") {
+    SECTION("Zoom in by one step from 1.0")
+    {
         float zoom = 1.0F * gimp::ViewportState::ZOOM_STEP;
         REQUIRE_THAT(zoom, WithinAbs(1.25, 0.001));
     }
 
-    SECTION("Zoom out by one step from 1.0") {
+    SECTION("Zoom out by one step from 1.0")
+    {
         float zoom = 1.0F / gimp::ViewportState::ZOOM_STEP;
         REQUIRE_THAT(zoom, WithinAbs(0.8, 0.001));
     }
 
-    SECTION("Multiple zoom steps") {
+    SECTION("Multiple zoom steps")
+    {
         float zoom = 1.0F;
         for (int i = 0; i < 4; ++i) {
             zoom *= gimp::ViewportState::ZOOM_STEP;

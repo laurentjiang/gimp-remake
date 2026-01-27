@@ -22,11 +22,11 @@
 #include <QPainter>
 #include <QWheelEvent>
 
-#include <include/core/SkImage.h>
-#include <include/core/SkPixmap.h>
-
 #include <algorithm>
 #include <cmath>
+
+#include <include/core/SkImage.h>
+#include <include/core/SkPixmap.h>
 
 namespace gimp {
 
@@ -47,26 +47,23 @@ SkiaCanvasWidget::~SkiaCanvasWidget() = default;
 
 QPointF SkiaCanvasWidget::screenToCanvas(const QPoint& screenPos) const
 {
-    const float x =
-        (static_cast<float>(screenPos.x()) - m_viewport.panX) / m_viewport.zoomLevel;
-    const float y =
-        (static_cast<float>(screenPos.y()) - m_viewport.panY) / m_viewport.zoomLevel;
-    return QPointF(x, y);
+    const float x = (static_cast<float>(screenPos.x()) - m_viewport.panX) / m_viewport.zoomLevel;
+    const float y = (static_cast<float>(screenPos.y()) - m_viewport.panY) / m_viewport.zoomLevel;
+    return {x, y};
 }
 
 QPoint SkiaCanvasWidget::canvasToScreen(const QPointF& canvasPos) const
 {
-    const int x = static_cast<int>(
-        std::round((canvasPos.x() * m_viewport.zoomLevel) + m_viewport.panX));
-    const int y = static_cast<int>(
-        std::round((canvasPos.y() * m_viewport.zoomLevel) + m_viewport.panY));
-    return QPoint(x, y);
+    const int x =
+        static_cast<int>(std::round((canvasPos.x() * m_viewport.zoomLevel) + m_viewport.panX));
+    const int y =
+        static_cast<int>(std::round((canvasPos.y() * m_viewport.zoomLevel) + m_viewport.panY));
+    return {x, y};
 }
 
 void SkiaCanvasWidget::setZoom(float zoom, const QPoint& centerScreen)
 {
-    const float newZoom =
-        std::clamp(zoom, ViewportState::MIN_ZOOM, ViewportState::MAX_ZOOM);
+    const float newZoom = std::clamp(zoom, ViewportState::MIN_ZOOM, ViewportState::MAX_ZOOM);
 
     if (std::abs(newZoom - m_viewport.zoomLevel) < 0.0001F) {
         return;
@@ -119,8 +116,8 @@ void SkiaCanvasWidget::fitInView()
 
     const float scaleX = widgetWidth / docWidth;
     const float scaleY = widgetHeight / docHeight;
-    const float newZoom =
-        std::clamp(std::min(scaleX, scaleY) * 0.9F, ViewportState::MIN_ZOOM, ViewportState::MAX_ZOOM);
+    const float newZoom = std::clamp(
+        std::min(scaleX, scaleY) * 0.9F, ViewportState::MIN_ZOOM, ViewportState::MAX_ZOOM);
 
     m_viewport.zoomLevel = newZoom;
     m_viewport.panX = (widgetWidth - (docWidth * newZoom)) / 2.0F;
@@ -163,8 +160,7 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 
     const SkPixmap pixmap(info, qImage.bits(), qImage.bytesPerLine());
     if (skImage->readPixels(pixmap, 0, 0)) {
-        painter.setRenderHint(QPainter::SmoothPixmapTransform,
-                              m_viewport.zoomLevel < 1.0F);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
 
         const QRectF targetRect(m_viewport.panX,
                                 m_viewport.panY,
@@ -196,7 +192,8 @@ void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)
 {
     m_lastMousePos = event->pos();
 
-    if ((event->button() == Qt::MiddleButton) || (m_spaceHeld && event->button() == Qt::LeftButton)) {
+    if ((event->button() == Qt::MiddleButton) ||
+        (m_spaceHeld && event->button() == Qt::LeftButton)) {
         m_isPanning = true;
         m_panStartPos = event->pos();
         setCursor(Qt::ClosedHandCursor);
@@ -241,8 +238,8 @@ void SkiaCanvasWidget::wheelEvent(QWheelEvent* event)
     const QPoint angleDelta = event->angleDelta();
 
     if (event->modifiers() & Qt::ControlModifier) {
-        const float zoomFactor = (angleDelta.y() > 0) ? ViewportState::ZOOM_STEP
-                                                      : (1.0F / ViewportState::ZOOM_STEP);
+        const float zoomFactor =
+            (angleDelta.y() > 0) ? ViewportState::ZOOM_STEP : (1.0F / ViewportState::ZOOM_STEP);
         setZoom(m_viewport.zoomLevel * zoomFactor, event->position().toPoint());
     } else {
         const float scrollSpeed = 40.0F;
@@ -352,7 +349,7 @@ void SkiaCanvasWidget::emitViewportChanged()
     EventBus::instance().publish(event);
 }
 
-void SkiaCanvasWidget::emitMousePosition(const QPoint& screenPos)
+void SkiaCanvasWidget::emitMousePosition(const QPoint& screenPos) const
 {
     const QPointF canvasPos = screenToCanvas(screenPos);
 

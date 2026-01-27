@@ -107,7 +107,7 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Zooms out by one step, centered on the widget. */
     void zoomOut();
 
-signals:
+  signals:
     /*! @brief Emitted when the viewport changes (pan or zoom).
      *  @param viewport The new viewport state.
      */
@@ -130,7 +130,7 @@ signals:
   private:
     void updateCursor();
     void emitViewportChanged();
-    void emitMousePosition(const QPoint& screenPos);
+    void emitMousePosition(const QPoint& screenPos) const;
     void dispatchToolEvent(QMouseEvent* event, bool isPress, bool isRelease);
     [[nodiscard]] Tool* activeTool() const;
 

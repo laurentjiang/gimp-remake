@@ -44,6 +44,7 @@ add_executable(gimp-remake
     "src/core/tools/move_tool.cpp"
     "src/core/commands/add_layer_command.cpp"
     "src/core/commands/fill_color_command.cpp"
+    "src/core/commands/draw_command.cpp"
     "src/render/skia_renderer.cpp"
     "src/render/skia_compositor.cpp"
     "resources/resources.qrc"
@@ -167,6 +168,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tool_factory.cpp"
         "src/core/tools/pencil_tool.cpp"
         "src/core/tools/move_tool.cpp"
+        "src/core/commands/draw_command.cpp"
         "src/render/skia_compositor.cpp"
     )
 

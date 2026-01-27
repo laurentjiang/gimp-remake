@@ -143,7 +143,7 @@ class Tool {
      */
     [[nodiscard]] CommandBus* commandBus() const { return commandBus_; }
 
-  private:
+  protected:
     ToolState state_ = ToolState::Idle;
     std::shared_ptr<Document> document_;
     CommandBus* commandBus_ = nullptr;

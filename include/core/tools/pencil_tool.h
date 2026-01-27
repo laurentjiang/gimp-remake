@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../tool.h"
+#include "core/tool.h"
 
 #include <cstdint>
 #include <vector>

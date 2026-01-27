@@ -66,8 +66,10 @@ class PencilTool : public Tool {
     };
 
     std::shared_ptr<DrawCommand> buildDrawCommand(int minX, int maxX, int minY, int maxY);
+    void renderSegment(int fromX, int fromY, float fromPressure, int toX, int toY, float toPressure);
 
     std::vector<StrokePoint> strokePoints_;
+    std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
     int brushSize_ = 3;
     std::uint32_t color_ = 0x000000FF;  ///< Default: opaque black.
 };

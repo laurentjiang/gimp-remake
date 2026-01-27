@@ -56,6 +56,10 @@ Tool* ToolFactory::setActiveTool(const std::string& toolId)
         activeTool_ = newTool;
         activeToolId_ = toolId;
         newTool->onActivate();
+    } else {
+        // Tool not registered - clear active tool
+        activeTool_ = nullptr;
+        activeToolId_.clear();
     }
     return newTool;
 }

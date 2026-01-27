@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <QImage>
 #include <QPointF>
 #include <QWidget>
 
@@ -107,6 +108,9 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Zooms out by one step, centered on the widget. */
     void zoomOut();
 
+    /*! @brief Invalidates the cached render, triggering re-render on next paint. */
+    void invalidateCache();
+
   signals:
     /*! @brief Emitted when the viewport changes (pan or zoom).
      *  @param viewport The new viewport state.
@@ -186,9 +190,15 @@ class SkiaCanvasWidget : public QWidget {
      */
     [[nodiscard]] Tool* activeTool() const;
 
+    /*! @brief Re-renders the document if the cache is invalid. */
+    void renderIfNeeded();
+
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
+
+    QImage m_cachedImage;         ///< Cached rendered document image.
+    bool m_cacheValid = false;    ///< Whether the cached image is valid.
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;

@@ -177,22 +177,6 @@ void MainWindow::createDocument()
         pixels[i] = 0xFFFFFFFF;
     }
 
-    auto fg = m_document->add_layer();
-    fg->set_name("Circle");
-    auto* fgPixels = reinterpret_cast<uint32_t*>(fg->data().data());
-    const int cx = 400;
-    const int cy = 300;
-    const int radius = 100;
-    for (int y = 0; y < 600; ++y) {
-        for (int x = 0; x < 800; ++x) {
-            const int dx = x - cx;
-            const int dy = y - cy;
-            if ((dx * dx) + (dy * dy) < radius * radius) {
-                fgPixels[(y * 800) + x] = 0xFF0000FF;
-            }
-        }
-    }
-
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);
 

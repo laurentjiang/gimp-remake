@@ -41,6 +41,7 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
+    invalidateCache();
 }
 
 SkiaCanvasWidget::~SkiaCanvasWidget() = default;
@@ -137,14 +138,15 @@ void SkiaCanvasWidget::zoomOut()
     setZoom(m_viewport.zoomLevel / ViewportState::ZOOM_STEP);
 }
 
-void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
+void SkiaCanvasWidget::invalidateCache()
 {
-    (void)event;
+    m_cacheValid = false;
+    update();
+}
 
-    QPainter painter(this);
-    painter.fillRect(rect(), QColor(64, 64, 64));
-
-    if (!m_document || !m_renderer) {
+void SkiaCanvasWidget::renderIfNeeded()
+{
+    if (m_cacheValid || !m_document || !m_renderer) {
         return;
     }
 
@@ -156,33 +158,53 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
     }
 
     const SkImageInfo info = skImage->imageInfo();
-    QImage qImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
+    m_cachedImage = QImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
 
-    const SkPixmap pixmap(info, qImage.bits(), qImage.bytesPerLine());
+    const SkPixmap pixmap(info, m_cachedImage.bits(), m_cachedImage.bytesPerLine());
     if (skImage->readPixels(pixmap, 0, 0)) {
-        painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
+        m_cacheValid = true;
+    }
+}
 
-        const QRectF targetRect(m_viewport.panX,
-                                m_viewport.panY,
-                                static_cast<float>(info.width()) * m_viewport.zoomLevel,
-                                static_cast<float>(info.height()) * m_viewport.zoomLevel);
-        painter.drawImage(targetRect, qImage);
+void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
+{
+    (void)event;
 
-        if (m_viewport.zoomLevel >= 8.0F) {
-            painter.setPen(QColor(128, 128, 128, 80));
-            const int startX = static_cast<int>(m_viewport.panX);
-            const int startY = static_cast<int>(m_viewport.panY);
-            const int step = static_cast<int>(m_viewport.zoomLevel);
+    QPainter painter(this);
+    painter.fillRect(rect(), QColor(64, 64, 64));
 
-            for (int x = startX; x < width(); x += step) {
-                if (x >= 0) {
-                    painter.drawLine(x, 0, x, height());
-                }
+    if (!m_document || !m_renderer) {
+        return;
+    }
+
+    renderIfNeeded();
+
+    if (!m_cacheValid || m_cachedImage.isNull()) {
+        return;
+    }
+
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
+
+    const QRectF targetRect(m_viewport.panX,
+                            m_viewport.panY,
+                            static_cast<float>(m_cachedImage.width()) * m_viewport.zoomLevel,
+                            static_cast<float>(m_cachedImage.height()) * m_viewport.zoomLevel);
+    painter.drawImage(targetRect, m_cachedImage);
+
+    if (m_viewport.zoomLevel >= 8.0F) {
+        painter.setPen(QColor(128, 128, 128, 80));
+        const int startX = static_cast<int>(m_viewport.panX);
+        const int startY = static_cast<int>(m_viewport.panY);
+        const int step = static_cast<int>(m_viewport.zoomLevel);
+
+        for (int x = startX; x < width(); x += step) {
+            if (x >= 0) {
+                painter.drawLine(x, 0, x, height());
             }
-            for (int y = startY; y < height(); y += step) {
-                if (y >= 0) {
-                    painter.drawLine(0, y, width(), y);
-                }
+        }
+        for (int y = startY; y < height(); y += step) {
+            if (y >= 0) {
+                painter.drawLine(0, y, width(), y);
             }
         }
     }
@@ -388,7 +410,7 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     }
 
     if (handled) {
-        update();
+        invalidateCache();
         emit canvasModified();
     }
 }

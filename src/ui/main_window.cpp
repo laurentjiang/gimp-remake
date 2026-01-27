@@ -7,10 +7,15 @@
 
 #include "ui/main_window.h"
 
+#include "core/command_bus.h"
 #include "core/document.h"
+#include "core/events.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
+#include "core/tool_factory.h"
+#include "core/tools/move_tool.h"
+#include "core/tools/pencil_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/command_palette.h"
 #include "ui/debug_hud.h"
@@ -19,6 +24,8 @@
 #include "ui/skia_canvas_widget.h"
 #include "ui/tool_options_bar.h"
 #include "ui/toolbox_panel.h"
+
+#include "history/simple_history_manager.h"
 
 #include <QKeyEvent>
 #include <QStatusBar>
@@ -69,6 +76,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     resize(1280, 900);
 
     m_renderer = std::make_shared<SkiaRenderer>();
+    m_historyManager = std::make_unique<SimpleHistoryManager>();
+    m_commandBus = std::make_unique<BasicCommandBus>(*m_historyManager);
+
+    // Register tools with the factory
+    auto& factory = ToolFactory::instance();
+    factory.registerTool("pencil", []() { return std::make_unique<PencilTool>(); });
+    factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
+
+    // Subscribe to tool changes to update ToolFactory
+    m_toolChangedSubscription =
+        EventBus::instance().subscribe<ToolChangedEvent>([](const ToolChangedEvent& event) {
+            ToolFactory::instance().setActiveTool(event.currentToolId);
+        });
 
     setupMenuBar();
     setupDockWidgets();
@@ -78,7 +98,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     statusBar()->showMessage("Ready");
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    EventBus::instance().unsubscribe(m_toolChangedSubscription);
+}
 
 void MainWindow::setupMenuBar()
 {
@@ -176,6 +199,12 @@ void MainWindow::createDocument()
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;
     }
+
+    // Configure ToolFactory with document and command bus
+    auto& factory = ToolFactory::instance();
+    factory.setDocument(m_document);
+    factory.setCommandBus(m_commandBus.get());
+    factory.setActiveTool("pencil");
 
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);

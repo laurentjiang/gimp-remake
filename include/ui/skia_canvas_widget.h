@@ -117,21 +117,73 @@ class SkiaCanvasWidget : public QWidget {
     void canvasModified();
 
   protected:
+    /*! @brief Paints the rendered document with viewport transformations.
+     *  @param event The paint event.
+     */
     void paintEvent(QPaintEvent* event) override;
+
+    /*! @brief Handles mouse button press events.
+     *  @param event The mouse event.
+     */
     void mousePressEvent(QMouseEvent* event) override;
+
+    /*! @brief Handles mouse move events.
+     *  @param event The mouse event.
+     */
     void mouseMoveEvent(QMouseEvent* event) override;
+
+    /*! @brief Handles mouse button release events.
+     *  @param event The mouse event.
+     */
     void mouseReleaseEvent(QMouseEvent* event) override;
+
+    /*! @brief Handles mouse wheel events for zoom and scroll.
+     *  @param event The wheel event.
+     */
     void wheelEvent(QWheelEvent* event) override;
+
+    /*! @brief Handles key press events for shortcuts.
+     *  @param event The key event.
+     */
     void keyPressEvent(QKeyEvent* event) override;
+
+    /*! @brief Handles key release events.
+     *  @param event The key event.
+     */
     void keyReleaseEvent(QKeyEvent* event) override;
+
+    /*! @brief Handles mouse entering the widget.
+     *  @param event The enter event.
+     */
     void enterEvent(QEnterEvent* event) override;
+
+    /*! @brief Handles mouse leaving the widget.
+     *  @param event The leave event.
+     */
     void leaveEvent(QEvent* event) override;
 
   private:
+    /*! @brief Updates the cursor based on the active tool and state. */
     void updateCursor();
+
+    /*! @brief Emits viewport changed signals and events. */
     void emitViewportChanged();
+
+    /*! @brief Emits mouse position events via EventBus.
+     *  @param screenPos The current screen position.
+     */
     void emitMousePosition(const QPoint& screenPos) const;
+
+    /*! @brief Dispatches mouse events to the active tool.
+     *  @param event The mouse event.
+     *  @param isPress True if this is a press event.
+     *  @param isRelease True if this is a release event.
+     */
     void dispatchToolEvent(QMouseEvent* event, bool isPress, bool isRelease);
+
+    /*! @brief Returns the currently active tool.
+     *  @return Pointer to the active tool, or nullptr.
+     */
     [[nodiscard]] Tool* activeTool() const;
 
     std::shared_ptr<Document> m_document;

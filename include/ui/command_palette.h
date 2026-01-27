@@ -13,10 +13,13 @@
 #include <QVBoxLayout>
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace gimp {
+
+class HistoryManager;
 
 /**
  * @brief Represents a command that can be executed from the palette.
@@ -45,6 +48,7 @@ class CommandPalette : public QDialog {
     explicit CommandPalette(QWidget* parent = nullptr);
     ~CommandPalette() override;
 
+    void setHistoryManager(HistoryManager* historyManager);
     /*! @brief Registers a command in the palette.
      *  @param command The command to register.
      */
@@ -73,6 +77,7 @@ class CommandPalette : public QDialog {
 
     std::vector<PaletteCommand> commands_;
     std::vector<const PaletteCommand*> filteredCommands_;
+    HistoryManager* historyManager_ = nullptr;
 };
 
 }  // namespace gimp

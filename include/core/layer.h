@@ -47,52 +47,52 @@ class Layer {
     /*! @brief Sets the layer name.
      *  @param name The new name for the layer.
      */
-    void set_name(const std::string& name) { m_name = name; }
+    void setName(const std::string& name) { m_name = name; }
 
     /*! @brief Returns the layer name.
      *  @return The layer name.
      */
-    const std::string& name() const { return m_name; }
+    [[nodiscard]] const std::string& name() const { return m_name; }
 
     /*! @brief Sets layer visibility.
      *  @param visible True to show the layer, false to hide.
      */
-    void set_visible(bool visible) { m_visible = visible; }
+    void setVisible(bool visible) { m_visible = visible; }
 
     /*! @brief Returns true if the layer is visible.
      *  @return Visibility state.
      */
-    bool visible() const { return m_visible; }
+    [[nodiscard]] bool visible() const { return m_visible; }
 
     /*! @brief Sets layer opacity (0.0 to 1.0).
      *  @param opacity The new opacity value.
      */
-    void set_opacity(float opacity) { m_opacity = opacity; }
+    void setOpacity(float opacity) { m_opacity = opacity; }
 
     /*! @brief Returns the layer opacity.
      *  @return Opacity value (0.0 to 1.0).
      */
-    float opacity() const { return m_opacity; }
+    [[nodiscard]] float opacity() const { return m_opacity; }
 
     /*! @brief Sets the blend mode.
      *  @param mode The new blend mode.
      */
-    void set_blend_mode(BlendMode mode) { m_blend_mode = mode; }
+    void setBlendMode(BlendMode mode) { m_blend_mode = mode; }
 
     /*! @brief Returns the blend mode.
      *  @return The current blend mode.
      */
-    BlendMode blend_mode() const { return m_blend_mode; }
+    [[nodiscard]] BlendMode blendMode() const { return m_blend_mode; }
 
     /*! @brief Returns the layer width.
      *  @return Width in pixels.
      */
-    int width() const { return m_width; }
+    [[nodiscard]] int width() const { return m_width; }
 
     /*! @brief Returns the layer height.
      *  @return Height in pixels.
      */
-    int height() const { return m_height; }
+    [[nodiscard]] int height() const { return m_height; }
 
     /*! @brief Returns mutable access to pixel data (RGBA, 4 bytes per pixel).
      *  @return Reference to the pixel data vector.
@@ -102,12 +102,12 @@ class Layer {
     /*! @brief Returns const access to pixel data.
      *  @return Const reference to the pixel data vector.
      */
-    const std::vector<uint8_t>& data() const { return m_data; }
+    [[nodiscard]] const std::vector<uint8_t>& data() const { return m_data; }
 
   private:
     std::string m_name = "Layer";                ///< Layer display name.
     bool m_visible = true;                       ///< Visibility flag.
-    float m_opacity = 1.0f;                      ///< Opacity (0.0 to 1.0).
+    float m_opacity = 1.0F;                      ///< Opacity (0.0 to 1.0).
     BlendMode m_blend_mode = BlendMode::Normal;  ///< Blend mode.
 
     int m_width = 0;              ///< Width in pixels.

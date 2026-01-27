@@ -197,8 +197,8 @@ class SkiaCanvasWidget : public QWidget {
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
 
-    QImage m_cachedImage;         ///< Cached rendered document image.
-    bool m_cacheValid = false;    ///< Whether the cached image is valid.
+    QImage m_cachedImage;       ///< Cached rendered document image.
+    bool m_cacheValid = false;  ///< Whether the cached image is valid.
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;

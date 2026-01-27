@@ -35,14 +35,14 @@ class LayerStack {
      * @pre layer must not be nullptr.
      * @post count() is incremented by 1.
      */
-    void add_layer(const std::shared_ptr<Layer>& layer);
+    void addLayer(const std::shared_ptr<Layer>& layer);
 
     /*!
      * @brief Removes a layer from the stack.
      * @param layer The layer to remove.
      * @post If layer was in the stack, count() is decremented by 1.
      */
-    void remove_layer(const std::shared_ptr<Layer>& layer);
+    void removeLayer(const std::shared_ptr<Layer>& layer);
 
     /*!
      * @brief Inserts a layer at a specific index.
@@ -51,16 +51,16 @@ class LayerStack {
      * @pre layer must not be nullptr.
      * @post count() is incremented by 1.
      */
-    void insert_layer(size_t index, const std::shared_ptr<Layer>& layer);
+    void insertLayer(size_t index, const std::shared_ptr<Layer>& layer);
 
     /*!
      * @brief Moves a layer from one index to another.
-     * @param from_index Source position.
-     * @param to_index Destination position.
+     * @param fromIndex Source position.
+     * @param toIndex Destination position.
      * @return True if the move succeeded.
-     * @pre from_index must be less than count().
+     * @pre fromIndex must be less than count().
      */
-    bool move_layer(size_t from_index, size_t to_index);
+    bool moveLayer(size_t fromIndex, size_t toIndex);
 
     /*! @brief Returns the number of layers.
      *  @return Layer count.

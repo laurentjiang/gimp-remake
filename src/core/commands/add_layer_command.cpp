@@ -22,14 +22,14 @@ void AddLayerCommand::apply()
     }
 
     if (!layer_) {
-        layer_ = document_->add_layer();
+        layer_ = document_->addLayer();
     }
 }
 
 void AddLayerCommand::undo()
 {
     if (document_ && layer_) {
-        document_->remove_layer(layer_);
+        document_->removeLayer(layer_);
     }
 }
 }  // namespace gimp

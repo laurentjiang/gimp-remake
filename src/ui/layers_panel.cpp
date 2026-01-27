@@ -147,7 +147,7 @@ void LayersPanel::onItemSelectionChanged()
 void LayersPanel::onAddLayerClicked()
 {
     if (document_) {
-        auto layer = document_->add_layer();
+        auto layer = document_->addLayer();
         EventBus::instance().publish(
             // NOLINTNEXTLINE(modernize-use-designated-initializers)
             LayerStackChangedEvent{LayerStackChangedEvent::Action::Added, layer});
@@ -170,7 +170,7 @@ void LayersPanel::onRemoveLayerClicked()
     for (std::size_t i = 0; i < layers.count(); ++i) {
         if (layers[i].get() == rawPtr) {
             auto layer = layers[i];
-            document_->remove_layer(layer);
+            document_->removeLayer(layer);
             EventBus::instance().publish(
                 // NOLINTNEXTLINE(modernize-use-designated-initializers)
                 LayerStackChangedEvent{LayerStackChangedEvent::Action::Removed, layer});

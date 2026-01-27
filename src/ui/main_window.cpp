@@ -30,21 +30,21 @@ class SimpleDocument : public gimp::Document {
   public:
     SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
 
-    std::shared_ptr<gimp::Layer> add_layer() override
+    std::shared_ptr<gimp::Layer> addLayer() override
     {
         auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
-        m_layers.add_layer(layer);
+        m_layers.addLayer(layer);
         return layer;
     }
 
-    void remove_layer(const std::shared_ptr<gimp::Layer>& layer) override
+    void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
-        m_layers.remove_layer(layer);
+        m_layers.removeLayer(layer);
     }
 
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
 
-    gimp::TileStore& tile_store() override { return m_dummyTileStore; }
+    gimp::TileStore& tileStore() override { return m_dummyTileStore; }
 
     [[nodiscard]] int width() const override { return m_width; }
     [[nodiscard]] int height() const override { return m_height; }
@@ -170,8 +170,8 @@ void MainWindow::createDocument()
 {
     m_document = std::make_shared<SimpleDocument>(800, 600);
 
-    auto bg = m_document->add_layer();
-    bg->set_name("Background");
+    auto bg = m_document->addLayer();
+    bg->setName("Background");
     auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;

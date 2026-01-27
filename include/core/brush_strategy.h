@@ -36,8 +36,14 @@ class BrushStrategy {
      * @param color Base color in RGBA format (0xRRGGBBAA).
      * @param pressure Pen pressure (0.0 to 1.0), affects opacity/size.
      */
-    virtual void renderDab(std::uint8_t* target, int targetWidth, int targetHeight, int x, int y,
-                           int size, std::uint32_t color, float pressure) = 0;
+    virtual void renderDab(std::uint8_t* target,
+                           int targetWidth,
+                           int targetHeight,
+                           int x,
+                           int y,
+                           int size,
+                           std::uint32_t color,
+                           float pressure) = 0;
 
     /*! @brief Returns a unique identifier for this strategy type.
      *  @return Strategy type name.
@@ -52,8 +58,14 @@ class BrushStrategy {
  */
 class SolidBrush : public BrushStrategy {
   public:
-    void renderDab(std::uint8_t* target, int targetWidth, int targetHeight, int x, int y, int size,
-                   std::uint32_t color, float pressure) override;
+    void renderDab(std::uint8_t* target,
+                   int targetWidth,
+                   int targetHeight,
+                   int x,
+                   int y,
+                   int size,
+                   std::uint32_t color,
+                   float pressure) override;
 
     [[nodiscard]] const char* typeName() const override { return "solid"; }
 };
@@ -73,8 +85,14 @@ class StampBrush : public BrushStrategy {
      */
     void setStamp(std::vector<std::uint8_t> data, int width, int height);
 
-    void renderDab(std::uint8_t* target, int targetWidth, int targetHeight, int x, int y, int size,
-                   std::uint32_t color, float pressure) override;
+    void renderDab(std::uint8_t* target,
+                   int targetWidth,
+                   int targetHeight,
+                   int x,
+                   int y,
+                   int size,
+                   std::uint32_t color,
+                   float pressure) override;
 
     [[nodiscard]] const char* typeName() const override { return "stamp"; }
 

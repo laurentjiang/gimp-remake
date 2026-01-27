@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "../tool.h"
+#include "core/commands/draw_command.h"
+#include "core/tool.h"
 
 #include <cstdint>
 #include <vector>
@@ -59,10 +60,12 @@ class PencilTool : public Tool {
      * @brief Single point in a stroke.
      */
     struct StrokePoint {
-        int x = 0;        ///< X coordinate in canvas space.
-        int y = 0;        ///< Y coordinate in canvas space.
-        float pressure = 1.0F; ///< Pen pressure.
+        int x = 0;              ///< X coordinate in canvas space.
+        int y = 0;              ///< Y coordinate in canvas space.
+        float pressure = 1.0F;  ///< Pen pressure.
     };
+
+    std::shared_ptr<DrawCommand> buildDrawCommand(int minX, int maxX, int minY, int maxY);
 
     std::vector<StrokePoint> strokePoints_;
     int brushSize_ = 3;

@@ -22,20 +22,20 @@ class CommandBus;
  * @brief Input event data passed to tools during mouse interactions.
  */
 struct ToolInputEvent {
-    QPoint canvasPos;              ///< Position in canvas coordinates.
-    QPoint screenPos;              ///< Position in screen coordinates.
-    Qt::MouseButtons buttons;      ///< Currently pressed mouse buttons.
-    Qt::KeyboardModifiers modifiers; ///< Active keyboard modifiers.
-    float pressure = 1.0F;         ///< Pen pressure (0.0 to 1.0), 1.0 for mouse.
+    QPoint canvasPos;                 ///< Position in canvas coordinates.
+    QPoint screenPos;                 ///< Position in screen coordinates.
+    Qt::MouseButtons buttons;         ///< Currently pressed mouse buttons.
+    Qt::KeyboardModifiers modifiers;  ///< Active keyboard modifiers.
+    float pressure = 1.0F;            ///< Pen pressure (0.0 to 1.0), 1.0 for mouse.
 };
 
 /**
  * @brief Tool state machine states.
  */
 enum class ToolState {
-    Idle,   ///< Tool is inactive, waiting for input.
-    Active, ///< Tool is actively processing input (e.g., dragging).
-    Commit  ///< Tool is committing the operation (issuing command).
+    Idle,    ///< Tool is inactive, waiting for input.
+    Active,  ///< Tool is actively processing input (e.g., dragging).
+    Commit   ///< Tool is committing the operation (issuing command).
 };
 
 /**
@@ -143,9 +143,12 @@ class Tool {
      */
     [[nodiscard]] CommandBus* commandBus() const { return commandBus_; }
 
-  private:
+  protected:
+    //! @brief Current state of the tool.
     ToolState state_ = ToolState::Idle;
+    //! @brief Active document the tool operates on.
     std::shared_ptr<Document> document_;
+    //! @brief Command bus for issuing commands.
     CommandBus* commandBus_ = nullptr;
 };
 

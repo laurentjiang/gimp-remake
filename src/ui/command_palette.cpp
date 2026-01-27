@@ -7,6 +7,8 @@
 
 #include "ui/command_palette.h"
 
+#include "core/history_manager.h"
+
 #include <QKeyEvent>
 #include <QLabel>
 
@@ -26,8 +28,16 @@ CommandPalette::CommandPalette(QWidget* parent)
     registerCommand({"file.save_as", "Save As...", "File", "Ctrl+Shift+S", []() {}});
     registerCommand({"file.export", "Export As...", "File", "Ctrl+E", []() {}});
 
-    registerCommand({"edit.undo", "Undo", "Edit", "Ctrl+Z", []() {}});
-    registerCommand({"edit.redo", "Redo", "Edit", "Ctrl+Y", []() {}});
+    registerCommand({"edit.undo", "Undo", "Edit", "Ctrl+Z", [this]() {
+                         if (historyManager_) {
+                             historyManager_->undo();
+                         }
+                     }});
+    registerCommand({"edit.redo", "Redo", "Edit", "Ctrl+Y", [this]() {
+                         if (historyManager_) {
+                             historyManager_->redo();
+                         }
+                     }});
     registerCommand({"edit.cut", "Cut", "Edit", "Ctrl+X", []() {}});
     registerCommand({"edit.copy", "Copy", "Edit", "Ctrl+C", []() {}});
     registerCommand({"edit.paste", "Paste", "Edit", "Ctrl+V", []() {}});
@@ -58,6 +68,11 @@ CommandPalette::CommandPalette(QWidget* parent)
 }
 
 CommandPalette::~CommandPalette() = default;
+
+void CommandPalette::setHistoryManager(HistoryManager* historyManager)
+{
+    historyManager_ = historyManager;
+}
 
 void CommandPalette::setupUi()
 {

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../tool.h"
+#include "core/tool.h"
 
 #include <QPoint>
 
@@ -38,9 +38,9 @@ class MoveTool : public Tool {
     void cancelStroke() override;
 
   private:
-    QPoint startPos_;      ///< Initial mouse position.
-    QPoint currentPos_;    ///< Current mouse position.
-    QPoint lastDelta_;     ///< Recorded movement from last completed stroke.
+    QPoint startPos_;    ///< Initial mouse position.
+    QPoint currentPos_;  ///< Current mouse position.
+    QPoint lastDelta_;   ///< Recorded movement from last completed stroke.
 };
 
 }  // namespace gimp

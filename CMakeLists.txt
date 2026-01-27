@@ -29,7 +29,11 @@ add_executable(gimp-remake
     "src/ui/history_panel.cpp"
     "src/ui/command_palette.cpp"
     "src/ui/debug_hud.cpp"
+    "src/history/history_stack.cpp"
+    "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
+    "src/history/history_stack.cpp"
+    "src/history/simple_history_manager.cpp"
     "src/error_handling/error_handler.cpp"
     "src/core/command_bus.cpp"
     "src/core/layer_stack.cpp"
@@ -40,6 +44,7 @@ add_executable(gimp-remake
     "src/core/tools/move_tool.cpp"
     "src/core/commands/add_layer_command.cpp"
     "src/core/commands/fill_color_command.cpp"
+    "src/core/commands/draw_command.cpp"
     "src/render/skia_renderer.cpp"
     "src/render/skia_compositor.cpp"
     "resources/resources.qrc"
@@ -163,6 +168,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tool_factory.cpp"
         "src/core/tools/pencil_tool.cpp"
         "src/core/tools/move_tool.cpp"
+        "src/core/commands/draw_command.cpp"
         "src/render/skia_compositor.cpp"
     )
 

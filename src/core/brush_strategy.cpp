@@ -23,7 +23,10 @@ namespace {
  * @param b Output blue component.
  * @param a Output alpha component.
  */
-void unpackRGBA(std::uint32_t rgba, std::uint8_t& r, std::uint8_t& g, std::uint8_t& b,
+void unpackRGBA(std::uint32_t rgba,
+                std::uint8_t& r,
+                std::uint8_t& g,
+                std::uint8_t& b,
                 std::uint8_t& a)
 {
     r = static_cast<std::uint8_t>((rgba >> 24) & 0xFF);
@@ -40,7 +43,10 @@ void unpackRGBA(std::uint32_t rgba, std::uint8_t& r, std::uint8_t& g, std::uint8
  * @param sb Source blue.
  * @param sa Source alpha.
  */
-void blendPixel(std::uint8_t* dst, std::uint8_t sr, std::uint8_t sg, std::uint8_t sb,
+void blendPixel(std::uint8_t* dst,
+                std::uint8_t sr,
+                std::uint8_t sg,
+                std::uint8_t sb,
                 std::uint8_t sa)
 {
     if (sa == 0) {
@@ -78,8 +84,14 @@ void blendPixel(std::uint8_t* dst, std::uint8_t sr, std::uint8_t sg, std::uint8_
 
 }  // namespace
 
-void SolidBrush::renderDab(std::uint8_t* target, int targetWidth, int targetHeight, int x, int y,
-                           int size, std::uint32_t color, float pressure)
+void SolidBrush::renderDab(std::uint8_t* target,
+                           int targetWidth,
+                           int targetHeight,
+                           int x,
+                           int y,
+                           int size,
+                           std::uint32_t color,
+                           float pressure)
 {
     std::uint8_t r = 0;
     std::uint8_t g = 0;
@@ -117,8 +129,14 @@ void StampBrush::setStamp(std::vector<std::uint8_t> data, int width, int height)
     stampHeight_ = height;
 }
 
-void StampBrush::renderDab(std::uint8_t* target, int targetWidth, int targetHeight, int x, int y,
-                           int size, std::uint32_t color, float pressure)
+void StampBrush::renderDab(std::uint8_t* target,
+                           int targetWidth,
+                           int targetHeight,
+                           int x,
+                           int y,
+                           int size,
+                           std::uint32_t color,
+                           float pressure)
 {
     if (stampData_.empty() || stampWidth_ <= 0 || stampHeight_ <= 0) {
         return;
@@ -131,7 +149,8 @@ void StampBrush::renderDab(std::uint8_t* target, int targetWidth, int targetHeig
     unpackRGBA(color, r, g, b, a);
 
     // Scale factor from stamp size to requested size
-    float scale = static_cast<float>(size) / static_cast<float>(std::max(stampWidth_, stampHeight_));
+    float scale =
+        static_cast<float>(size) / static_cast<float>(std::max(stampWidth_, stampHeight_));
     int halfSize = size / 2;
 
     int minX = std::max(0, x - halfSize);

@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include <include/core/SkImage.h>
 #include <include/core/SkPixmap.h>
@@ -162,6 +163,28 @@ void SkiaCanvasWidget::renderIfNeeded()
 
     const SkPixmap pixmap(info, m_cachedImage.bits(), m_cachedImage.bytesPerLine());
     if (skImage->readPixels(pixmap, 0, 0)) {
+        m_cacheValid = true;
+    }
+}
+
+void SkiaCanvasWidget::updateCacheFromLayer()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        return;
+    }
+
+    auto layer = m_document->layers()[0];
+    const int w = layer->width();
+    const int h = layer->height();
+
+    if (m_cachedImage.isNull() || m_cachedImage.width() != w || m_cachedImage.height() != h) {
+        m_cachedImage = QImage(w, h, QImage::Format_ARGB32_Premultiplied);
+    }
+
+    // Direct copy from layer BGRA data to QImage
+    const auto& layerData = layer->data();
+    if (layerData.size() == static_cast<size_t>(w * h * 4)) {
+        std::memcpy(m_cachedImage.bits(), layerData.data(), layerData.size());
         m_cacheValid = true;
     }
 }
@@ -402,15 +425,29 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
 
     bool handled = false;
     if (isPress) {
+        m_isStroking = true;
         handled = tool->onMousePress(toolEvent);
     } else if (isRelease) {
         handled = tool->onMouseRelease(toolEvent);
+        m_isStroking = false;
+        // Full re-render on stroke end for proper compositing
+        if (handled) {
+            invalidateCache();
+            emit canvasModified();
+        }
+        return;
     } else {
         handled = tool->onMouseMove(toolEvent);
     }
 
     if (handled) {
-        invalidateCache();
+        // Fast path: update cache directly from layer during stroke
+        if (m_isStroking) {
+            updateCacheFromLayer();
+            update();
+        } else {
+            invalidateCache();
+        }
         emit canvasModified();
     }
 }

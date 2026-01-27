@@ -193,6 +193,11 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Re-renders the document if the cache is invalid. */
     void renderIfNeeded();
 
+    /*! @brief Updates a region of the cache directly from layer data.
+     *  Faster than full re-render for interactive painting.
+     */
+    void updateCacheFromLayer();
+
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
@@ -202,6 +207,7 @@ class SkiaCanvasWidget : public QWidget {
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;
+    bool m_isStroking = false;  ///< True during active brush stroke.
     QPoint m_lastMousePos;
     QPoint m_panStartPos;
 };

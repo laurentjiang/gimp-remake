@@ -6,6 +6,7 @@
  */
 
 #include "history/history_stack.h"
+
 #include "core/command.h"
 
 namespace gimp {

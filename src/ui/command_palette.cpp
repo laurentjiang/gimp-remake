@@ -29,15 +29,15 @@ CommandPalette::CommandPalette(QWidget* parent)
     registerCommand({"file.export", "Export As...", "File", "Ctrl+E", []() {}});
 
     registerCommand({"edit.undo", "Undo", "Edit", "Ctrl+Z", [this]() {
-        if (historyManager_) {
-            historyManager_->undo();
-        }
-    }});
+                         if (historyManager_) {
+                             historyManager_->undo();
+                         }
+                     }});
     registerCommand({"edit.redo", "Redo", "Edit", "Ctrl+Y", [this]() {
-        if (historyManager_) {
-            historyManager_->redo();
-        }
-    }});
+                         if (historyManager_) {
+                             historyManager_->redo();
+                         }
+                     }});
     registerCommand({"edit.cut", "Cut", "Edit", "Ctrl+X", []() {}});
     registerCommand({"edit.copy", "Copy", "Edit", "Ctrl+C", []() {}});
     registerCommand({"edit.paste", "Paste", "Edit", "Ctrl+V", []() {}});

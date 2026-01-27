@@ -6,9 +6,10 @@
  */
 
 #include "core/tools/pencil_tool.h"
-#include "core/document.h"
+
 #include "core/command_bus.h"
 #include "core/commands/draw_command.h"
+#include "core/document.h"
 
 namespace gimp {
 
@@ -23,19 +24,8 @@ void PencilTool::continueStroke(const ToolInputEvent& event)
     strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
 }
 
-void PencilTool::endStroke(const ToolInputEvent& event)
+std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, int minY, int maxY)
 {
-    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
-
-    if (!document_ || !commandBus_ || strokePoints_.empty()) {
-        strokePoints_.clear();
-        return;
-    }
-
-    // Find affected region bounds
-    int minX = INT_MAX, maxX = INT_MIN;
-    int minY = INT_MAX, maxY = INT_MIN;
-
     for (const auto& pt : strokePoints_) {
         int radius = brushSize_ / 2;
         minX = std::min(minX, pt.x - radius);
@@ -46,16 +36,31 @@ void PencilTool::endStroke(const ToolInputEvent& event)
 
     if (minX > maxX || minY > maxY) {
         strokePoints_.clear();
-        return;
+        return nullptr;
     }
 
     int width = maxX - minX + 1;
     int height = maxY - minY + 1;
 
-    // Create command and capture before state
-    auto drawCmd = std::make_shared<DrawCommand>(
-        document_->layers()[0],  // TODO: Use active layer
-        minX, minY, width, height);
+    return std::make_shared<DrawCommand>(document_->layers()[0], minX, minY, width, height);
+}
+
+void PencilTool::endStroke(const ToolInputEvent& event)
+{
+    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+
+    if (!document_ || !commandBus_ || strokePoints_.empty()) {
+        strokePoints_.clear();
+        return;
+    }
+
+    // Create command
+    auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
+    if (!drawCmd) {
+        return;
+    }
+
+    // Capture before state
     drawCmd->captureBeforeState();
 
     // TODO: Render the stroke to the layer using BrushStrategy

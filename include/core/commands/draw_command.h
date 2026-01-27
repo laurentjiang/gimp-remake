@@ -62,10 +62,10 @@ class DrawCommand : public Command {
 
   private:
     std::shared_ptr<Layer> layer_;
-    int regionX_;                      ///< Left edge of affected region.
-    int regionY_;                      ///< Top edge of affected region.
-    int regionWidth_;                  ///< Width of affected region.
-    int regionHeight_;                 ///< Height of affected region.
+    int regionX_;                            ///< Left edge of affected region.
+    int regionY_;                            ///< Top edge of affected region.
+    int regionWidth_;                        ///< Width of affected region.
+    int regionHeight_;                       ///< Height of affected region.
     std::vector<std::uint8_t> beforeState_;  ///< Pixel data before drawing.
     std::vector<std::uint8_t> afterState_;   ///< Pixel data after drawing.
 

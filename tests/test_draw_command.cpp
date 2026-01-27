@@ -23,8 +23,15 @@ std::shared_ptr<gimp::Layer> createTestLayer(int width, int height)
 /**
  * @brief Helper to set a rectangular region to a specific RGBA color.
  */
-void setRegionColor(std::shared_ptr<gimp::Layer> layer, int x, int y, int width, int height,
-                    uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+void setRegionColor(std::shared_ptr<gimp::Layer> layer,
+                    int x,
+                    int y,
+                    int width,
+                    int height,
+                    uint8_t r,
+                    uint8_t g,
+                    uint8_t b,
+                    uint8_t a)
 {
     auto& data = layer->data();
     const int layerWidth = layer->width();
@@ -36,8 +43,7 @@ void setRegionColor(std::shared_ptr<gimp::Layer> layer, int x, int y, int width,
             const int dstCol = x + col;
 
             // Bounds check
-            if (dstRow < 0 || dstRow >= layer->height() || dstCol < 0 ||
-                dstCol >= layer->width()) {
+            if (dstRow < 0 || dstRow >= layer->height() || dstCol < 0 || dstCol >= layer->width()) {
                 continue;
             }
 
@@ -53,8 +59,13 @@ void setRegionColor(std::shared_ptr<gimp::Layer> layer, int x, int y, int width,
 /**
  * @brief Helper to get the color at a specific pixel.
  */
-void getPixelColor(const std::shared_ptr<gimp::Layer>& layer, int x, int y, uint8_t& r,
-                   uint8_t& g, uint8_t& b, uint8_t& a)
+void getPixelColor(const std::shared_ptr<gimp::Layer>& layer,
+                   int x,
+                   int y,
+                   uint8_t& r,
+                   uint8_t& g,
+                   uint8_t& b,
+                   uint8_t& a)
 {
     const auto& data = layer->data();
     const int layerWidth = layer->width();
@@ -75,8 +86,15 @@ void getPixelColor(const std::shared_ptr<gimp::Layer>& layer, int x, int y, uint
 /**
  * @brief Helper to verify a region has a specific color.
  */
-bool regionHasColor(const std::shared_ptr<gimp::Layer>& layer, int x, int y, int width,
-                    int height, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+bool regionHasColor(const std::shared_ptr<gimp::Layer>& layer,
+                    int x,
+                    int y,
+                    int width,
+                    int height,
+                    uint8_t r,
+                    uint8_t g,
+                    uint8_t b,
+                    uint8_t a)
 {
     for (int row = 0; row < height; ++row) {
         for (int col = 0; col < width; ++col) {
@@ -298,8 +316,8 @@ TEST_CASE("DrawCommand preserves unaffected pixels", "[draw_command]")
     auto layer = createTestLayer(100, 100);
 
     // Create a gradient: red on left, blue on right
-    setRegionColor(layer, 0, 0, 50, 100, 255, 0, 0, 255);    // Left: red
-    setRegionColor(layer, 50, 0, 50, 100, 0, 0, 255, 255);   // Right: blue
+    setRegionColor(layer, 0, 0, 50, 100, 255, 0, 0, 255);   // Left: red
+    setRegionColor(layer, 50, 0, 50, 100, 0, 0, 255, 255);  // Right: blue
 
     // Command affects only the left side
     auto cmd = std::make_shared<gimp::DrawCommand>(layer, 0, 0, 50, 100);

@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include <memory>
-
 #include "core/history_manager.h"
+
+#include <memory>
 
 namespace gimp {
 class HistoryStack;

@@ -6,13 +6,11 @@
  */
 
 #include "history/simple_history_manager.h"
+
 #include "history/history_stack.h"
 
 namespace gimp {
-SimpleHistoryManager::SimpleHistoryManager()
-    : stack_{std::make_shared<HistoryStack>()}
-{
-}
+SimpleHistoryManager::SimpleHistoryManager() : stack_{std::make_shared<HistoryStack>()} {}
 
 SimpleHistoryManager::SimpleHistoryManager(std::shared_ptr<HistoryStack> stack)
     : stack_{std::move(stack)}

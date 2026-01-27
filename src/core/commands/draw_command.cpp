@@ -15,7 +15,11 @@
 namespace gimp {
 
 DrawCommand::DrawCommand(std::shared_ptr<Layer> layer, int x, int y, int width, int height)
-    : layer_{std::move(layer)}, regionX_{x}, regionY_{y}, regionWidth_{width}, regionHeight_{height}
+    : layer_{std::move(layer)},
+      regionX_{x},
+      regionY_{y},
+      regionWidth_{width},
+      regionHeight_{height}
 {
 }
 
@@ -49,8 +53,9 @@ void DrawCommand::captureBeforeState()
         const int srcOffset = (srcRow * layerWidth + clippedX) * pixelSize;
         const int dstOffset = row * clippedWidth * pixelSize;
 
-        std::memcpy(beforeState_.data() + dstOffset, layerData.data() + srcOffset,
-                    static_cast<std::size_t>(clippedWidth * pixelSize));
+        std::memcpy(beforeState_.data() + dstOffset,
+                    layerData.data() + srcOffset,
+                    (clippedWidth * pixelSize));
     }
 }
 
@@ -84,8 +89,9 @@ void DrawCommand::captureAfterState()
         const int srcOffset = (srcRow * layerWidth + clippedX) * pixelSize;
         const int dstOffset = row * clippedWidth * pixelSize;
 
-        std::memcpy(afterState_.data() + dstOffset, layerData.data() + srcOffset,
-                    static_cast<std::size_t>(clippedWidth * pixelSize));
+        std::memcpy(afterState_.data() + dstOffset,
+                    layerData.data() + srcOffset,
+                    (clippedWidth * pixelSize));
     }
 }
 
@@ -124,8 +130,8 @@ void DrawCommand::updateState(const std::vector<std::uint8_t>& state)
         const int dstOffset = (dstRow * layerWidth + clippedX) * pixelSize;
         const int srcOffset = row * clippedWidth * pixelSize;
 
-        std::memcpy(layerData.data() + dstOffset, state.data() + srcOffset,
-                    static_cast<std::size_t>(clippedWidth * pixelSize));
+        std::memcpy(
+            layerData.data() + dstOffset, state.data() + srcOffset, (clippedWidth * pixelSize));
     }
 }
 

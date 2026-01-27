@@ -48,6 +48,9 @@ class CommandPalette : public QDialog {
     explicit CommandPalette(QWidget* parent = nullptr);
     ~CommandPalette() override;
 
+    /*! @brief Sets the history manager for command execution context.
+     *  @param historyManager The history manager.
+     */
     void setHistoryManager(HistoryManager* historyManager);
     /*! @brief Registers a command in the palette.
      *  @param command The command to register.

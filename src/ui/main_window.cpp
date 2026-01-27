@@ -65,7 +65,7 @@ namespace gimp {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
-    setWindowTitle("GIMP Remake - Pre-Alpha");
+    setWindowTitle("GIMP Remake - Alpha");
     resize(1280, 900);
 
     m_renderer = std::make_shared<SkiaRenderer>();

@@ -165,6 +165,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/layer_stack.cpp"
         "src/core/tool.cpp"
         "src/core/tool_factory.cpp"
+        "src/core/brush_strategy.cpp"
         "src/core/tools/pencil_tool.cpp"
         "src/core/tools/move_tool.cpp"
         "src/core/commands/draw_command.cpp"

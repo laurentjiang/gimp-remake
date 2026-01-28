@@ -107,4 +107,14 @@ struct ColorChangedEvent {
     std::string source;                ///< Source of the change (e.g., "color_picker", "palette").
 };
 
+/**
+ * @brief Event requesting a tool switch.
+ *
+ * Published by tools that need to trigger a tool change (e.g., color picker
+ * switching back to the previous tool after sampling).
+ */
+struct ToolSwitchRequestEvent {
+    std::string targetToolId;  ///< ID of the tool to switch to.
+};
+
 }  // namespace gimp

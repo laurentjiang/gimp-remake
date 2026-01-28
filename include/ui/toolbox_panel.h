@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "core/event_bus.h"
+
 #include <QButtonGroup>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -57,6 +59,7 @@ class ToolboxPanel : public QWidget {
     QVBoxLayout* mainLayout_ = nullptr;
     QButtonGroup* buttonGroup_ = nullptr;
     std::string activeToolId_;
+    EventBus::SubscriptionId toolSwitchSub_ = 0;  ///< Subscription for tool switch requests.
 };
 
 }  // namespace gimp

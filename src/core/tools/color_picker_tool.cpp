@@ -11,8 +11,17 @@
 #include "core/event_bus.h"
 #include "core/events.h"
 #include "core/layer.h"
+#include "core/tool_factory.h"
 
 namespace gimp {
+
+void ColorPickerTool::onActivate()
+{
+    const std::string& currentId = ToolFactory::instance().activeToolId();
+    if (currentId != "color_picker" && !currentId.empty()) {
+        previousToolId_ = currentId;
+    }
+}
 
 std::uint32_t ColorPickerTool::sampleColorAt(int x, int y) const
 {
@@ -53,6 +62,15 @@ void ColorPickerTool::publishColorChanged(std::uint32_t color) const
     EventBus::instance().publish(event);
 }
 
+void ColorPickerTool::requestSwitchToPreviousTool() const
+{
+    if (!previousToolId_.empty()) {
+        ToolSwitchRequestEvent event;
+        event.targetToolId = previousToolId_;
+        EventBus::instance().publish(event);
+    }
+}
+
 void ColorPickerTool::beginStroke(const ToolInputEvent& event)
 {
     pickedColor_ = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
@@ -68,9 +86,9 @@ void ColorPickerTool::continueStroke(const ToolInputEvent& event)
 
 void ColorPickerTool::endStroke(const ToolInputEvent& event)
 {
-    // Final pick on mouse release
     pickedColor_ = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
     publishColorChanged(pickedColor_);
+    requestSwitchToPreviousTool();
 }
 
 }  // namespace gimp

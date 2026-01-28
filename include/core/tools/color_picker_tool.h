@@ -10,6 +10,7 @@
 #include "core/tool.h"
 
 #include <cstdint>
+#include <string>
 
 namespace gimp {
 
@@ -18,6 +19,7 @@ namespace gimp {
  *
  * The color picker tool samples the color at the clicked position from the
  * active layer and emits a ColorChangedEvent to update the foreground color.
+ * After sampling, it automatically switches back to the previously active tool.
  */
 class ColorPickerTool : public Tool {
   public:
@@ -30,6 +32,13 @@ class ColorPickerTool : public Tool {
      *  @return Color in RGBA format (0xRRGGBBAA).
      */
     [[nodiscard]] std::uint32_t pickedColor() const { return pickedColor_; }
+
+    /*! @brief Sets the tool to switch back to after picking.
+     *  @param toolId The previous tool ID.
+     */
+    void setPreviousTool(const std::string& toolId) { previousToolId_ = toolId; }
+
+    void onActivate() override;
 
   protected:
     void beginStroke(const ToolInputEvent& event) override;
@@ -52,7 +61,10 @@ class ColorPickerTool : public Tool {
      */
     void publishColorChanged(std::uint32_t color) const;
 
+    void requestSwitchToPreviousTool() const;
+
     std::uint32_t pickedColor_ = 0x000000FF;  ///< Last picked color.
+    std::string previousToolId_;              ///< Tool to switch back to after picking.
 };
 
 }  // namespace gimp

@@ -1,6 +1,7 @@
 /**
  * @file test_io_manager.cpp
- * @brief Unit tests for IOManager image read/write, color conversion, and project import/export.
+ * @brief Integration tests for IOManager image read/write, color conversion, and project
+ * import/export.
  * @author Aless Tosi
  * @date 2025-12-17
  */
@@ -12,15 +13,20 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("IOManager reads and writes image files", "[io]")
+namespace {
+// Test input/output directories
+const std::string TEST_INPUT_IMAGE = "tests/img/starry_night.jpg";
+const std::string TEST_OUTPUT_DIR = "tests/img/generated/";  // Ignored by .gitignore
+}  // namespace
+
+TEST_CASE("IOManager reads and writes image files", "[io][integration]")
 {
     gimp::IOManager ioManager;
 
-    const std::string testImagePath = "starry_night.jpg";
-    REQUIRE(std::filesystem::exists(testImagePath));
+    REQUIRE(std::filesystem::exists(TEST_INPUT_IMAGE));
 
     // Read image
-    gimp::ImageFile image = ioManager.readImage(testImagePath);
+    gimp::ImageFile image = ioManager.readImage(TEST_INPUT_IMAGE);
     REQUIRE(!image.empty());
     REQUIRE(image.width() > 0);
     REQUIRE(image.height() > 0);
@@ -29,9 +35,10 @@ TEST_CASE("IOManager reads and writes image files", "[io]")
     {
         cv::Mat grayMat = image.mat().clone();
         ioManager.toGrayscale(grayMat);
-        REQUIRE(ioManager.writeImage(grayMat, "starry_night_gray.jpg"));
+        const std::string outputPath = TEST_OUTPUT_DIR + "starry_night_gray.jpg";
+        REQUIRE(ioManager.writeImage(grayMat, outputPath));
 
-        gimp::ImageFile grayImage = ioManager.readImage("starry_night_gray.jpg");
+        gimp::ImageFile grayImage = ioManager.readImage(outputPath);
         REQUIRE(!grayImage.empty());
         REQUIRE(grayImage.channels() == 1);
     }
@@ -40,9 +47,10 @@ TEST_CASE("IOManager reads and writes image files", "[io]")
     {
         cv::Mat rgbMat = image.mat().clone();
         ioManager.toRgb(rgbMat);
-        REQUIRE(ioManager.writeImage(rgbMat, "starry_night_rgb.jpg"));
+        const std::string outputPath = TEST_OUTPUT_DIR + "starry_night_rgb.jpg";
+        REQUIRE(ioManager.writeImage(rgbMat, outputPath));
 
-        gimp::ImageFile rgbImage = ioManager.readImage("starry_night_rgb.jpg");
+        gimp::ImageFile rgbImage = ioManager.readImage(outputPath);
         REQUIRE(!rgbImage.empty());
         REQUIRE(rgbImage.channels() == 3);
     }
@@ -51,15 +59,16 @@ TEST_CASE("IOManager reads and writes image files", "[io]")
     {
         cv::Mat rgbaMat = image.mat().clone();
         ioManager.toRgba(rgbaMat);
-        REQUIRE(ioManager.writeImage(rgbaMat, "starry_night_rgba.jpg"));
+        const std::string outputPath = TEST_OUTPUT_DIR + "starry_night_rgba.jpg";
+        REQUIRE(ioManager.writeImage(rgbaMat, outputPath));
 
         // Note: JPG doesn't support alpha, so RGBA will be read back as RGB
-        gimp::ImageFile rgbaImage = ioManager.readImage("starry_night_rgba.jpg");
+        gimp::ImageFile rgbaImage = ioManager.readImage(outputPath);
         REQUIRE(!rgbaImage.empty());
     }
 }
 
-TEST_CASE("IOManager exports and imports ProjectFile", "[io]")
+TEST_CASE("IOManager exports and imports ProjectFile", "[io][integration]")
 {
     gimp::IOManager ioManager;
 
@@ -84,15 +93,17 @@ TEST_CASE("IOManager exports and imports ProjectFile", "[io]")
 
     SECTION("Export project to JSON")
     {
-        REQUIRE(ioManager.exportProject(project, "test_project_export.json"));
-        REQUIRE(std::filesystem::exists("test_project_export.json"));
+        const std::string outputPath = TEST_OUTPUT_DIR + "test_project_export.json";
+        REQUIRE(ioManager.exportProject(project, outputPath));
+        REQUIRE(std::filesystem::exists(outputPath));
     }
 
     SECTION("Export and import project preserves data")
     {
-        REQUIRE(ioManager.exportProject(project, "test_project_roundtrip.json"));
+        const std::string outputPath = TEST_OUTPUT_DIR + "test_project_roundtrip.json";
+        REQUIRE(ioManager.exportProject(project, outputPath));
 
-        gimp::ProjectFile imported = ioManager.importProject("test_project_roundtrip.json");
+        gimp::ProjectFile imported = ioManager.importProject(outputPath);
 
         // Check project dimensions
         REQUIRE(imported.width() == 800);

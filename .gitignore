@@ -124,6 +124,7 @@ HEADER_FORMAT.txt
 RULES.md
 COMMIT_FORMAT.txt
 logs
+*.profraw
 
 # Ignore generated test output files
 tests/img/generated/

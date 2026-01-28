@@ -14,9 +14,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 namespace {
-// Test input/output directories
-const std::string TEST_INPUT_IMAGE = "tests/img/starry_night.jpg";
-const std::string TEST_OUTPUT_DIR = "tests/img/generated/";  // Ignored by .gitignore
+// Get the source directory from CMake-defined macro or use relative path
+#ifdef SOURCE_DIR
+const std::filesystem::path SOURCE_ROOT = SOURCE_DIR;
+#else
+const std::filesystem::path SOURCE_ROOT = ".";
+#endif
+
+// Test input/output directories (relative to source root)
+const std::string TEST_INPUT_IMAGE = (SOURCE_ROOT / "tests/img/starry_night.jpg").string();
+const std::string TEST_OUTPUT_DIR = (SOURCE_ROOT / "tests/img/generated/").string();
 }  // namespace
 
 TEST_CASE("IOManager reads and writes image files", "[io][integration]")

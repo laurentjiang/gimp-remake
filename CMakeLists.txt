@@ -212,6 +212,9 @@ if(GIMP_REMAKE_BUILD_TESTS)
     # Ensure tests use C++20
     target_compile_features(unit_tests PRIVATE cxx_std_20)
     
+    # Define source directory for test file paths
+    target_compile_definitions(unit_tests PRIVATE SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    
     if(MSVC)
         target_compile_options(unit_tests PRIVATE /W4 /permissive- /Zc:__cplusplus)
     else()

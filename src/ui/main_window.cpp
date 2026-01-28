@@ -94,6 +94,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setActiveTool(event.currentToolId);
         });
 
+    // Subscribe to color changes to update status bar
+    m_colorChangedSubscription =
+        EventBus::instance().subscribe<ColorChangedEvent>([this](const ColorChangedEvent& event) {
+            const std::uint32_t rgba = event.color;
+            const int red = static_cast<int>((rgba >> 24) & 0xFF);
+            const int green = static_cast<int>((rgba >> 16) & 0xFF);
+            const int blue = static_cast<int>((rgba >> 8) & 0xFF);
+            const int alpha = static_cast<int>(rgba & 0xFF);
+            statusBar()->showMessage(
+                QString("Color: RGB(%1, %2, %3) A:%4").arg(red).arg(green).arg(blue).arg(alpha));
+        });
+
     setupMenuBar();
     setupDockWidgets();
     setupShortcuts();
@@ -105,6 +117,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
+    EventBus::instance().unsubscribe(m_colorChangedSubscription);
 }
 
 void MainWindow::setupMenuBar()

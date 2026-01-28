@@ -17,9 +17,9 @@ namespace gimp {
 
 void ColorPickerTool::onActivate()
 {
-    const std::string& currentId = ToolFactory::instance().activeToolId();
-    if (currentId != "color_picker" && !currentId.empty()) {
-        previousToolId_ = currentId;
+    const std::string& prevId = ToolFactory::instance().previousToolId();
+    if (!prevId.empty() && prevId != "color_picker") {
+        previousToolId_ = prevId;
     }
 }
 

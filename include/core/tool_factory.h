@@ -68,6 +68,11 @@ class ToolFactory {
      */
     [[nodiscard]] const std::string& activeToolId() const { return activeToolId_; }
 
+    /*! @brief Returns the ID of the previously active tool.
+     *  @return Previous tool ID, or empty string.
+     */
+    [[nodiscard]] const std::string& previousToolId() const { return previousToolId_; }
+
     /**
      * @brief Sets the document for all tools to operate on.
      * @param document The active document.
@@ -94,6 +99,7 @@ class ToolFactory {
     std::unordered_map<std::string, std::unique_ptr<Tool>> cache_;
     Tool* activeTool_ = nullptr;
     std::string activeToolId_;
+    std::string previousToolId_;
     std::shared_ptr<Document> document_;
     CommandBus* commandBus_ = nullptr;
 };

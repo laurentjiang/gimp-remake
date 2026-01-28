@@ -30,8 +30,9 @@ std::uint32_t ColorPickerTool::sampleColorAt(int x, int y) const
     }
 
     const auto& data = layer->data();
-    const std::size_t offset =
-        (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) + static_cast<std::size_t>(x)) * 4;
+    const std::size_t offset = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+                                static_cast<std::size_t>(x)) *
+                               4;
 
     // RGBA format: extract each channel
     const std::uint8_t r = data[offset + 0];

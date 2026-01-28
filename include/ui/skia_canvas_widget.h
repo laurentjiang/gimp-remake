@@ -190,6 +190,12 @@ class SkiaCanvasWidget : public QWidget {
      */
     [[nodiscard]] Tool* activeTool() const;
 
+    /*! @brief Samples color at screen position and publishes ColorChangedEvent.
+     *  Used for Alt+click color picking from any tool.
+     *  @param screenPos The screen position to sample.
+     */
+    void sampleColorAtPosition(const QPoint& screenPos);
+
     /*! @brief Re-renders the document if the cache is invalid. */
     void renderIfNeeded();
 

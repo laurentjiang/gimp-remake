@@ -1,0 +1,227 @@
+/**
+ * @file eraser_tool.cpp
+ * @brief Implementation of EraserTool.
+ * @author Laurent Jiang
+ * @date 2026-01-28
+ */
+
+#include "core/tools/eraser_tool.h"
+
+#include "core/command_bus.h"
+#include "core/commands/draw_command.h"
+#include "core/document.h"
+#include "core/layer.h"
+
+#include <algorithm>
+#include <cmath>
+
+namespace gimp {
+
+namespace {
+
+/**
+ * @brief Interpolates points along a line between two stroke points.
+ *
+ * Uses linear interpolation to ensure smooth, continuous strokes without gaps.
+ *
+ * @param fromX Starting X position.
+ * @param fromY Starting Y position.
+ * @param fromPressure Starting pressure.
+ * @param toX Ending X position.
+ * @param toY Ending Y position.
+ * @param toPressure Ending pressure.
+ * @param brushSize Spacing is approximately 1/4 the brush size.
+ * @return Vector of interpolated points including endpoints.
+ */
+std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
+                                                           int fromY,
+                                                           float fromPressure,
+                                                           int toX,
+                                                           int toY,
+                                                           float toPressure,
+                                                           int brushSize)
+{
+    std::vector<std::tuple<int, int, float>> result;
+
+    int dx = toX - fromX;
+    int dy = toY - fromY;
+    float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
+
+    float spacing = std::max(1.0F, static_cast<float>(brushSize) / 4.0F);
+    int steps = std::max(1, static_cast<int>(distance / spacing));
+
+    for (int i = 0; i <= steps; ++i) {
+        float t = static_cast<float>(i) / static_cast<float>(steps);
+        int x = fromX + static_cast<int>(static_cast<float>(dx) * t);
+        int y = fromY + static_cast<int>(static_cast<float>(dy) * t);
+        float pressure = fromPressure + (toPressure - fromPressure) * t;
+        result.emplace_back(x, y, pressure);
+    }
+
+    return result;
+}
+
+}  // namespace
+
+void EraserTool::eraseAt(int x, int y, float pressure)
+{
+    if (!document_ || document_->layers().count() == 0) {
+        return;
+    }
+
+    auto layer = document_->layers()[0];
+    auto* pixelData = layer->data().data();
+    int layerWidth = layer->width();
+    int layerHeight = layer->height();
+
+    int radius = brushSize_ / 2;
+    int radiusSq = radius * radius;
+
+    int minX = std::max(0, x - radius);
+    int maxX = std::min(layerWidth - 1, x + radius);
+    int minY = std::max(0, y - radius);
+    int maxY = std::min(layerHeight - 1, y + radius);
+
+    for (int py = minY; py <= maxY; ++py) {
+        for (int px = minX; px <= maxX; ++px) {
+            int dx = px - x;
+            int dy = py - y;
+            if (dx * dx + dy * dy <= radiusSq) {
+                std::uint8_t* pixel = pixelData + (py * layerWidth + px) * 4;
+                // Apply pressure to erase strength
+                float eraseStrength = pressure;
+                std::uint8_t currentAlpha = pixel[3];
+                std::uint8_t newAlpha = static_cast<std::uint8_t>(
+                    static_cast<float>(currentAlpha) * (1.0F - eraseStrength));
+                pixel[3] = newAlpha;
+            }
+        }
+    }
+}
+
+void EraserTool::renderSegment(int fromX,
+                               int fromY,
+                               float fromPressure,
+                               int toX,
+                               int toY,
+                               float toPressure)
+{
+    auto interpolated =
+        interpolatePoints(fromX, fromY, fromPressure, toX, toY, toPressure, brushSize_);
+
+    for (const auto& [x, y, pressure] : interpolated) {
+        eraseAt(x, y, pressure);
+    }
+}
+
+void EraserTool::beginStroke(const ToolInputEvent& event)
+{
+    strokePoints_.clear();
+    beforeState_.clear();
+
+    if (!document_ || document_->layers().count() == 0) {
+        return;
+    }
+
+    // Capture the layer state before we start erasing
+    auto layer = document_->layers()[0];
+    beforeState_ = layer->data();
+
+    // Add first point and erase it
+    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+    eraseAt(event.canvasPos.x(), event.canvasPos.y(), event.pressure);
+}
+
+void EraserTool::continueStroke(const ToolInputEvent& event)
+{
+    if (strokePoints_.empty()) {
+        return;
+    }
+
+    const auto& lastPoint = strokePoints_.back();
+    int newX = event.canvasPos.x();
+    int newY = event.canvasPos.y();
+
+    // Only render if the mouse moved
+    if (newX != lastPoint.x || newY != lastPoint.y) {
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
+        strokePoints_.push_back({newX, newY, event.pressure});
+    }
+}
+
+std::shared_ptr<DrawCommand> EraserTool::buildDrawCommand(int minX, int maxX, int minY, int maxY)
+{
+    for (const auto& pt : strokePoints_) {
+        int radius = brushSize_ / 2;
+        minX = std::min(minX, pt.x - radius);
+        maxX = std::max(maxX, pt.x + radius);
+        minY = std::min(minY, pt.y - radius);
+        maxY = std::max(maxY, pt.y + radius);
+    }
+
+    if (minX > maxX || minY > maxY) {
+        strokePoints_.clear();
+        return nullptr;
+    }
+
+    int width = maxX - minX + 1;
+    int height = maxY - minY + 1;
+
+    return std::make_shared<DrawCommand>(document_->layers()[0], minX, minY, width, height);
+}
+
+void EraserTool::endStroke(const ToolInputEvent& event)
+{
+    if (strokePoints_.empty() || beforeState_.empty()) {
+        strokePoints_.clear();
+        beforeState_.clear();
+        return;
+    }
+
+    // Render the final segment
+    const auto& lastPoint = strokePoints_.back();
+    int newX = event.canvasPos.x();
+    int newY = event.canvasPos.y();
+    if (newX != lastPoint.x || newY != lastPoint.y) {
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
+        strokePoints_.push_back({newX, newY, event.pressure});
+    }
+
+    if (!document_ || !commandBus_) {
+        strokePoints_.clear();
+        beforeState_.clear();
+        return;
+    }
+
+    // Create command for the affected region
+    auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
+    if (!drawCmd) {
+        beforeState_.clear();
+        return;
+    }
+
+    // The layer now has the "after" state (with the erased pixels)
+    // We need to swap in the "before" state, capture it, then swap back
+    auto layer = document_->layers()[0];
+    std::vector<uint8_t> afterState = layer->data();
+
+    // Temporarily restore before state
+    layer->data() = beforeState_;
+    drawCmd->captureBeforeState();
+
+    // Restore after state (the erased stroke)
+    layer->data() = afterState;
+    drawCmd->captureAfterState();
+
+    commandBus_->dispatch(drawCmd);
+
+    strokePoints_.clear();
+    beforeState_.clear();
+}
+
+void EraserTool::cancelStroke()
+{
+    strokePoints_.clear();
+}
+
+}  // namespace gimp

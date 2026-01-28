@@ -14,6 +14,7 @@
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
 #include "core/tool_factory.h"
+#include "core/tools/eraser_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
 #include "render/skia_renderer.h"
@@ -82,6 +83,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // Register tools with the factory
     auto& factory = ToolFactory::instance();
     factory.registerTool("pencil", []() { return std::make_unique<PencilTool>(); });
+    factory.registerTool("eraser", []() { return std::make_unique<EraserTool>(); });
     factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
 
     // Subscribe to tool changes to update ToolFactory

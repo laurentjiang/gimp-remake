@@ -6,6 +6,7 @@
  */
 
 #include "core/command.h"
+
 #include "history/history_stack.h"
 #include "history/simple_history_manager.h"
 
@@ -241,4 +242,3 @@ TEST_CASE("SimpleHistoryManager clear", "[history_manager][unit]")
     REQUIRE(manager.undo_size() == 0);
     REQUIRE_FALSE(manager.can_undo());
 }
-

@@ -194,4 +194,3 @@ TEST_CASE("ColorPickerTool samples correct color at specific pixel", "[color_pic
     REQUIRE(pickedColor == 0x12345678);
     gimp::EventBus::instance().unsubscribe(subId);
 }
-

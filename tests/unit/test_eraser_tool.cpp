@@ -5,10 +5,9 @@
  * @date 2026-01-28
  */
 
-#include "core/tools/eraser_tool.h"
-
 #include "core/command_bus.h"
 #include "core/layer.h"
+#include "core/tools/eraser_tool.h"
 #include "io/project_file.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -219,4 +218,3 @@ TEST_CASE("EraserTool handles document with no layers", "[eraser_tool][unit]")
     // Should not crash
     REQUIRE_NOTHROW(tool.onMousePress(pressEvent));
 }
-

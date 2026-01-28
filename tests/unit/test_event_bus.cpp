@@ -7,9 +7,9 @@
 
 #include "core/event_bus.h"
 
-#include <catch2/catch_test_macros.hpp>
-
 #include <string>
+
+#include <catch2/catch_test_macros.hpp>
 
 namespace {
 
@@ -144,4 +144,3 @@ TEST_CASE("EventBus unsubscribe with invalid ID does not crash", "[event_bus][un
 
     REQUIRE_NOTHROW(gimp::EventBus::instance().unsubscribe(999999));
 }
-

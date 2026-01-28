@@ -220,4 +220,3 @@ TEST_CASE("LayerStack reverse iteration", "[layer_stack][unit]")
     REQUIRE(names[1] == "Second");
     REQUIRE(names[2] == "First");
 }
-

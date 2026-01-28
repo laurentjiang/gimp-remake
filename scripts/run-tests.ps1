@@ -14,12 +14,8 @@ $testExe = Join-Path $buildDir "unit_tests.exe"
 # Suppress OpenCV plugin loader INFO messages
 $env:OPENCV_LOG_LEVEL = "WARNING"
 
-# Set up coverage output directory
-$profDataDir = Join-Path $buildDir "profdata"
-if (-not $NoCoverage) {
-    New-Item -ItemType Directory -Path $profDataDir -Force | Out-Null
-    $env:LLVM_PROFILE_FILE = Join-Path $profDataDir "default.profraw"
-}
+# Coverage output directory
+$coverageDir = Join-Path $buildDir "coverage"
 
 # Check if test executable exists
 if (-not (Test-Path $testExe)) {
@@ -55,50 +51,72 @@ if ($testExitCode -ne 0) {
 
 Write-Host "All tests passed!" -ForegroundColor Green
 
-# Coverage report (requires build with coverage flags)
+# Coverage report using OpenCppCoverage (works with MSVC)
 if (-not $NoCoverage) {
     Write-Host ""
     Write-Host "Coverage Analysis" -ForegroundColor Cyan
     Write-Host "-----------------"
     
-    $profRaw = Join-Path $profDataDir "default.profraw"
-    $profData = Join-Path $profDataDir "coverage.profdata"
+    # Check for OpenCppCoverage
+    $openCppCov = Get-Command "OpenCppCoverage" -ErrorAction SilentlyContinue
+    if (-not $openCppCov) {
+        # Try common install location
+        $defaultPath = "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe"
+        if (Test-Path $defaultPath) {
+            $openCppCov = @{ Source = $defaultPath }
+        }
+    }
     
-    # Check for llvm-profdata and llvm-cov
-    $llvmProfdata = Get-Command "llvm-profdata" -ErrorAction SilentlyContinue
-    $llvmCov = Get-Command "llvm-cov" -ErrorAction SilentlyContinue
-    
-    if (-not $llvmProfdata -or -not $llvmCov) {
-        Write-Host "Coverage tools not found (llvm-profdata, llvm-cov)." -ForegroundColor Yellow
-        Write-Host "To enable coverage, ensure LLVM is installed and in PATH." -ForegroundColor Yellow
+    if (-not $openCppCov) {
+        Write-Host "OpenCppCoverage not found." -ForegroundColor Yellow
+        Write-Host "Install it with: choco install opencppcoverage" -ForegroundColor Yellow
+        Write-Host "Or download from: https://github.com/OpenCppCoverage/OpenCppCoverage/releases" -ForegroundColor Yellow
         exit 0
     }
     
-    # Check for profile data
-    if (-not (Test-Path $profRaw)) {
-        Write-Host "No coverage data found." -ForegroundColor Yellow
-        Write-Host "Rebuild with coverage enabled:" -ForegroundColor Yellow
-        Write-Host "  .\scripts\build.ps1 -Clean" -ForegroundColor Yellow
-        Write-Host "  cmake -B build -DENABLE_COVERAGE=ON" -ForegroundColor Yellow
-        Write-Host "  cmake --build build" -ForegroundColor Yellow
-        Write-Host "Then run tests again." -ForegroundColor Yellow
-        exit 0
-    }
+    $openCppCovExe = if ($openCppCov.Source) { $openCppCov.Source } else { "OpenCppCoverage" }
     
-    # Merge profile data
-    & llvm-profdata merge -sparse $profRaw -o $profData
+    # Create coverage output directory
+    New-Item -ItemType Directory -Path $coverageDir -Force | Out-Null
     
-    # Generate coverage report for src/ files only (exclude tests, third-party)
     $srcDir = Join-Path $rootDir "src"
     $includeDir = Join-Path $rootDir "include"
+    $coverageXml = Join-Path $coverageDir "coverage.xml"
+    $coverageHtml = Join-Path $coverageDir "html"
     
-    Write-Host ""
-    Write-Host "Coverage Summary (src/ and include/ only):" -ForegroundColor Cyan
-    & llvm-cov report $testExe "-instr-profile=$profData" "-ignore-filename-regex=tests[/\\]|build[/\\]|vcpkg_installed[/\\]|_deps[/\\]" -show-region-summary=false
+    Write-Host "Running tests with coverage..." -ForegroundColor Cyan
     
-    Write-Host ""
-    Write-Host "To see detailed line coverage:" -ForegroundColor Gray
-    Write-Host "  llvm-cov show $testExe -instr-profile=$profData -format=html -o coverage/" -ForegroundColor Gray
+    # Build coverage arguments
+    $covArgs = @(
+        "--sources", $srcDir,
+        "--sources", $includeDir,
+        "--excluded_sources", (Join-Path $rootDir "tests"),
+        "--excluded_sources", (Join-Path $buildDir "vcpkg_installed"),
+        "--excluded_sources", (Join-Path $buildDir "_deps"),
+        "--export_type", "cobertura:$coverageXml",
+        "--export_type", "html:$coverageHtml",
+        "--", $testExe
+    )
+    
+    if ($Filter) {
+        $covArgs += $Filter
+    }
+    
+    & $openCppCovExe $covArgs
+    
+    # Parse and display coverage summary
+    if (Test-Path $coverageXml) {
+        [xml]$cov = Get-Content $coverageXml
+        $lineRate = [math]::Round([double]$cov.coverage.'line-rate' * 100, 1)
+        $branchRate = [math]::Round([double]$cov.coverage.'branch-rate' * 100, 1)
+        
+        Write-Host ""
+        Write-Host "Coverage Summary:" -ForegroundColor Cyan
+        Write-Host "  Line Coverage:   $lineRate%" -ForegroundColor $(if ($lineRate -ge 70) { "Green" } elseif ($lineRate -ge 50) { "Yellow" } else { "Red" })
+        Write-Host "  Branch Coverage: $branchRate%" -ForegroundColor $(if ($branchRate -ge 70) { "Green" } elseif ($branchRate -ge 50) { "Yellow" } else { "Red" })
+        Write-Host ""
+        Write-Host "Detailed HTML report: $coverageHtml\index.html" -ForegroundColor Gray
+    }
 }
 
 exit 0

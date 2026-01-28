@@ -171,6 +171,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_layer_stack.cpp"
         "tests/unit/test_history_stack.cpp"
         "tests/unit/test_eraser_tool.cpp"
+        "tests/unit/test_pencil_tool.cpp"
         # Integration tests (file I/O, rendering)
         "tests/integration/test_compositor.cpp"
         "tests/integration/test_io_manager.cpp"

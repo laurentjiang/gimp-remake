@@ -88,6 +88,7 @@ if (-not $NoCoverage) {
     
     # Build coverage arguments
     $covArgs = @(
+        "--quiet",
         "--sources", $srcDir,
         "--sources", $includeDir,
         "--excluded_sources", (Join-Path $rootDir "tests"),

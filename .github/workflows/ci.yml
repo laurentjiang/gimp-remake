@@ -91,6 +91,9 @@ jobs:
           doNotCache: true
           runVcpkgInstall: false
 
+      - name: Install OpenCppCoverage
+        run: choco install opencppcoverage -y
+
       - name: Configure NuGet for GitHub Packages
         shell: pwsh
         run: |
@@ -112,9 +115,6 @@ jobs:
 
       - name: Run Tests
         run: ctest --test-dir build --output-on-failure --verbose
-
-      - name: Install OpenCppCoverage
-        run: choco install opencppcoverage -y
 
       - name: Run Tests with Coverage
         id: coverage

@@ -1,5 +1,6 @@
 Param(
     [switch]$Clean,
+    [switch]$Coverage,
     [string]$Config = "Debug"
 )
 
@@ -25,6 +26,11 @@ $cmakeArgs = @(
 if ($env:VCPKG_ROOT) {
     $toolchain = Join-Path $env:VCPKG_ROOT "scripts/buildsystems/vcpkg.cmake"
     $cmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=$toolchain"
+}
+
+if ($Coverage) {
+    $cmakeArgs += "-DENABLE_COVERAGE=ON"
+    Write-Host "Coverage instrumentation enabled" -ForegroundColor Cyan
 }
 
 Write-Host "Configuring project..."

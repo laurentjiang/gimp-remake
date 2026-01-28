@@ -167,6 +167,10 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_color_picker_tool.cpp"
         "tests/unit/test_draw_command.cpp"
         "tests/unit/test_canvas_viewport.cpp"
+        "tests/unit/test_event_bus.cpp"
+        "tests/unit/test_layer_stack.cpp"
+        "tests/unit/test_history_stack.cpp"
+        "tests/unit/test_eraser_tool.cpp"
         # Integration tests (file I/O, rendering)
         "tests/integration/test_compositor.cpp"
         "tests/integration/test_io_manager.cpp"
@@ -180,6 +184,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tools/move_tool.cpp"
         "src/core/tools/color_picker_tool.cpp"
         "src/core/commands/draw_command.cpp"
+        "src/history/history_stack.cpp"
+        "src/history/simple_history_manager.cpp"
         "src/render/skia_compositor.cpp"
         "src/io/io_manager.cpp"
         # Headers with Q_OBJECT for AUTOMOC

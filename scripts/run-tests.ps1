@@ -91,6 +91,7 @@ if (-not $NoCoverage) {
         "--quiet",
         "--sources", $srcDir,
         "--sources", $includeDir,
+        "--modules", $buildDir,
         "--excluded_sources", (Join-Path $rootDir "tests"),
         "--excluded_sources", (Join-Path $buildDir "vcpkg_installed"),
         "--excluded_sources", (Join-Path $buildDir "_deps"),

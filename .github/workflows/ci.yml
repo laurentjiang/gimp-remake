@@ -105,13 +105,13 @@ jobs:
         shell: pwsh
         run: |
           cmake -S . -B build -G "Ninja" `
-            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo `
             -DVCPKG_TARGET_TRIPLET=x64-windows-release `
             -DVCPKG_OVERLAY_TRIPLETS="${{ github.workspace }}/triplets" `
             -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config RelWithDebInfo --parallel
 
       - name: Run Tests
         run: ctest --test-dir build --output-on-failure --verbose
@@ -126,10 +126,12 @@ jobs:
           # Run tests with coverage collection
           OpenCppCoverage --sources "${{ github.workspace }}\src" `
             --sources "${{ github.workspace }}\include" `
+            --modules "${{ github.workspace }}\build" `
             --excluded_sources "${{ github.workspace }}\tests" `
             --excluded_sources "${{ github.workspace }}\build\_deps" `
             --excluded_sources "${{ github.workspace }}\build\vcpkg_installed" `
             --export_type cobertura:build\coverage.xml `
+            --optimized_build `
             -- .\build\unit_tests.exe
           
           # Parse coverage from cobertura XML

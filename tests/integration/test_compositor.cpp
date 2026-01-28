@@ -14,7 +14,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("SkiaCompositor blends layers correctly", "[render]")
+TEST_CASE("SkiaCompositor blends layers correctly", "[render][integration]")
 {
     // Setup
     gimp::LayerStack stack;

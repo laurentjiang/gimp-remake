@@ -47,13 +47,13 @@ gimp::ToolInputEvent makeEvent(int x, int y)
 
 }  // namespace
 
-TEST_CASE("Tool starts in Idle state", "[tool]")
+TEST_CASE("Tool starts in Idle state", "[tool][unit]")
 {
     TestTool tool;
     REQUIRE(tool.state() == gimp::ToolState::Idle);
 }
 
-TEST_CASE("Tool transitions Idle -> Active on mouse press", "[tool]")
+TEST_CASE("Tool transitions Idle -> Active on mouse press", "[tool][unit]")
 {
     TestTool tool;
 
@@ -62,7 +62,7 @@ TEST_CASE("Tool transitions Idle -> Active on mouse press", "[tool]")
     REQUIRE(tool.beginCount == 1);
 }
 
-TEST_CASE("Tool ignores mouse press when not Idle", "[tool]")
+TEST_CASE("Tool ignores mouse press when not Idle", "[tool][unit]")
 {
     TestTool tool;
 
@@ -74,7 +74,7 @@ TEST_CASE("Tool ignores mouse press when not Idle", "[tool]")
     REQUIRE(tool.beginCount == 1);
 }
 
-TEST_CASE("Tool calls continueStroke during Active state", "[tool]")
+TEST_CASE("Tool calls continueStroke during Active state", "[tool][unit]")
 {
     TestTool tool;
 
@@ -84,7 +84,7 @@ TEST_CASE("Tool calls continueStroke during Active state", "[tool]")
     REQUIRE(tool.continueCount == 2);
 }
 
-TEST_CASE("Tool ignores mouse move when Idle", "[tool]")
+TEST_CASE("Tool ignores mouse move when Idle", "[tool][unit]")
 {
     TestTool tool;
 
@@ -92,7 +92,7 @@ TEST_CASE("Tool ignores mouse move when Idle", "[tool]")
     REQUIRE(tool.continueCount == 0);
 }
 
-TEST_CASE("Tool transitions Active -> Idle on mouse release", "[tool]")
+TEST_CASE("Tool transitions Active -> Idle on mouse release", "[tool][unit]")
 {
     TestTool tool;
 
@@ -104,7 +104,7 @@ TEST_CASE("Tool transitions Active -> Idle on mouse release", "[tool]")
     REQUIRE(tool.endCount == 1);
 }
 
-TEST_CASE("Tool ignores mouse release when Idle", "[tool]")
+TEST_CASE("Tool ignores mouse release when Idle", "[tool][unit]")
 {
     TestTool tool;
 
@@ -112,7 +112,7 @@ TEST_CASE("Tool ignores mouse release when Idle", "[tool]")
     REQUIRE(tool.endCount == 0);
 }
 
-TEST_CASE("Tool reset cancels active stroke", "[tool]")
+TEST_CASE("Tool reset cancels active stroke", "[tool][unit]")
 {
     TestTool tool;
 
@@ -124,7 +124,7 @@ TEST_CASE("Tool reset cancels active stroke", "[tool]")
     REQUIRE(tool.cancelCount == 1);
 }
 
-TEST_CASE("Tool reset does nothing when Idle", "[tool]")
+TEST_CASE("Tool reset does nothing when Idle", "[tool][unit]")
 {
     TestTool tool;
 
@@ -133,7 +133,7 @@ TEST_CASE("Tool reset does nothing when Idle", "[tool]")
     REQUIRE(tool.cancelCount == 0);
 }
 
-TEST_CASE("Full stroke cycle: press -> move -> release", "[tool]")
+TEST_CASE("Full stroke cycle: press -> move -> release", "[tool][unit]")
 {
     TestTool tool;
 
@@ -150,21 +150,21 @@ TEST_CASE("Full stroke cycle: press -> move -> release", "[tool]")
     REQUIRE(tool.cancelCount == 0);
 }
 
-TEST_CASE("PencilTool has correct id and name", "[tool]")
+TEST_CASE("PencilTool has correct id and name", "[tool][unit]")
 {
     gimp::PencilTool pencil;
     REQUIRE(pencil.id() == "pencil");
     REQUIRE(pencil.name() == "Pencil");
 }
 
-TEST_CASE("MoveTool has correct id and name", "[tool]")
+TEST_CASE("MoveTool has correct id and name", "[tool][unit]")
 {
     gimp::MoveTool move;
     REQUIRE(move.id() == "move");
     REQUIRE(move.name() == "Move");
 }
 
-TEST_CASE("MoveTool records movement delta", "[tool]")
+TEST_CASE("MoveTool records movement delta", "[tool][unit]")
 {
     gimp::MoveTool move;
 
@@ -176,7 +176,7 @@ TEST_CASE("MoveTool records movement delta", "[tool]")
     REQUIRE(move.lastDelta().y() == 50);
 }
 
-TEST_CASE("ToolFactory creates and caches tools", "[tool]")
+TEST_CASE("ToolFactory creates and caches tools", "[tool][unit]")
 {
     auto& factory = gimp::ToolFactory::instance();
     factory.clearCache();
@@ -195,7 +195,7 @@ TEST_CASE("ToolFactory creates and caches tools", "[tool]")
     REQUIRE(move != pencil1);  // Different tool
 }
 
-TEST_CASE("ToolFactory setActiveTool calls lifecycle methods", "[tool]")
+TEST_CASE("ToolFactory setActiveTool calls lifecycle methods", "[tool][unit]")
 {
     auto& factory = gimp::ToolFactory::instance();
     factory.clearCache();

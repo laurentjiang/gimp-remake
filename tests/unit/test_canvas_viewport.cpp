@@ -12,7 +12,7 @@
 
 using Catch::Matchers::WithinAbs;
 
-TEST_CASE("ViewportState default values", "[canvas][viewport]")
+TEST_CASE("ViewportState default values", "[canvas][viewport][unit]")
 {
     gimp::ViewportState viewport;
 
@@ -21,14 +21,14 @@ TEST_CASE("ViewportState default values", "[canvas][viewport]")
     REQUIRE(viewport.panY == 0.0F);
 }
 
-TEST_CASE("ViewportState zoom limits", "[canvas][viewport]")
+TEST_CASE("ViewportState zoom limits", "[canvas][viewport][unit]")
 {
     REQUIRE(gimp::ViewportState::MIN_ZOOM == 0.1F);
     REQUIRE(gimp::ViewportState::MAX_ZOOM == 32.0F);
     REQUIRE(gimp::ViewportState::ZOOM_STEP == 1.25F);
 }
 
-TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport]")
+TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport][unit]")
 {
     SECTION("screenToCanvas formula: canvas = (screen - pan) / zoom")
     {
@@ -65,7 +65,7 @@ TEST_CASE("Coordinate transformation at default viewport", "[canvas][viewport]")
     }
 }
 
-TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport]")
+TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport][unit]")
 {
     SECTION("2x zoom: screen coords are 2x canvas coords")
     {
@@ -102,7 +102,7 @@ TEST_CASE("Coordinate transformation with zoom", "[canvas][viewport]")
     }
 }
 
-TEST_CASE("Coordinate transformation with pan", "[canvas][viewport]")
+TEST_CASE("Coordinate transformation with pan", "[canvas][viewport][unit]")
 {
     SECTION("Pan offset adds to screen coordinates")
     {
@@ -139,7 +139,7 @@ TEST_CASE("Coordinate transformation with pan", "[canvas][viewport]")
     }
 }
 
-TEST_CASE("Coordinate transformation with zoom and pan combined", "[canvas][viewport]")
+TEST_CASE("Coordinate transformation with zoom and pan combined", "[canvas][viewport][unit]")
 {
     SECTION("2x zoom with pan offset")
     {
@@ -165,7 +165,7 @@ TEST_CASE("Coordinate transformation with zoom and pan combined", "[canvas][view
     }
 }
 
-TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport]")
+TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport][unit]")
 {
     SECTION("Screen -> Canvas -> Screen preserves coordinates")
     {
@@ -208,7 +208,7 @@ TEST_CASE("Round-trip coordinate transformation", "[canvas][viewport]")
     }
 }
 
-TEST_CASE("Zoom clamping", "[canvas][viewport]")
+TEST_CASE("Zoom clamping", "[canvas][viewport][unit]")
 {
     SECTION("Zoom below minimum should clamp")
     {
@@ -232,7 +232,7 @@ TEST_CASE("Zoom clamping", "[canvas][viewport]")
     }
 }
 
-TEST_CASE("Zoom step calculations", "[canvas][viewport]")
+TEST_CASE("Zoom step calculations", "[canvas][viewport][unit]")
 {
     SECTION("Zoom in by one step from 1.0")
     {

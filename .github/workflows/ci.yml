@@ -16,6 +16,7 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  pull-requests: write
 
 env:
   VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite"
@@ -130,6 +131,92 @@ jobs:
           retention-days: 7
 
   # ───────────────────────────────────────────────────────────────────────────
+  # Coverage Analysis (Non-blocking)
+  # ───────────────────────────────────────────────────────────────────────────
+  
+  coverage:
+    name: Coverage Analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            clang-18 llvm-18 \
+            ninja-build \
+            libgl1-mesa-dev libglu1-mesa-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev \
+            libxcb-*-dev libx11-xcb-dev \
+            libfontconfig1-dev libfreetype6-dev \
+            libegl1-mesa-dev libgles2-mesa-dev \
+            libwayland-dev \
+            pkg-config
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-18 100
+          sudo update-alternatives --install /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-18 100
+          sudo update-alternatives --install /usr/bin/llvm-cov llvm-cov /usr/bin/llvm-cov-18 100
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: ${{ github.workspace }}/vcpkg
+          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT }}
+          doNotCache: true
+          runVcpkgInstall: false
+
+      - name: Configure CMake with Coverage
+        run: |
+          cmake -S . -B build -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_CXX_COMPILER=clang++ \
+            -DENABLE_COVERAGE=ON \
+            -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run Tests with Coverage
+        id: coverage
+        run: |
+          cd build
+          export LLVM_PROFILE_FILE="coverage-%p.profraw"
+          ./unit_tests || true
+          llvm-profdata merge -sparse coverage-*.profraw -o coverage.profdata
+          
+          # Generate coverage report and extract summary
+          COVERAGE_OUTPUT=$(llvm-cov report ./unit_tests -instr-profile=coverage.profdata \
+            -ignore-filename-regex='tests/|build/|_deps/|vcpkg_installed/' 2>/dev/null || echo "Coverage generation failed")
+          
+          echo "COVERAGE_OUTPUT<<EOF" >> $GITHUB_OUTPUT
+          echo "$COVERAGE_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Extract line coverage percentage
+          LINE_COV=$(echo "$COVERAGE_OUTPUT" | grep "TOTAL" | awk '{print $10}' || echo "N/A")
+          FUNC_COV=$(echo "$COVERAGE_OUTPUT" | grep "TOTAL" | awk '{print $4}' || echo "N/A")
+          echo "line_coverage=$LINE_COV" >> $GITHUB_OUTPUT
+          echo "func_coverage=$FUNC_COV" >> $GITHUB_OUTPUT
+
+      - name: Upload Coverage Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: build/coverage.profdata
+          retention-days: 7
+
+    outputs:
+      line_coverage: ${{ steps.coverage.outputs.line_coverage }}
+      func_coverage: ${{ steps.coverage.outputs.func_coverage }}
+
+  # ───────────────────────────────────────────────────────────────────────────
   # Release (Only on tags)
   # ───────────────────────────────────────────────────────────────────────────
   
@@ -183,7 +270,7 @@ jobs:
   ci-status:
     name: CI Status
     runs-on: ubuntu-latest
-    needs: [lint, build-windows]
+    needs: [lint, build-windows, coverage]
     if: always()
     
     steps:
@@ -195,3 +282,27 @@ jobs:
             exit 1
           fi
           echo "All CI checks passed"
+
+      - name: Post PR Summary
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: ci-summary
+          message: |
+            ## 🔍 CI Summary
+            
+            | Check | Status |
+            |-------|--------|
+            | **Lint & Format** | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+            | **Build (Windows)** | ${{ needs.build-windows.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+            | **Tests** | ${{ needs.build-windows.result == 'success' && '✅ Passed' || '❌ Failed' }} |
+            | **Coverage** | ${{ needs.coverage.result == 'success' && '✅ Collected' || '⚠️ Skipped' }} |
+            
+            ### 📊 Coverage Report
+            | Metric | Value |
+            |--------|-------|
+            | Function Coverage | ${{ needs.coverage.outputs.func_coverage || 'N/A' }} |
+            | Line Coverage | ${{ needs.coverage.outputs.line_coverage || 'N/A' }} |
+            
+            ---
+            <sub>Generated by CI • Commit: ${{ github.sha }}</sub>

@@ -14,6 +14,7 @@
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
 #include "core/tool_factory.h"
+#include "core/tools/color_picker_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
@@ -85,11 +86,27 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("pencil", []() { return std::make_unique<PencilTool>(); });
     factory.registerTool("eraser", []() { return std::make_unique<EraserTool>(); });
     factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
+    factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =
         EventBus::instance().subscribe<ToolChangedEvent>([](const ToolChangedEvent& event) {
             ToolFactory::instance().setActiveTool(event.currentToolId);
+        });
+
+    // Subscribe to color changes to update status bar and foreground color
+    m_colorChangedSubscription =
+        EventBus::instance().subscribe<ColorChangedEvent>([this](const ColorChangedEvent& event) {
+            const std::uint32_t rgba = event.color;
+            const int red = static_cast<int>((rgba >> 24) & 0xFF);
+            const int green = static_cast<int>((rgba >> 16) & 0xFF);
+            const int blue = static_cast<int>((rgba >> 8) & 0xFF);
+            const int alpha = static_cast<int>(rgba & 0xFF);
+            statusBar()->showMessage(
+                QString("Color: RGB(%1, %2, %3) A:%4").arg(red).arg(green).arg(blue).arg(alpha));
+
+            // Update global foreground color
+            ToolFactory::instance().setForegroundColor(rgba);
         });
 
     setupMenuBar();
@@ -103,6 +120,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
+    EventBus::instance().unsubscribe(m_colorChangedSubscription);
 }
 
 void MainWindow::setupMenuBar()

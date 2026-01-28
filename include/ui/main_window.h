@@ -87,6 +87,7 @@ class MainWindow : public QMainWindow {
     std::unique_ptr<BasicCommandBus> m_commandBus;
 
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
+    EventBus::SubscriptionId m_colorChangedSubscription = 0;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

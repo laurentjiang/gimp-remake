@@ -24,9 +24,15 @@ ToolboxPanel::ToolboxPanel(QWidget* parent) : QWidget(parent), buttonGroup_(new 
     populateTools();
 
     connect(buttonGroup_, &QButtonGroup::idClicked, this, &ToolboxPanel::onToolButtonClicked);
+
+    toolSwitchSub_ = EventBus::instance().subscribe<ToolSwitchRequestEvent>(
+        [this](const ToolSwitchRequestEvent& evt) { setActiveTool(evt.targetToolId); });
 }
 
-ToolboxPanel::~ToolboxPanel() = default;
+ToolboxPanel::~ToolboxPanel()
+{
+    EventBus::instance().unsubscribe(toolSwitchSub_);
+}
 
 void ToolboxPanel::setupUi()
 {

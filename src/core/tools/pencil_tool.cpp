@@ -12,6 +12,7 @@
 #include "core/commands/draw_command.h"
 #include "core/document.h"
 #include "core/layer.h"
+#include "core/tool_factory.h"
 
 #include <cmath>
 
@@ -81,12 +82,13 @@ void PencilTool::renderSegment(int fromX,
     int layerHeight = layer->height();
 
     SolidBrush brush;
+    std::uint32_t color = ToolFactory::instance().foregroundColor();
 
     auto interpolated =
         interpolatePoints(fromX, fromY, fromPressure, toX, toY, toPressure, brushSize_);
 
     for (const auto& [x, y, pressure] : interpolated) {
-        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color_, pressure);
+        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color, pressure);
     }
 }
 
@@ -111,13 +113,14 @@ void PencilTool::beginStroke(const ToolInputEvent& event)
     int layerHeight = layer->height();
 
     SolidBrush brush;
+    std::uint32_t color = ToolFactory::instance().foregroundColor();
     brush.renderDab(pixelData,
                     layerWidth,
                     layerHeight,
                     event.canvasPos.x(),
                     event.canvasPos.y(),
                     brushSize_,
-                    color_,
+                    color,
                     event.pressure);
 }
 

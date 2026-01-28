@@ -41,6 +41,7 @@ add_executable(gimp-remake
     "src/core/tools/pencil_tool.cpp"
     "src/core/tools/eraser_tool.cpp"
     "src/core/tools/move_tool.cpp"
+    "src/core/tools/color_picker_tool.cpp"
     "src/core/commands/add_layer_command.cpp"
     "src/core/commands/fill_color_command.cpp"
     "src/core/commands/draw_command.cpp"
@@ -163,6 +164,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/test_compositor.cpp"
         "tests/test_tool_state_machine.cpp"
         "tests/test_canvas_viewport.cpp"
+        "tests/test_color_picker_tool.cpp"
         "src/core/layer_stack.cpp"
         "src/core/tool.cpp"
         "src/core/tool_factory.cpp"
@@ -170,6 +172,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tools/pencil_tool.cpp"
         "src/core/tools/eraser_tool.cpp"
         "src/core/tools/move_tool.cpp"
+        "src/core/tools/color_picker_tool.cpp"
         "src/core/commands/draw_command.cpp"
         "src/render/skia_compositor.cpp"
         # Headers with Q_OBJECT for AUTOMOC

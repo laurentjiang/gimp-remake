@@ -70,6 +70,8 @@ class MainWindow : public QMainWindow {
   private slots:
     void onToggleDebugHud();
     void onShowCommandPalette();
+    void onUndo();
+    void onRedo();
 
   private:
     void setupMenuBar();

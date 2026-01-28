@@ -117,8 +117,8 @@ void MainWindow::setupMenuBar()
     fileMenu->addAction("E&xit", QKeySequence::Quit, this, &QMainWindow::close);
 
     auto* editMenu = menuBar()->addMenu("&Edit");
-    editMenu->addAction("&Undo", QKeySequence::Undo, []() {});
-    editMenu->addAction("&Redo", QKeySequence::Redo, []() {});
+    editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
+    editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
     editMenu->addSeparator();
     editMenu->addAction("Cu&t", QKeySequence::Cut, []() {});
     editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
@@ -259,6 +259,26 @@ void MainWindow::positionDebugHud()
         auto canvasPos = m_canvasWidget->mapTo(this, QPoint(10, 10));
         m_debugHud->move(canvasPos);
         m_debugHud->raise();
+    }
+}
+
+void MainWindow::onUndo()
+{
+    if (m_historyManager && m_historyManager->undo()) {
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Undo", 2000);
+    }
+}
+
+void MainWindow::onRedo()
+{
+    if (m_historyManager && m_historyManager->redo()) {
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Redo", 2000);
     }
 }
 

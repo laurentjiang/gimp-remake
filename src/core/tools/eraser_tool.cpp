@@ -88,12 +88,15 @@ void EraserTool::eraseAt(int x, int y, float pressure)
             int dy = py - y;
             if (dx * dx + dy * dy <= radiusSq) {
                 std::uint8_t* pixel = pixelData + (py * layerWidth + px) * 4;
-                // Apply pressure to erase strength
+                // Erase by blending towards white background based on pressure
                 float eraseStrength = pressure;
-                std::uint8_t currentAlpha = pixel[3];
-                std::uint8_t newAlpha = static_cast<std::uint8_t>(
-                    static_cast<float>(currentAlpha) * (1.0F - eraseStrength));
-                pixel[3] = newAlpha;
+                pixel[0] = static_cast<std::uint8_t>(
+                    static_cast<float>(pixel[0]) * (1.0F - eraseStrength) + 255.0F * eraseStrength);
+                pixel[1] = static_cast<std::uint8_t>(
+                    static_cast<float>(pixel[1]) * (1.0F - eraseStrength) + 255.0F * eraseStrength);
+                pixel[2] = static_cast<std::uint8_t>(
+                    static_cast<float>(pixel[2]) * (1.0F - eraseStrength) + 255.0F * eraseStrength);
+                pixel[3] = 255;  // Keep fully opaque
             }
         }
     }

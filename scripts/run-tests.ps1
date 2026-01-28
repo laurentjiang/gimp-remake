@@ -69,7 +69,7 @@ if (-not $NoCoverage) {
     
     if (-not $openCppCov) {
         Write-Host "OpenCppCoverage not found." -ForegroundColor Yellow
-        Write-Host "Install it with: choco install opencppcoverage" -ForegroundColor Yellow
+        Write-Host "Install it with: winget install OpenCppCoverage.OpenCppCoverage" -ForegroundColor Yellow
         Write-Host "Or download from: https://github.com/OpenCppCoverage/OpenCppCoverage/releases" -ForegroundColor Yellow
         exit 0
     }

@@ -40,9 +40,10 @@ ProjectFile IOManager::importProject(const std::string& filePath)
     // Import layers
     if (projectJson.contains("layers")) {
         for (const auto& layerJson : projectJson.at("layers")) {
-            auto layer = std::make_shared<Layer>(width, height);
+            // addLayer() creates a new layer with default settings
+            auto layer = project.addLayer();
 
-            // Restore layer properties
+            // Restore layer properties from JSON
             layer->setName(layerJson.at("name").get<std::string>());
             layer->setVisible(layerJson.at("visible").get<bool>());
             layer->setOpacity(layerJson.at("opacity").get<float>());
@@ -56,8 +57,6 @@ ProjectFile IOManager::importProject(const std::string& filePath)
             } else {
                 throw std::runtime_error("Layer data size mismatch during import");
             }
-
-            project.addLayer();  // This adds to the layer stack
         }
     }
 

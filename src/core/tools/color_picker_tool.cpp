@@ -23,10 +23,10 @@ void ColorPickerTool::onActivate()
     }
 }
 
-std::uint32_t ColorPickerTool::sampleColorAt(int x, int y) const
+std::optional<std::uint32_t> ColorPickerTool::sampleColorAt(int x, int y) const
 {
     if (!document_ || document_->layers().count() == 0) {
-        return 0x000000FF;  // Default to opaque black
+        return std::nullopt;
     }
 
     auto layer = document_->layers()[0];
@@ -35,7 +35,7 @@ std::uint32_t ColorPickerTool::sampleColorAt(int x, int y) const
 
     // Bounds check
     if (x < 0 || x >= width || y < 0 || y >= height) {
-        return 0x000000FF;  // Default to opaque black
+        return std::nullopt;
     }
 
     const auto& data = layer->data();
@@ -73,21 +73,29 @@ void ColorPickerTool::requestSwitchToPreviousTool() const
 
 void ColorPickerTool::beginStroke(const ToolInputEvent& event)
 {
-    pickedColor_ = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
-    publishColorChanged(pickedColor_);
+    auto colorOpt = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
+    if (colorOpt.has_value()) {
+        pickedColor_ = colorOpt.value();
+        publishColorChanged(pickedColor_);
+    }
 }
 
 void ColorPickerTool::continueStroke(const ToolInputEvent& event)
 {
-    // Live preview: update color as user drags
-    pickedColor_ = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
-    publishColorChanged(pickedColor_);
+    auto colorOpt = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
+    if (colorOpt.has_value()) {
+        pickedColor_ = colorOpt.value();
+        publishColorChanged(pickedColor_);
+    }
 }
 
 void ColorPickerTool::endStroke(const ToolInputEvent& event)
 {
-    pickedColor_ = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
-    publishColorChanged(pickedColor_);
+    auto colorOpt = sampleColorAt(event.canvasPos.x(), event.canvasPos.y());
+    if (colorOpt.has_value()) {
+        pickedColor_ = colorOpt.value();
+        publishColorChanged(pickedColor_);
+    }
     requestSwitchToPreviousTool();
 }
 

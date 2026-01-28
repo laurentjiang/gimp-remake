@@ -10,6 +10,7 @@
 #include "core/tool.h"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace gimp {
@@ -51,9 +52,9 @@ class ColorPickerTool : public Tool {
      * @brief Samples the color at the given canvas position.
      * @param x X coordinate in canvas space.
      * @param y Y coordinate in canvas space.
-     * @return Sampled color in RGBA format, or transparent black if out of bounds.
+     * @return Sampled color in RGBA format, or std::nullopt if out of bounds.
      */
-    std::uint32_t sampleColorAt(int x, int y) const;
+    std::optional<std::uint32_t> sampleColorAt(int x, int y) const;
 
     /**
      * @brief Publishes a ColorChangedEvent with the given color.

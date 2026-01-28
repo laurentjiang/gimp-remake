@@ -164,6 +164,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/test_compositor.cpp"
         "tests/test_tool_state_machine.cpp"
         "tests/test_canvas_viewport.cpp"
+        "tests/test_color_picker_tool.cpp"
         "src/core/layer_stack.cpp"
         "src/core/tool.cpp"
         "src/core/tool_factory.cpp"

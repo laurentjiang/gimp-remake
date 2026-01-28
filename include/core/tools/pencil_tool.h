@@ -9,6 +9,7 @@
 
 #include "core/commands/draw_command.h"
 #include "core/tool.h"
+#include "core/tool_factory.h"
 
 #include <cstdint>
 #include <vector>
@@ -39,15 +40,15 @@ class PencilTool : public Tool {
      */
     [[nodiscard]] int brushSize() const { return brushSize_; }
 
-    /*! @brief Sets the drawing color.
+    /*! @brief Sets the drawing color (updates global foreground color).
      *  @param rgba Color in RGBA format (0xRRGGBBAA).
      */
-    void setColor(std::uint32_t rgba) { color_ = rgba; }
+    void setColor(std::uint32_t rgba) { ToolFactory::instance().setForegroundColor(rgba); }
 
-    /*! @brief Returns the current drawing color.
+    /*! @brief Returns the current drawing color (global foreground color).
      *  @return Color in RGBA format.
      */
-    [[nodiscard]] std::uint32_t color() const { return color_; }
+    [[nodiscard]] std::uint32_t color() const { return ToolFactory::instance().foregroundColor(); }
 
   protected:
     void beginStroke(const ToolInputEvent& event) override;
@@ -76,7 +77,6 @@ class PencilTool : public Tool {
     std::vector<StrokePoint> strokePoints_;
     std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
     int brushSize_ = 3;
-    std::uint32_t color_ = 0x000000FF;  ///< Default: opaque black.
 };
 
 }  // namespace gimp

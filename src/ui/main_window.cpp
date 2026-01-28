@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setActiveTool(event.currentToolId);
         });
 
-    // Subscribe to color changes to update status bar and pencil tool
+    // Subscribe to color changes to update status bar and foreground color
     m_colorChangedSubscription =
         EventBus::instance().subscribe<ColorChangedEvent>([this](const ColorChangedEvent& event) {
             const std::uint32_t rgba = event.color;
@@ -105,11 +105,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             statusBar()->showMessage(
                 QString("Color: RGB(%1, %2, %3) A:%4").arg(red).arg(green).arg(blue).arg(alpha));
 
-            // Update pencil tool's drawing color
-            auto* pencil = dynamic_cast<PencilTool*>(ToolFactory::instance().getTool("pencil"));
-            if (pencil) {
-                pencil->setColor(rgba);
-            }
+            // Update global foreground color
+            ToolFactory::instance().setForegroundColor(rgba);
         });
 
     setupMenuBar();

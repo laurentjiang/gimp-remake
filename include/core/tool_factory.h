@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -90,6 +91,26 @@ class ToolFactory {
      */
     void clearCache();
 
+    /*! @brief Sets the foreground (drawing) color.
+     *  @param rgba Color in RGBA format (0xRRGGBBAA).
+     */
+    void setForegroundColor(std::uint32_t rgba) { foregroundColor_ = rgba; }
+
+    /*! @brief Returns the current foreground color.
+     *  @return Color in RGBA format.
+     */
+    [[nodiscard]] std::uint32_t foregroundColor() const { return foregroundColor_; }
+
+    /*! @brief Sets the background color.
+     *  @param rgba Color in RGBA format (0xRRGGBBAA).
+     */
+    void setBackgroundColor(std::uint32_t rgba) { backgroundColor_ = rgba; }
+
+    /*! @brief Returns the current background color.
+     *  @return Color in RGBA format.
+     */
+    [[nodiscard]] std::uint32_t backgroundColor() const { return backgroundColor_; }
+
   private:
     ToolFactory() = default;
 
@@ -102,6 +123,8 @@ class ToolFactory {
     std::string previousToolId_;
     std::shared_ptr<Document> document_;
     CommandBus* commandBus_ = nullptr;
+    std::uint32_t foregroundColor_ = 0x000000FF;  ///< Default: opaque black.
+    std::uint32_t backgroundColor_ = 0xFFFFFFFF;  ///< Default: opaque white.
 };
 
 }  // namespace gimp

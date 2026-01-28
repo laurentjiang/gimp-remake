@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -96,6 +97,14 @@ struct MousePositionChangedEvent {
     int canvasY = 0;  ///< Mouse Y position in canvas coordinates.
     int screenX = 0;  ///< Mouse X position in screen coordinates.
     int screenY = 0;  ///< Mouse Y position in screen coordinates.
+};
+
+/**
+ * @brief Event fired when the foreground or background color changes.
+ */
+struct ColorChangedEvent {
+    std::uint32_t color = 0x000000FF;  ///< New color in RGBA format (0xRRGGBBAA).
+    std::string source;                ///< Source of the change (e.g., "color_picker", "palette").
 };
 
 }  // namespace gimp

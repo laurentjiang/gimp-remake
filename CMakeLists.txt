@@ -18,6 +18,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(GIMP_REMAKE_BUILD_TESTS "Build tests" ON)
+option(ENABLE_COVERAGE "Enable code coverage instrumentation" OFF)
 
 add_executable(gimp-remake
     "src/main.cpp"
@@ -161,10 +162,20 @@ if(GIMP_REMAKE_BUILD_TESTS)
     FetchContent_MakeAvailable(Catch2)
 
     add_executable(unit_tests
-        "tests/test_compositor.cpp"
-        "tests/test_tool_state_machine.cpp"
-        "tests/test_canvas_viewport.cpp"
-        "tests/test_color_picker_tool.cpp"
+        # Unit tests (pure logic, no external dependencies)
+        "tests/unit/test_tool_state_machine.cpp"
+        "tests/unit/test_color_picker_tool.cpp"
+        "tests/unit/test_draw_command.cpp"
+        "tests/unit/test_canvas_viewport.cpp"
+        "tests/unit/test_event_bus.cpp"
+        "tests/unit/test_layer_stack.cpp"
+        "tests/unit/test_history_stack.cpp"
+        "tests/unit/test_eraser_tool.cpp"
+        "tests/unit/test_pencil_tool.cpp"
+        # Integration tests (file I/O, rendering)
+        "tests/integration/test_compositor.cpp"
+        "tests/integration/test_io_manager.cpp"
+        # Sources needed for tests
         "src/core/layer_stack.cpp"
         "src/core/tool.cpp"
         "src/core/tool_factory.cpp"
@@ -174,13 +185,17 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tools/move_tool.cpp"
         "src/core/tools/color_picker_tool.cpp"
         "src/core/commands/draw_command.cpp"
+        "src/history/history_stack.cpp"
+        "src/history/simple_history_manager.cpp"
         "src/render/skia_compositor.cpp"
+        "src/io/io_manager.cpp"
         # Headers with Q_OBJECT for AUTOMOC
         "include/ui/skia_canvas_widget.h"
     )
 
     target_include_directories(unit_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${OpenCV_INCLUDE_DIRS}
     )
 
     target_link_libraries(unit_tests PRIVATE 
@@ -191,15 +206,25 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::Gui
         Qt6::Widgets
         spdlog::spdlog
+        ${OpenCV_LIBS}
     )
     
     # Ensure tests use C++20
     target_compile_features(unit_tests PRIVATE cxx_std_20)
     
+    # Define source directory for test file paths
+    target_compile_definitions(unit_tests PRIVATE SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    
     if(MSVC)
         target_compile_options(unit_tests PRIVATE /W4 /permissive- /Zc:__cplusplus)
     else()
         target_compile_options(unit_tests PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+
+    # Coverage instrumentation (Clang only)
+    if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(unit_tests PRIVATE -fprofile-instr-generate -fcoverage-mapping)
+        target_link_options(unit_tests PRIVATE -fprofile-instr-generate -fcoverage-mapping)
     endif()
 
     add_test(NAME unit_tests COMMAND unit_tests)

@@ -111,7 +111,7 @@ bool regionHasColor(const std::shared_ptr<gimp::Layer>& layer,
 
 }  // namespace
 
-TEST_CASE("DrawCommand construction", "[draw_command]")
+TEST_CASE("DrawCommand construction", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
     auto cmd = std::make_shared<gimp::DrawCommand>(layer, 10, 20, 30, 40);
@@ -119,7 +119,7 @@ TEST_CASE("DrawCommand construction", "[draw_command]")
     REQUIRE(cmd != nullptr);
 }
 
-TEST_CASE("DrawCommand captures before state", "[draw_command]")
+TEST_CASE("DrawCommand captures before state", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -143,7 +143,7 @@ TEST_CASE("DrawCommand captures before state", "[draw_command]")
     REQUIRE(regionHasColor(layer, 10, 20, 30, 40, 255, 0, 0, 255));
 }
 
-TEST_CASE("DrawCommand captures after state", "[draw_command]")
+TEST_CASE("DrawCommand captures after state", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -166,7 +166,7 @@ TEST_CASE("DrawCommand captures after state", "[draw_command]")
     REQUIRE(regionHasColor(layer, 10, 20, 30, 40, 0, 255, 0, 255));
 }
 
-TEST_CASE("DrawCommand undo restores before state", "[draw_command]")
+TEST_CASE("DrawCommand undo restores before state", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -184,7 +184,7 @@ TEST_CASE("DrawCommand undo restores before state", "[draw_command]")
     REQUIRE(regionHasColor(layer, 10, 20, 30, 40, 255, 0, 0, 255));
 }
 
-TEST_CASE("DrawCommand apply restores after state", "[draw_command]")
+TEST_CASE("DrawCommand apply restores after state", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -206,7 +206,7 @@ TEST_CASE("DrawCommand apply restores after state", "[draw_command]")
     REQUIRE(regionHasColor(layer, 10, 20, 30, 40, 0, 255, 0, 255));
 }
 
-TEST_CASE("DrawCommand handles multiple undo/redo cycles", "[draw_command]")
+TEST_CASE("DrawCommand handles multiple undo/redo cycles", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -234,7 +234,7 @@ TEST_CASE("DrawCommand handles multiple undo/redo cycles", "[draw_command]")
     REQUIRE(regionHasColor(layer, 10, 20, 30, 40, 0, 255, 0, 255));
 }
 
-TEST_CASE("DrawCommand handles partial region (clipping)", "[draw_command]")
+TEST_CASE("DrawCommand handles partial region (clipping)", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -258,7 +258,7 @@ TEST_CASE("DrawCommand handles partial region (clipping)", "[draw_command]")
     REQUIRE(regionHasColor(layer, 80, 80, 20, 20, 255, 0, 0, 255));
 }
 
-TEST_CASE("DrawCommand doesn't affect regions outside affected area", "[draw_command]")
+TEST_CASE("DrawCommand doesn't affect regions outside affected area", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -281,7 +281,7 @@ TEST_CASE("DrawCommand doesn't affect regions outside affected area", "[draw_com
     REQUIRE(regionHasColor(layer, 50, 50, 30, 30, 255, 255, 255, 255));
 }
 
-TEST_CASE("DrawCommand with zero-sized region doesn't crash", "[draw_command]")
+TEST_CASE("DrawCommand with zero-sized region doesn't crash", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -297,7 +297,7 @@ TEST_CASE("DrawCommand with zero-sized region doesn't crash", "[draw_command]")
     REQUIRE(true);
 }
 
-TEST_CASE("DrawCommand with null layer doesn't crash", "[draw_command]")
+TEST_CASE("DrawCommand with null layer doesn't crash", "[draw_command][unit]")
 {
     // This test verifies robustness when layer is null
     auto cmd = std::make_shared<gimp::DrawCommand>(nullptr, 10, 10, 30, 30);
@@ -311,7 +311,7 @@ TEST_CASE("DrawCommand with null layer doesn't crash", "[draw_command]")
     REQUIRE(true);
 }
 
-TEST_CASE("DrawCommand preserves unaffected pixels", "[draw_command]")
+TEST_CASE("DrawCommand preserves unaffected pixels", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -343,7 +343,7 @@ TEST_CASE("DrawCommand preserves unaffected pixels", "[draw_command]")
     REQUIRE(regionHasColor(layer, 50, 0, 50, 100, 0, 0, 255, 255));
 }
 
-TEST_CASE("DrawCommand handles different alpha values", "[draw_command]")
+TEST_CASE("DrawCommand handles different alpha values", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -374,7 +374,7 @@ TEST_CASE("DrawCommand handles different alpha values", "[draw_command]")
     REQUIRE(a == 128);
 }
 
-TEST_CASE("DrawCommand with single pixel region", "[draw_command]")
+TEST_CASE("DrawCommand with single pixel region", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -405,7 +405,7 @@ TEST_CASE("DrawCommand with single pixel region", "[draw_command]")
     REQUIRE(a == 255);
 }
 
-TEST_CASE("DrawCommand with full-size region", "[draw_command]")
+TEST_CASE("DrawCommand with full-size region", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 
@@ -427,7 +427,7 @@ TEST_CASE("DrawCommand with full-size region", "[draw_command]")
     REQUIRE(regionHasColor(layer, 0, 0, 100, 100, 0, 255, 0, 255));
 }
 
-TEST_CASE("DrawCommand sequence: multiple draws", "[draw_command]")
+TEST_CASE("DrawCommand sequence: multiple draws", "[draw_command][unit]")
 {
     auto layer = createTestLayer(100, 100);
 

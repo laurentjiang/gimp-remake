@@ -124,10 +124,11 @@ HEADER_FORMAT.txt
 RULES.md
 COMMIT_FORMAT.txt
 logs
+*.log
+*.profraw
 
-# Ignore jpg and png files generated during testing
-tests/img/*.jpg
-tests/img/*.png
+# Ignore generated test output files
+tests/img/generated/
 
 # Generated Doxygen documentation (deployed via CI to GitHub Pages)
 docs/api/

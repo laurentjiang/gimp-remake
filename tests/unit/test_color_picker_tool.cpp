@@ -49,7 +49,7 @@ void fillLayerWithColor(const std::shared_ptr<gimp::Layer>& layer, std::uint32_t
 
 }  // namespace
 
-TEST_CASE("ColorPickerTool has correct id and name", "[color_picker]")
+TEST_CASE("ColorPickerTool has correct id and name", "[color_picker][unit]")
 {
     gimp::ColorPickerTool picker;
 
@@ -57,7 +57,7 @@ TEST_CASE("ColorPickerTool has correct id and name", "[color_picker]")
     REQUIRE(picker.name() == "Color Picker");
 }
 
-TEST_CASE("ColorPickerTool samples pixel color from layer", "[color_picker]")
+TEST_CASE("ColorPickerTool samples pixel color from layer", "[color_picker][unit]")
 {
     gimp::EventBus::instance().clear();
 
@@ -82,7 +82,7 @@ TEST_CASE("ColorPickerTool samples pixel color from layer", "[color_picker]")
     gimp::EventBus::instance().unsubscribe(subId);
 }
 
-TEST_CASE("ColorPickerTool updates ToolFactory foreground color", "[color_picker]")
+TEST_CASE("ColorPickerTool updates ToolFactory foreground color", "[color_picker][unit]")
 {
     gimp::EventBus::instance().clear();
 
@@ -110,7 +110,7 @@ TEST_CASE("ColorPickerTool updates ToolFactory foreground color", "[color_picker
     gimp::EventBus::instance().unsubscribe(subId);
 }
 
-TEST_CASE("ColorPickerTool handles out-of-bounds coordinates", "[color_picker]")
+TEST_CASE("ColorPickerTool handles out-of-bounds coordinates", "[color_picker][unit]")
 {
     gimp::EventBus::instance().clear();
 
@@ -133,7 +133,7 @@ TEST_CASE("ColorPickerTool handles out-of-bounds coordinates", "[color_picker]")
     gimp::EventBus::instance().unsubscribe(subId);
 }
 
-TEST_CASE("ColorPickerTool tracks previous tool for switch-back", "[color_picker]")
+TEST_CASE("ColorPickerTool tracks previous tool for switch-back", "[color_picker][unit]")
 {
     gimp::EventBus::instance().clear();
 
@@ -163,7 +163,7 @@ TEST_CASE("ColorPickerTool tracks previous tool for switch-back", "[color_picker
     gimp::EventBus::instance().unsubscribe(subId);
 }
 
-TEST_CASE("ColorPickerTool samples correct color at specific pixel", "[color_picker]")
+TEST_CASE("ColorPickerTool samples correct color at specific pixel", "[color_picker][unit]")
 {
     gimp::EventBus::instance().clear();
 
@@ -194,4 +194,3 @@ TEST_CASE("ColorPickerTool samples correct color at specific pixel", "[color_pic
     REQUIRE(pickedColor == 0x12345678);
     gimp::EventBus::instance().unsubscribe(subId);
 }
-

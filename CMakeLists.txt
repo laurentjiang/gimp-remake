@@ -174,6 +174,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_history_stack.cpp"
         "tests/unit/test_eraser_tool.cpp"
         "tests/unit/test_pencil_tool.cpp"
+        "tests/unit/test_color_chooser_panel.cpp"
         # Integration tests (file I/O, rendering)
         "tests/integration/test_compositor.cpp"
         "tests/integration/test_io_manager.cpp"
@@ -191,8 +192,10 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/history/simple_history_manager.cpp"
         "src/render/skia_compositor.cpp"
         "src/io/io_manager.cpp"
+        "src/ui/color_chooser_panel.cpp"
         # Headers with Q_OBJECT for AUTOMOC
         "include/ui/skia_canvas_widget.h"
+        "include/ui/color_chooser_panel.h"
     )
 
     target_include_directories(unit_tests PRIVATE

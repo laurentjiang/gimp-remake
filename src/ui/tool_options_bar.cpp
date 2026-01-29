@@ -8,7 +8,9 @@
 #include "ui/tool_options_bar.h"
 
 #include "core/events.h"
+#include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/fill_tool.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -150,7 +152,29 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
         return;
     }
 
-    if (tool->category == "Paint") {
+    if (toolId == "bucket_fill") {
+        // Tolerance slider for bucket fill tool (0-255)
+        auto* label = new QLabel("Tolerance:", optionsContainer_);
+        auto* slider = new QSlider(Qt::Horizontal, optionsContainer_);
+        slider->setRange(0, 255);
+        slider->setValue(0);
+        slider->setFixedWidth(100);
+        auto* valueLabel = new QLabel("0", optionsContainer_);
+        valueLabel->setFixedWidth(30);
+
+        layout->addWidget(label);
+        layout->addWidget(slider);
+        layout->addWidget(valueLabel);
+
+        connect(slider, &QSlider::valueChanged, [valueLabel](int value) {
+            valueLabel->setText(QString::number(value));
+            auto* activeTool = ToolFactory::instance().activeTool();
+            if (auto* fillTool = dynamic_cast<FillTool*>(activeTool)) {
+                fillTool->setTolerance(value);
+            }
+        });
+
+    } else if (tool->category == "Paint") {
         // Size option group
         addSpinBox(layout, "Size:", 1, 1000, 20, " px");
         addSeparator(layout);

@@ -110,6 +110,9 @@ class ColorChooserPanel : public QWidget {
     [[nodiscard]] std::uint32_t foregroundColor() const { return foregroundColor_; }
     [[nodiscard]] std::uint32_t backgroundColor() const { return backgroundColor_; }
 
+  protected:
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
   signals:
     void foregroundColorChanged(std::uint32_t color);
     void backgroundColorChanged(std::uint32_t color);

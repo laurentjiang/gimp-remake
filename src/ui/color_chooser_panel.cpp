@@ -9,6 +9,7 @@
 
 #include "core/events.h"
 
+#include <QEvent>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -202,6 +203,34 @@ ColorChooserPanel::ColorChooserPanel(QWidget* parent) : QWidget(parent)
 ColorChooserPanel::~ColorChooserPanel()
 {
     EventBus::instance().unsubscribe(colorChangedSub_);
+}
+
+bool ColorChooserPanel::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        if (watched == foregroundSwatch_) {
+            onForegroundClicked();
+            return true;
+        }
+        if (watched == backgroundSwatch_) {
+            onBackgroundClicked();
+            return true;
+        }
+
+        // Check recent color swatches
+        for (std::size_t i = 0; i < recentSwatches_.size(); ++i) {
+            if (watched == recentSwatches_[i] && i < recentColors_.size()) {
+                if (editingForeground_) {
+                    setForegroundColor(recentColors_[i]);
+                } else {
+                    setBackgroundColor(recentColors_[i]);
+                }
+                publishColorChange();
+                return true;
+            }
+        }
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void ColorChooserPanel::setupUi()

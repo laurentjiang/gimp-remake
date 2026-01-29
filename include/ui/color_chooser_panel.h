@@ -17,7 +17,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -126,7 +125,6 @@ class ColorChooserPanel : public QWidget {
     void onSwapColors();
     void onForegroundClicked();
     void onBackgroundClicked();
-    void onRecentColorClicked();
 
   private:
     void setupUi();
@@ -139,24 +137,13 @@ class ColorChooserPanel : public QWidget {
     void updateFromHsv(int hue, int saturation, int value);
     void updateFromRgb(int red, int green, int blue);
     void updateUiFromColor(std::uint32_t color);
+    void addToRecentColors(std::uint32_t color);
     void publishColorChange();
 
   public:
-    // Color conversion utilities (public for use by ColorSquare/HueSlider and testing)
+    // Color conversion utilities (public for use by ColorSquare/HueSlider)
     static void hsvToRgb(int h, int s, int v, int& r, int& g, int& b);
     static void rgbToHsv(int r, int g, int b, int& h, int& s, int& v);
-
-    // Color packing utilities (0xRRGGBBAA format)
-    static std::uint32_t packColor(int r, int g, int b, int a = 255);
-    static void unpackColor(std::uint32_t color, int& r, int& g, int& b, int& a);
-
-    // Hex color parsing (accepts "#RRGGBB" or "RRGGBB")
-    static bool parseHexColor(const std::string& hex, int& r, int& g, int& b);
-
-    // Recent colors management (exposed for testing)
-    void addToRecentColors(std::uint32_t color);
-    [[nodiscard]] const std::vector<std::uint32_t>& recentColors() const { return recentColors_; }
-    static constexpr std::size_t maxRecentColors() { return kMaxRecentColors; }
 
   private:
     QVBoxLayout* mainLayout_ = nullptr;

@@ -625,24 +625,6 @@ void ColorChooserPanel::onBackgroundClicked()
     updateUiFromColor(backgroundColor_);
 }
 
-void ColorChooserPanel::onRecentColorClicked()
-{
-    auto* swatch = qobject_cast<QFrame*>(sender());
-    if (swatch == nullptr) {
-        return;
-    }
-
-    const int index = swatch->property("colorIndex").toInt();
-    if (index >= 0 && index < static_cast<int>(recentColors_.size())) {
-        if (editingForeground_) {
-            setForegroundColor(recentColors_[static_cast<std::size_t>(index)]);
-        } else {
-            setBackgroundColor(recentColors_[static_cast<std::size_t>(index)]);
-        }
-        publishColorChange();
-    }
-}
-
 void ColorChooserPanel::updateFromHsv(int hue, int saturation, int value)
 {
     currentHue_ = hue;
@@ -850,45 +832,6 @@ void ColorChooserPanel::rgbToHsv(int r, int g, int b, int& h, int& s, int& v)
 
     if (h < 0) {
         h += 360;
-    }
-}
-
-std::uint32_t ColorChooserPanel::packColor(int r, int g, int b, int a)
-{
-    return static_cast<std::uint32_t>((r << 24) | (g << 16) | (b << 8) | a);
-}
-
-void ColorChooserPanel::unpackColor(std::uint32_t color, int& r, int& g, int& b, int& a)
-{
-    r = static_cast<int>((color >> 24) & 0xFF);
-    g = static_cast<int>((color >> 16) & 0xFF);
-    b = static_cast<int>((color >> 8) & 0xFF);
-    a = static_cast<int>(color & 0xFF);
-}
-
-bool ColorChooserPanel::parseHexColor(const std::string& hex, int& r, int& g, int& b)
-{
-    std::string cleanHex = hex;
-
-    // Remove leading '#' if present
-    if (!cleanHex.empty() && cleanHex[0] == '#') {
-        cleanHex = cleanHex.substr(1);
-    }
-
-    // Must be exactly 6 hex characters
-    if (cleanHex.length() != 6) {
-        return false;
-    }
-
-    // Parse hex value
-    try {
-        const unsigned long value = std::stoul(cleanHex, nullptr, 16);
-        r = static_cast<int>((value >> 16) & 0xFF);
-        g = static_cast<int>((value >> 8) & 0xFF);
-        b = static_cast<int>(value & 0xFF);
-        return true;
-    } catch (...) {
-        return false;
     }
 }
 

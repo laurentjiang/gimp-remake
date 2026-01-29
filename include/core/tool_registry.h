@@ -126,7 +126,7 @@ class ToolRegistry {
         registerTool({"color_picker", "Color Picker", ":/icons/color-picker.svg", "O", "Other"});
         registerTool({"zoom", "Zoom", ":/icons/zoom.svg", "Z", "Other"});
 
-        activeToolId_ = "paintbrush";
+        activeToolId_ = "pencil";
     }
 
     std::unordered_map<std::string, ToolDescriptor> tools_;

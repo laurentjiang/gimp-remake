@@ -33,21 +33,51 @@ class ColorSquare : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs a ColorSquare widget.
+     *  @param parent The parent widget.
+     */
     explicit ColorSquare(QWidget* parent = nullptr);
 
+    /*! @brief Sets the current hue value.
+     *  @param hue Hue value (0-359).
+     */
     void setHue(int hue);
+
+    /*! @brief Sets the saturation value.
+     *  @param saturation Saturation value (0-255).
+     */
     void setSaturation(int saturation);
+
+    /*! @brief Sets the value (brightness).
+     *  @param value Value/brightness (0-255).
+     */
     void setValue(int value);
 
+    /*! @brief Returns the current saturation.
+     *  @return Saturation value (0-255).
+     */
     [[nodiscard]] int saturation() const { return saturation_; }
+
+    /*! @brief Returns the current value (brightness).
+     *  @return Value/brightness (0-255).
+     */
     [[nodiscard]] int value() const { return value_; }
 
   signals:
+    /*! @brief Emitted when saturation or value changes.
+     *  @param saturation New saturation value.
+     *  @param value New value/brightness.
+     */
     void colorChanged(int saturation, int value);
 
   protected:
+    /*! @brief Handles paint events. */
     void paintEvent(QPaintEvent* event) override;
+
+    /*! @brief Handles mouse press events. */
     void mousePressEvent(QMouseEvent* event) override;
+
+    /*! @brief Handles mouse move events. */
     void mouseMoveEvent(QMouseEvent* event) override;
 
   private:
@@ -67,17 +97,35 @@ class HueSlider : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs a HueSlider widget.
+     *  @param parent The parent widget.
+     */
     explicit HueSlider(QWidget* parent = nullptr);
 
+    /*! @brief Sets the current hue value.
+     *  @param hue Hue value (0-359).
+     */
     void setHue(int hue);
+
+    /*! @brief Returns the current hue.
+     *  @return Hue value (0-359).
+     */
     [[nodiscard]] int hue() const { return hue_; }
 
   signals:
+    /*! @brief Emitted when the hue value changes.
+     *  @param hue New hue value.
+     */
     void hueChanged(int hue);
 
   protected:
+    /*! @brief Handles paint events. */
     void paintEvent(QPaintEvent* event) override;
+
+    /*! @brief Handles mouse press events. */
     void mousePressEvent(QMouseEvent* event) override;
+
+    /*! @brief Handles mouse move events. */
     void mouseMoveEvent(QMouseEvent* event) override;
 
   private:
@@ -101,20 +149,51 @@ class ColorChooserPanel : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs a ColorChooserPanel widget.
+     *  @param parent The parent widget.
+     */
     explicit ColorChooserPanel(QWidget* parent = nullptr);
+
+    /*! @brief Destructor. */
     ~ColorChooserPanel() override;
 
+    /*! @brief Sets the foreground color.
+     *  @param color Color in RGBA format (0xRRGGBBAA).
+     */
     void setForegroundColor(std::uint32_t color);
+
+    /*! @brief Sets the background color.
+     *  @param color Color in RGBA format (0xRRGGBBAA).
+     */
     void setBackgroundColor(std::uint32_t color);
 
+    /*! @brief Returns the current foreground color.
+     *  @return Foreground color in RGBA format.
+     */
     [[nodiscard]] std::uint32_t foregroundColor() const { return foregroundColor_; }
+
+    /*! @brief Returns the current background color.
+     *  @return Background color in RGBA format.
+     */
     [[nodiscard]] std::uint32_t backgroundColor() const { return backgroundColor_; }
 
   protected:
+    /*! @brief Event filter for handling swatch clicks.
+     *  @param watched The watched object.
+     *  @param event The event.
+     *  @return True if event was handled.
+     */
     bool eventFilter(QObject* watched, QEvent* event) override;
 
   signals:
+    /*! @brief Emitted when the foreground color changes.
+     *  @param color New foreground color in RGBA format.
+     */
     void foregroundColorChanged(std::uint32_t color);
+
+    /*! @brief Emitted when the background color changes.
+     *  @param color New background color in RGBA format.
+     */
     void backgroundColorChanged(std::uint32_t color);
 
   private slots:
@@ -141,8 +220,24 @@ class ColorChooserPanel : public QWidget {
     void publishColorChange();
 
   public:
-    // Color conversion utilities (public for use by ColorSquare/HueSlider)
+    /*! @brief Converts HSV to RGB color values.
+     *  @param h Hue (0-359).
+     *  @param s Saturation (0-255).
+     *  @param v Value/brightness (0-255).
+     *  @param r Output red component (0-255).
+     *  @param g Output green component (0-255).
+     *  @param b Output blue component (0-255).
+     */
     static void hsvToRgb(int h, int s, int v, int& r, int& g, int& b);
+
+    /*! @brief Converts RGB to HSV color values.
+     *  @param r Red component (0-255).
+     *  @param g Green component (0-255).
+     *  @param b Blue component (0-255).
+     *  @param h Output hue (0-359).
+     *  @param s Output saturation (0-255).
+     *  @param v Output value/brightness (0-255).
+     */
     static void rgbToHsv(int r, int g, int b, int& h, int& s, int& v);
 
   private:

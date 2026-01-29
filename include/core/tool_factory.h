@@ -116,7 +116,7 @@ class ToolFactory {
      * Call this when a tool completes a stroke/action with the current foreground color.
      * This emits a ColorUsedEvent so the UI can update recent colors palettes.
      */
-    void markForegroundColorUsed();
+    void markForegroundColorUsed() const;
 
   private:
     ToolFactory() = default;

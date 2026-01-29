@@ -823,11 +823,11 @@ void ColorChooserPanel::rgbToHsv(int r, int g, int b, int& h, int& s, int& v)
     }
 
     if (r == maxVal) {
-        h = 60 * ((g - b) / static_cast<double>(delta));
+        h = static_cast<int>(60.0 * ((g - b) / static_cast<double>(delta)));
     } else if (g == maxVal) {
-        h = 60 * (2.0 + (b - r) / static_cast<double>(delta));
+        h = static_cast<int>(60.0 * (2.0 + (b - r) / static_cast<double>(delta)));
     } else {
-        h = 60 * (4.0 + (r - g) / static_cast<double>(delta));
+        h = static_cast<int>(60.0 * (4.0 + (r - g) / static_cast<double>(delta)));
     }
 
     if (h < 0) {

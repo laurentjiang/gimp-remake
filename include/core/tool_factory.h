@@ -111,6 +111,13 @@ class ToolFactory {
      */
     [[nodiscard]] std::uint32_t backgroundColor() const { return backgroundColor_; }
 
+    /*! @brief Marks the foreground color as used in a discrete action.
+     *
+     * Call this when a tool completes a stroke/action with the current foreground color.
+     * This emits a ColorUsedEvent so the UI can update recent colors palettes.
+     */
+    void markForegroundColorUsed();
+
   private:
     ToolFactory() = default;
 

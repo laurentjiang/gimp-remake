@@ -7,6 +7,8 @@
 
 #include "core/tool_factory.h"
 
+#include "core/event_bus.h"
+#include "core/events.h"
 #include "core/tool.h"
 
 namespace gimp {
@@ -100,6 +102,13 @@ void ToolFactory::injectDependencies(Tool* tool)
     if (commandBus_) {
         tool->setCommandBus(commandBus_);
     }
+}
+
+void ToolFactory::markForegroundColorUsed()
+{
+    ColorUsedEvent event;
+    event.color = foregroundColor_;
+    EventBus::instance().publish(event);
 }
 
 }  // namespace gimp

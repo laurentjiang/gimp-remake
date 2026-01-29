@@ -108,6 +108,16 @@ struct ColorChangedEvent {
 };
 
 /**
+ * @brief Event fired when a color is used in a drawing operation.
+ *
+ * This event is emitted when a stroke is completed with a particular color,
+ * allowing the UI to update recent colors palettes.
+ */
+struct ColorUsedEvent {
+    std::uint32_t color = 0x000000FF;  ///< Color that was used in RGBA format (0xRRGGBBAA).
+};
+
+/**
  * @brief Event requesting a tool switch.
  *
  * Published by tools that need to trigger a tool change (e.g., color picker

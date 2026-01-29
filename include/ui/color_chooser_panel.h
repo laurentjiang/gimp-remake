@@ -197,6 +197,7 @@ class ColorChooserPanel : public QWidget {
 
     // Event subscriptions
     EventBus::SubscriptionId colorChangedSub_ = 0;
+    EventBus::SubscriptionId colorUsedSub_ = 0;
 
     // Flag to prevent recursive updates
     bool updatingUi_ = false;

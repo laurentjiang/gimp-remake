@@ -29,7 +29,9 @@ std::uint32_t FillTool::getPixelColor(const std::vector<uint8_t>& data,
                                       int y,
                                       int width)
 {
-    std::size_t index = static_cast<std::size_t>((y * width + x) * 4);
+    std::size_t index = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+                         static_cast<std::size_t>(x)) *
+                        4;
     std::uint32_t r = data[index];
     std::uint32_t g = data[index + 1];
     std::uint32_t b = data[index + 2];
@@ -43,7 +45,9 @@ void FillTool::setPixelColor(std::vector<uint8_t>& data,
                              int width,
                              std::uint32_t color)
 {
-    std::size_t index = static_cast<std::size_t>((y * width + x) * 4);
+    std::size_t index = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
+                         static_cast<std::size_t>(x)) *
+                        4;
     data[index] = static_cast<uint8_t>((color >> 24) & 0xFF);
     data[index + 1] = static_cast<uint8_t>((color >> 16) & 0xFF);
     data[index + 2] = static_cast<uint8_t>((color >> 8) & 0xFF);
@@ -159,6 +163,11 @@ void FillTool::beginStroke(const ToolInputEvent& event)
 {
     beforeState_.clear();
     fillPending_ = false;
+
+    // Only fill on left mouse button
+    if ((event.buttons & Qt::LeftButton) == 0) {
+        return;
+    }
 
     if (!document_ || document_->layers().count() == 0) {
         return;

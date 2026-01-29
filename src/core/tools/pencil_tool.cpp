@@ -207,6 +207,9 @@ void PencilTool::endStroke(const ToolInputEvent& event)
 
     commandBus_->dispatch(drawCmd);
 
+    // Mark the foreground color as used for recent colors tracking
+    ToolFactory::instance().markForegroundColorUsed();
+
     strokePoints_.clear();
     beforeState_.clear();
 }

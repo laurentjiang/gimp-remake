@@ -19,6 +19,7 @@
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
 #include "render/skia_renderer.h"
+#include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
 #include "ui/debug_hud.h"
 #include "ui/history_panel.h"
@@ -186,8 +187,10 @@ void MainWindow::setupDockWidgets()
 
     m_layersPanel = new LayersPanel(this);
     m_historyPanel = new HistoryPanel(this);
+    m_colorChooserPanel = new ColorChooserPanel(this);
 
     m_rightTabWidget = new QTabWidget(this);
+    m_rightTabWidget->addTab(m_colorChooserPanel, "Colors");
     m_rightTabWidget->addTab(m_layersPanel, "Layers");
     m_rightTabWidget->addTab(m_historyPanel, "History");
 

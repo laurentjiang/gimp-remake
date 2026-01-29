@@ -21,6 +21,7 @@
 namespace gimp {
 
 class BasicCommandBus;
+class ColorChooserPanel;
 class CommandPalette;
 class DebugHud;
 class Document;
@@ -94,6 +95,7 @@ class MainWindow : public QMainWindow {
     ToolOptionsBar* m_toolOptionsBar = nullptr;
     LayersPanel* m_layersPanel = nullptr;
     HistoryPanel* m_historyPanel = nullptr;
+    ColorChooserPanel* m_colorChooserPanel = nullptr;
     CommandPalette* m_commandPalette = nullptr;
     DebugHud* m_debugHud = nullptr;
 

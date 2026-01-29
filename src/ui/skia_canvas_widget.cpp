@@ -182,10 +182,20 @@ void SkiaCanvasWidget::updateCacheFromLayer()
         m_cachedImage = QImage(w, h, QImage::Format_ARGB32_Premultiplied);
     }
 
-    // Direct copy from layer BGRA data to QImage
+    // Convert from RGBA (layer storage) to BGRA (QImage Format_ARGB32 on little-endian)
     const auto& layerData = layer->data();
     if (layerData.size() == static_cast<size_t>(w) * static_cast<size_t>(h) * 4U) {
-        std::memcpy(m_cachedImage.bits(), layerData.data(), layerData.size());
+        std::uint8_t* dest = m_cachedImage.bits();
+        const std::uint8_t* src = layerData.data();
+        const size_t pixelCount = static_cast<size_t>(w) * static_cast<size_t>(h);
+
+        for (size_t i = 0; i < pixelCount; ++i) {
+            // RGBA -> BGRA: swap R and B channels
+            dest[i * 4 + 0] = src[i * 4 + 2];  // B <- B from src
+            dest[i * 4 + 1] = src[i * 4 + 1];  // G <- G
+            dest[i * 4 + 2] = src[i * 4 + 0];  // R <- R from src
+            dest[i * 4 + 3] = src[i * 4 + 3];  // A <- A
+        }
         m_cacheValid = true;
     }
 }

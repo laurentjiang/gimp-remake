@@ -196,6 +196,8 @@ ColorChooserPanel::ColorChooserPanel(QWidget* parent) : QWidget(parent)
         EventBus::instance().subscribe<ColorChangedEvent>([this](const ColorChangedEvent& event) {
             if (event.source != "color_panel") {
                 setForegroundColor(event.color);
+                // Eyedropper pick is a discrete action - add to recent colors
+                addToRecentColors(event.color);
             }
         });
 }
@@ -438,7 +440,8 @@ void ColorChooserPanel::setForegroundColor(std::uint32_t color)
     }
 
     foregroundColor_ = color;
-    addToRecentColors(color);
+    // Note: Don't add to recent colors here - this is called on every color change.
+    // Recent colors are only added on discrete actions (eyedropper, hex input, swatch click).
 
     if (editingForeground_) {
         updateUiFromColor(color);
@@ -585,6 +588,11 @@ void ColorChooserPanel::onHexInputFinished()
     const int b = value & 0xFF;
 
     updateFromRgb(r, g, b);
+
+    // Hex input commit is a discrete action - add to recent colors
+    const auto color = static_cast<std::uint32_t>((r << 24) | (g << 16) | (b << 8) | 0xFF);
+    addToRecentColors(color);
+
     publishColorChange();
 }
 
@@ -686,7 +694,7 @@ void ColorChooserPanel::updateUiFromColor(std::uint32_t color)
 
 void ColorChooserPanel::addToRecentColors(std::uint32_t color)
 {
-    // Don't add duplicates
+    // Don't add duplicates - if exists, move to front
     auto it = std::find(recentColors_.begin(), recentColors_.end(), color);
     if (it != recentColors_.end()) {
         recentColors_.erase(it);
@@ -700,7 +708,7 @@ void ColorChooserPanel::addToRecentColors(std::uint32_t color)
         recentColors_.resize(kMaxRecentColors);
     }
 
-    // Update swatches
+    // Update all swatches - show color if available, gray if empty
     for (std::size_t i = 0; i < recentSwatches_.size(); ++i) {
         if (i < recentColors_.size()) {
             const std::uint32_t c = recentColors_[i];
@@ -712,6 +720,9 @@ void ColorChooserPanel::addToRecentColors(std::uint32_t color)
                     .arg(cr)
                     .arg(cg)
                     .arg(cb));
+        } else {
+            // Empty slot - show gray
+            recentSwatches_[i]->setStyleSheet("background-color: #404040; border: 1px solid #333;");
         }
     }
 }
@@ -726,7 +737,7 @@ void ColorChooserPanel::publishColorChange()
 
     if (editingForeground_) {
         foregroundColor_ = color;
-        addToRecentColors(color);
+        // Note: Don't add to recent here - continuous updates from sliders/color picker.
 
         foregroundSwatch_->setStyleSheet(
             QString("background-color: rgb(%1,%2,%3); border: 2px solid #666;")
@@ -832,6 +843,45 @@ void ColorChooserPanel::rgbToHsv(int r, int g, int b, int& h, int& s, int& v)
 
     if (h < 0) {
         h += 360;
+    }
+}
+
+std::uint32_t ColorChooserPanel::packColor(int r, int g, int b, int a)
+{
+    return static_cast<std::uint32_t>((r << 24) | (g << 16) | (b << 8) | a);
+}
+
+void ColorChooserPanel::unpackColor(std::uint32_t color, int& r, int& g, int& b, int& a)
+{
+    r = static_cast<int>((color >> 24) & 0xFF);
+    g = static_cast<int>((color >> 16) & 0xFF);
+    b = static_cast<int>((color >> 8) & 0xFF);
+    a = static_cast<int>(color & 0xFF);
+}
+
+bool ColorChooserPanel::parseHexColor(const std::string& hex, int& r, int& g, int& b)
+{
+    std::string cleanHex = hex;
+
+    // Remove leading '#' if present
+    if (!cleanHex.empty() && cleanHex[0] == '#') {
+        cleanHex = cleanHex.substr(1);
+    }
+
+    // Must be exactly 6 hex characters
+    if (cleanHex.length() != 6) {
+        return false;
+    }
+
+    // Parse hex value
+    try {
+        const unsigned long value = std::stoul(cleanHex, nullptr, 16);
+        r = static_cast<int>((value >> 16) & 0xFF);
+        g = static_cast<int>((value >> 8) & 0xFF);
+        b = static_cast<int>(value & 0xFF);
+        return true;
+    } catch (...) {
+        return false;
     }
 }
 

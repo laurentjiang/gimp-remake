@@ -104,7 +104,7 @@ void ToolFactory::injectDependencies(Tool* tool)
     }
 }
 
-void ToolFactory::markForegroundColorUsed()
+void ToolFactory::markForegroundColorUsed() const
 {
     ColorUsedEvent event;
     event.color = foregroundColor_;

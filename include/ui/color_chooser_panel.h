@@ -147,7 +147,6 @@ class ColorChooserPanel : public QWidget {
     static void rgbToHsv(int r, int g, int b, int& h, int& s, int& v);
 
   private:
-
     QVBoxLayout* mainLayout_ = nullptr;
 
     // Color picker section

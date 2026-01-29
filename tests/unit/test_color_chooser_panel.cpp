@@ -5,10 +5,9 @@
  * @date 2026-01-29
  */
 
-#include "ui/color_chooser_panel.h"
-
 #include "core/event_bus.h"
 #include "core/events.h"
+#include "ui/color_chooser_panel.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -118,14 +117,14 @@ TEST_CASE("ColorChooserPanel HSV-RGB roundtrip", "[ui][unit]")
     {
         // Test a variety of colors
         std::vector<std::tuple<int, int, int>> testColors = {
-            {255, 0, 0},     // Red
-            {0, 255, 0},     // Green
-            {0, 0, 255},     // Blue
-            {255, 255, 0},   // Yellow
-            {255, 0, 255},   // Magenta
-            {0, 255, 255},   // Cyan
-            {128, 64, 32},   // Brown-ish
-            {200, 100, 50},  // Orange-ish
+            {255, 0,   0  }, // Red
+            {0,   255, 0  }, // Green
+            {0,   0,   255}, // Blue
+            {255, 255, 0  }, // Yellow
+            {255, 0,   255}, // Magenta
+            {0,   255, 255}, // Cyan
+            {128, 64,  32 }, // Brown-ish
+            {200, 100, 50 }, // Orange-ish
         };
 
         for (const auto& [origR, origG, origB] : testColors) {

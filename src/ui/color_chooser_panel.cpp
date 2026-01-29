@@ -192,8 +192,8 @@ ColorChooserPanel::ColorChooserPanel(QWidget* parent) : QWidget(parent)
     setupUi();
 
     // Subscribe to color change events from other sources (e.g., eyedropper)
-    colorChangedSub_ = EventBus::instance().subscribe<ColorChangedEvent>(
-        [this](const ColorChangedEvent& event) {
+    colorChangedSub_ =
+        EventBus::instance().subscribe<ColorChangedEvent>([this](const ColorChangedEvent& event) {
             if (event.source != "color_panel") {
                 setForegroundColor(event.color);
             }
@@ -309,7 +309,8 @@ void ColorChooserPanel::setupColorPickerSection()
     pickerLayout->setSpacing(4);
 
     colorSquare_ = new ColorSquare(this);
-    connect(colorSquare_, &ColorSquare::colorChanged, this, &ColorChooserPanel::onColorSquareChanged);
+    connect(
+        colorSquare_, &ColorSquare::colorChanged, this, &ColorChooserPanel::onColorSquareChanged);
     pickerLayout->addWidget(colorSquare_);
 
     hueSlider_ = new HueSlider(this);
@@ -359,11 +360,16 @@ void ColorChooserPanel::setupRgbSection()
 
     // Connect sliders and spinboxes
     connect(redSlider_, &QSlider::valueChanged, redSpinBox_, &QSpinBox::setValue);
-    connect(redSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), redSlider_, &QSlider::setValue);
+    connect(
+        redSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), redSlider_, &QSlider::setValue);
     connect(greenSlider_, &QSlider::valueChanged, greenSpinBox_, &QSpinBox::setValue);
-    connect(greenSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), greenSlider_, &QSlider::setValue);
+    connect(greenSpinBox_,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            greenSlider_,
+            &QSlider::setValue);
     connect(blueSlider_, &QSlider::valueChanged, blueSpinBox_, &QSpinBox::setValue);
-    connect(blueSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), blueSlider_, &QSlider::setValue);
+    connect(
+        blueSpinBox_, QOverload<int>::of(&QSpinBox::valueChanged), blueSlider_, &QSlider::setValue);
 
     // Connect to update handler
     connect(redSlider_, &QSlider::valueChanged, this, &ColorChooserPanel::onRgbSliderChanged);
@@ -387,8 +393,8 @@ void ColorChooserPanel::setupHexSection()
     hexInput_->setFixedWidth(80);
 
     // Validate hex input
-    auto* validator = new QRegularExpressionValidator(
-        QRegularExpression("^#?[0-9A-Fa-f]{0,6}$"), hexInput_);
+    auto* validator =
+        new QRegularExpressionValidator(QRegularExpression("^#?[0-9A-Fa-f]{0,6}$"), hexInput_);
     hexInput_->setValidator(validator);
 
     connect(hexInput_, &QLineEdit::editingFinished, this, &ColorChooserPanel::onHexInputFinished);
@@ -723,7 +729,10 @@ void ColorChooserPanel::publishColorChange()
         addToRecentColors(color);
 
         foregroundSwatch_->setStyleSheet(
-            QString("background-color: rgb(%1,%2,%3); border: 2px solid #666;").arg(r).arg(g).arg(b));
+            QString("background-color: rgb(%1,%2,%3); border: 2px solid #666;")
+                .arg(r)
+                .arg(g)
+                .arg(b));
 
         // Publish event
         ColorChangedEvent event;
@@ -735,7 +744,10 @@ void ColorChooserPanel::publishColorChange()
     } else {
         backgroundColor_ = color;
         backgroundSwatch_->setStyleSheet(
-            QString("background-color: rgb(%1,%2,%3); border: 1px solid #999;").arg(r).arg(g).arg(b));
+            QString("background-color: rgb(%1,%2,%3); border: 1px solid #999;")
+                .arg(r)
+                .arg(g)
+                .arg(b));
 
         emit backgroundColorChanged(color);
     }

@@ -28,6 +28,7 @@ add_executable(gimp-remake
     "src/ui/tool_options_bar.cpp"
     "src/ui/layers_panel.cpp"
     "src/ui/history_panel.cpp"
+    "src/ui/color_chooser_panel.cpp"
     "src/ui/command_palette.cpp"
     "src/ui/debug_hud.cpp"
     "src/history/history_stack.cpp"
@@ -56,6 +57,7 @@ add_executable(gimp-remake
     "include/ui/tool_options_bar.h"
     "include/ui/layers_panel.h"
     "include/ui/history_panel.h"
+    "include/ui/color_chooser_panel.h"
     "include/ui/command_palette.h"
     "include/ui/debug_hud.h"
 )

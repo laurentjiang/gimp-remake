@@ -66,9 +66,7 @@ class Tool {
      */
     [[nodiscard]] virtual int brushSize() const { return 0; }
 
-    /*! @brief Sets the brush size for this tool.
-     *  @param size Brush size in pixels.
-     */
+    /*! @brief Sets the brush size for this tool. Does nothing for tools without brush. */
     virtual void setBrushSize(int /*size*/) {}
 
     /*! @brief Returns the current tool state.

@@ -30,18 +30,17 @@ void ShortcutManager::registerToolShortcuts()
 {
     const auto& registry = ToolRegistry::instance();
 
-    for (const auto& toolId : registry.getToolIds()) {
-        const auto* tool = registry.getTool(toolId);
-        if (tool == nullptr || tool->shortcut.empty()) {
+    for (const auto& tool : registry.getAllTools()) {
+        if (tool.shortcut.empty()) {
             continue;
         }
 
-        QKeySequence keySeq(QString::fromStdString(tool->shortcut));
+        QKeySequence keySeq(QString::fromStdString(tool.shortcut));
         if (keySeq.isEmpty()) {
             continue;
         }
 
-        std::string capturedId = toolId;
+        std::string capturedId = tool.id;
         createShortcut(keySeq, [this, capturedId]() {
             emit toolSwitchRequested(QString::fromStdString(capturedId));
         });

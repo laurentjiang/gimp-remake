@@ -31,6 +31,7 @@ add_executable(gimp-remake
     "src/ui/color_chooser_panel.cpp"
     "src/ui/command_palette.cpp"
     "src/ui/debug_hud.cpp"
+    "src/ui/shortcut_manager.cpp"
     "src/history/history_stack.cpp"
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
@@ -61,6 +62,7 @@ add_executable(gimp-remake
     "include/ui/color_chooser_panel.h"
     "include/ui/command_palette.h"
     "include/ui/debug_hud.h"
+    "include/ui/shortcut_manager.h"
 )
 
 target_include_directories(gimp-remake PRIVATE

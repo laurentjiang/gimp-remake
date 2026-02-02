@@ -33,15 +33,13 @@ class SkiaCanvasWidget;
 class SkiaRenderer;
 class Tool;
 class ToolboxPanel;
-class ToolOptionsBar;
 class ToolOptionsPanel;
 
 /**
  * @brief Main application window with Photoshop-like docking layout.
  *
  * Layout:
- * - Left dock: Toolbox panel
- * - Top bar: Tool options
+ * - Left dock: Toolbox panel and Tool Options panel (stacked)
  * - Center: Canvas widget
  * - Right dock: Layers and History panels (tabbed)
  * - Overlay: Debug HUD (toggleable)
@@ -101,7 +99,6 @@ class MainWindow : public QMainWindow {
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;
-    ToolOptionsBar* m_toolOptionsBar = nullptr;
     ToolOptionsPanel* m_toolOptionsPanel = nullptr;
     LayersPanel* m_layersPanel = nullptr;
     HistoryPanel* m_historyPanel = nullptr;
@@ -111,6 +108,7 @@ class MainWindow : public QMainWindow {
     ShortcutManager* m_shortcutManager = nullptr;
 
     QDockWidget* m_toolboxDock = nullptr;
+    QDockWidget* m_toolOptionsDock = nullptr;
     QDockWidget* m_rightDock = nullptr;
     QTabWidget* m_rightTabWidget = nullptr;
 

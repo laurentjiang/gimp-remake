@@ -28,7 +28,6 @@
 #include "ui/layers_panel.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
-#include "ui/tool_options_bar.h"
 #include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
@@ -182,25 +181,20 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
-    m_toolOptionsBar = new ToolOptionsBar(this);
-    auto* optionsToolbar = new QToolBar("Tool Options", this);
-    optionsToolbar->setMovable(false);
-    optionsToolbar->addWidget(m_toolOptionsBar);
-    addToolBar(Qt::TopToolBarArea, optionsToolbar);
-
+    // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);
     m_toolboxDock = new QDockWidget("Toolbox", this);
     m_toolboxDock->setWidget(m_toolboxPanel);
     m_toolboxDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::LeftDockWidgetArea, m_toolboxDock);
 
-    // Tool Options Panel (top right)
+    // Tool Options Panel under Toolbox
     m_toolOptionsPanel = new ToolOptionsPanel(this);
-    auto* toolOptionsDock = new QDockWidget("Tool Options", this);
-    toolOptionsDock->setWidget(m_toolOptionsPanel);
-    toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    toolOptionsDock->setMinimumWidth(200);
-    addDockWidget(Qt::RightDockWidgetArea, toolOptionsDock);
+    m_toolOptionsDock = new QDockWidget("Tool Options", this);
+    m_toolOptionsDock->setWidget(m_toolOptionsPanel);
+    m_toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable |
+                                   QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::LeftDockWidgetArea, m_toolOptionsDock);
 
     m_layersPanel = new LayersPanel(this);
     m_historyPanel = new HistoryPanel(this);

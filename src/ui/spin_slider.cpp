@@ -218,4 +218,3 @@ void SpinSlider::onEditFinished()
 }
 
 }  // namespace gimp
-

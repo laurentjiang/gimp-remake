@@ -89,4 +89,3 @@ class SpinSlider : public QWidget {
 };
 
 }  // namespace gimp
-

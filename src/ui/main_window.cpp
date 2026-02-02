@@ -351,8 +351,7 @@ void MainWindow::onToolChanged(const Tool* tool)
 {
     if (m_toolOptionsPanel && tool) {
         m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
-        // Update dock title with tool name
-        m_toolOptionsDock->setWindowTitle(QString::fromStdString(tool->name()) + " Options");
+        m_toolOptionsDock->setWindowTitle(QString::fromStdString(tool->name()));
     } else if (m_toolOptionsDock) {
         m_toolOptionsDock->setWindowTitle("Tool Options");
     }

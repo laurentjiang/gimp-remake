@@ -22,16 +22,10 @@ namespace gimp {
 
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
-    // Dark background matching spin slider background (#2b2b2b)
-    setAutoFillBackground(true);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(43, 43, 43));
-    setPalette(pal);
-
     setStyleSheet(
         "QWidget { background-color: #2b2b2b; }"
-        "QLabel { color: #ffffff; background: transparent; }"
-        "QCheckBox { color: #ffffff; background: transparent; }"
+        "QLabel { color: #ffffff; }"
+        "QCheckBox { color: #ffffff; }"
         "QCheckBox::indicator { width: 16px; height: 16px; }"
         "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; }"
         "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; }");
@@ -39,8 +33,6 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     auto* containerLayout = new QVBoxLayout(this);
     containerLayout->setContentsMargins(8, 8, 8, 8);
     containerLayout->setSpacing(4);
-
-    // Tool name header (removed - now shown in dock title)
 
     // Scroll area for options
     auto* scrollArea = new QScrollArea(this);

@@ -11,6 +11,7 @@
 #include "core/commands/draw_command.h"
 #include "core/document.h"
 #include "core/layer.h"
+#include "core/tool_options.h"
 
 #include <algorithm>
 #include <cmath>
@@ -225,6 +226,38 @@ void EraserTool::endStroke(const ToolInputEvent& event)
 void EraserTool::cancelStroke()
 {
     strokePoints_.clear();
+}
+
+std::vector<ToolOption> EraserTool::getOptions() const
+{
+    return {
+        ToolOption{
+            "brush_size",
+            "Brush Size",
+            ToolOption::Type::Slider,
+            brushSize_,
+            1.0F,
+            100.0F,
+            1.0F
+        }
+    };
+}
+
+void EraserTool::setOptionValue(const std::string& optionId,
+                                const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
+        setBrushSize(std::get<int>(value));
+    }
+}
+
+std::variant<int, float, bool, std::string> EraserTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "brush_size") {
+        return brushSize_;
+    }
+    return 0;
 }
 
 }  // namespace gimp

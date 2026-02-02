@@ -9,6 +9,7 @@
 
 #include "core/commands/draw_command.h"
 #include "core/tool.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <vector>
@@ -22,7 +23,7 @@ namespace gimp {
  * it sets the alpha channel to 0 (transparent). Collects stroke points during
  * the Active state and issues a command on commit.
  */
-class EraserTool : public Tool {
+class EraserTool : public Tool, public ToolOptions {
   public:
     EraserTool() = default;
 
@@ -44,6 +45,13 @@ class EraserTool : public Tool {
     void continueStroke(const ToolInputEvent& event) override;
     void endStroke(const ToolInputEvent& event) override;
     void cancelStroke() override;
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                        const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string>
+    getOptionValue(const std::string& optionId) const override;
 
   private:
     /**

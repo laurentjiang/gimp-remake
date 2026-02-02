@@ -44,12 +44,10 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     m_mainLayout = new QVBoxLayout(optionsWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(8);
+    m_mainLayout->setAlignment(Qt::AlignTop);
 
     scrollArea->setWidget(optionsWidget);
-    containerLayout->addWidget(scrollArea);
-
-    // Spacer at bottom
-    containerLayout->addStretch();
+    containerLayout->addWidget(scrollArea, 1);  // Stretch factor 1 to fill space
 
     setLayout(containerLayout);
 }
@@ -108,6 +106,9 @@ void ToolOptionsPanel::populateOptions()
         // Create option widget
         createOptionWidget(option);
     }
+
+    // Add stretch at the end to push all widgets to the top
+    m_mainLayout->addStretch();
 }
 
 void ToolOptionsPanel::createOptionWidget(const ToolOption& option)

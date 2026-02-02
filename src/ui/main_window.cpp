@@ -261,7 +261,10 @@ void MainWindow::createDocument()
     auto& factory = ToolFactory::instance();
     factory.setDocument(m_document);
     factory.setCommandBus(m_commandBus.get());
-    factory.setActiveTool("pencil");
+    factory.setActiveTool("paintbrush");
+
+    // Initialize tool options panel with default tool
+    onToolChanged(factory.activeTool());
 
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);

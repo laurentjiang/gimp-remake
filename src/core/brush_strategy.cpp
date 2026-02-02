@@ -122,6 +122,28 @@ void SolidBrush::renderDab(std::uint8_t* target,
     }
 }
 
+namespace {
+/**
+ * @brief GIMP-style piecewise falloff function (not true Gaussian).
+ *
+ * This produces a smoother, more natural brush edge than a simple Gaussian.
+ * @param f Normalized distance value.
+ * @return Falloff intensity.
+ */
+float gimpGauss(float f)
+{
+    if (f < -0.5F) {
+        f = -1.0F - f;
+        return 2.0F * f * f;
+    }
+    if (f < 0.5F) {
+        return 1.0F - 2.0F * f * f;
+    }
+    f = 1.0F - f;
+    return 2.0F * f * f;
+}
+}  // namespace
+
 void SoftBrush::renderDab(std::uint8_t* target,
                           int targetWidth,
                           int targetHeight,
@@ -144,32 +166,29 @@ void SoftBrush::renderDab(std::uint8_t* target,
     int minY = std::max(0, y - static_cast<int>(radius) - 1);
     int maxY = std::min(targetHeight - 1, y + static_cast<int>(radius) + 1);
 
-    // Gaussian sigma based on hardness: lower hardness = larger sigma = softer
-    // At hardness=1.0, we want a nearly solid circle
-    // At hardness=0.0, we want maximum blur
-    float sigma = std::max(radius * (1.0F - hardness_ * 0.8F), 0.1F);
-    float twoSigmaSq = 2.0F * sigma * sigma;
+    // GIMP-style exponent from hardness: harder = sharper falloff curve
+    // At hardness = 1.0: exponent approaches infinity (solid edge)
+    // At hardness = 0.0: exponent = 0.4 (maximum softness)
+    float exponent = 0.4F;
+    if ((1.0F - hardness_) > 0.0001F) {
+        exponent = 0.4F / (1.0F - hardness_);
+    } else {
+        exponent = 1000000.0F;
+    }
 
     for (int py = minY; py <= maxY; ++py) {
         for (int px = minX; px <= maxX; ++px) {
             float dx = static_cast<float>(px - x);
             float dy = static_cast<float>(py - y);
-            float distSq = dx * dx + dy * dy;
-            float dist = std::sqrt(distSq);
+            float dist = std::sqrt(dx * dx + dy * dy);
 
             if (dist > radius) {
                 continue;
             }
 
-            // Gaussian falloff combined with hardness
-            float falloff = 1.0F;
-            if (hardness_ < 1.0F) {
-                // Gaussian falloff from center
-                falloff = std::exp(-distSq / twoSigmaSq);
-                // Mix with hard edge based on hardness
-                float hardEdge = (dist <= radius) ? 1.0F : 0.0F;
-                falloff = hardness_ * hardEdge + (1.0F - hardness_) * falloff;
-            }
+            // GIMP-style falloff: gauss(pow(d / radius, exponent))
+            float normalizedDist = dist / radius;
+            float falloff = gimpGauss(std::pow(normalizedDist, exponent));
 
             std::uint8_t finalAlpha =
                 static_cast<std::uint8_t>(static_cast<float>(a) * pressure * falloff);

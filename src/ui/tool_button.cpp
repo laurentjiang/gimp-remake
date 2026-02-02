@@ -111,12 +111,13 @@ void ToolButton::paintEvent(QPaintEvent* /*event*/)
         painter.drawRect(rect);
     }
 
-    // Draw icon centered
-    QIcon icon = this->icon();
-    if (!icon.isNull()) {
-        QPixmap pixmap = icon.pixmap(iconSize());
-        int x = (rect.width() - pixmap.width()) / 2;
-        int y = (rect.height() - pixmap.height()) / 2;
+    // Draw icon centered using iconSize for correct positioning
+    QIcon currentIcon = icon();
+    if (!currentIcon.isNull()) {
+        QSize icoSize = iconSize();
+        QPixmap pixmap = currentIcon.pixmap(icoSize);
+        int x = (rect.width() - icoSize.width()) / 2;
+        int y = (rect.height() - icoSize.height()) / 2;
         painter.drawPixmap(x, y, pixmap);
     }
 

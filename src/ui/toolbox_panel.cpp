@@ -40,8 +40,8 @@ void ToolboxPanel::setupUi()
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    // Match workspace background color (#404040)
-    setStyleSheet("ToolboxPanel { background-color: #404040; }"
+    // Match workspace background color (#4d4d4d)
+    setStyleSheet("ToolboxPanel { background-color: #4d4d4d; }"
                   "QLabel { color: #ffffff; }"
                   "QGroupBox { color: #ffffff; border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");

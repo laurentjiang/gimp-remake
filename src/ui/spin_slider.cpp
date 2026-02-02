@@ -97,14 +97,13 @@ QString SpinSlider::formatValue() const
 void SpinSlider::paintEvent(QPaintEvent* /*event*/)
 {
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
 
     QRect rect = this->rect().adjusted(1, 1, -1, -1);
 
     // Background
     painter.setPen(QPen(QColor(80, 80, 80), 1));
     painter.setBrush(QColor(60, 60, 60));
-    painter.drawRoundedRect(rect, 3, 3);
+    painter.drawRect(rect);
 
     // Fill bar based on value
     if (max_ > min_) {
@@ -114,7 +113,7 @@ void SpinSlider::paintEvent(QPaintEvent* /*event*/)
             QRect fillRect(rect.x() + 1, rect.y() + 1, fillWidth, rect.height() - 2);
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(85, 85, 85));
-            painter.drawRoundedRect(fillRect, 2, 2);
+            painter.drawRect(fillRect);
         }
     }
 

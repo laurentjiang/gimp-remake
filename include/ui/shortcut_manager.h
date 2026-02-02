@@ -92,8 +92,8 @@ class ShortcutManager : public QObject {
 
   private:
     void registerShortcut(const std::string& actionId,
-                         const QKeySequence& key,
-                         const std::function<void()>& callback);
+                          const QKeySequence& key,
+                          const std::function<void()>& callback);
 
     QWidget* parentWidget_ = nullptr;
     std::unordered_map<std::string, std::unique_ptr<QShortcut>> shortcuts_;
@@ -101,4 +101,3 @@ class ShortcutManager : public QObject {
 };
 
 }  // namespace gimp
-

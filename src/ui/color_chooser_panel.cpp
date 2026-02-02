@@ -202,10 +202,8 @@ ColorChooserPanel::ColorChooserPanel(QWidget* parent) : QWidget(parent)
         });
 
     // Subscribe to color used events (when a stroke is completed with a color)
-    colorUsedSub_ =
-        EventBus::instance().subscribe<ColorUsedEvent>([this](const ColorUsedEvent& event) {
-            addToRecentColors(event.color);
-        });
+    colorUsedSub_ = EventBus::instance().subscribe<ColorUsedEvent>(
+        [this](const ColorUsedEvent& event) { addToRecentColors(event.color); });
 }
 
 ColorChooserPanel::~ColorChooserPanel()

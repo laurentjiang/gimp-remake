@@ -122,6 +122,83 @@ void SolidBrush::renderDab(std::uint8_t* target,
     }
 }
 
+namespace {
+/**
+ * @brief GIMP-style piecewise falloff function (not true Gaussian).
+ *
+ * This produces a smoother, more natural brush edge than a simple Gaussian.
+ * @param f Normalized distance value.
+ * @return Falloff intensity.
+ */
+float gimpGauss(float f)
+{
+    if (f < -0.5F) {
+        f = -1.0F - f;
+        return 2.0F * f * f;
+    }
+    if (f < 0.5F) {
+        return 1.0F - 2.0F * f * f;
+    }
+    f = 1.0F - f;
+    return 2.0F * f * f;
+}
+}  // namespace
+
+void SoftBrush::renderDab(std::uint8_t* target,
+                          int targetWidth,
+                          int targetHeight,
+                          int x,
+                          int y,
+                          int size,
+                          std::uint32_t color,
+                          float pressure)
+{
+    std::uint8_t r = 0;
+    std::uint8_t g = 0;
+    std::uint8_t b = 0;
+    std::uint8_t a = 0;
+    unpackRGBA(color, r, g, b, a);
+
+    float radius = std::max(static_cast<float>(size) / 2.0F, 0.5F);
+
+    int minX = std::max(0, x - static_cast<int>(radius) - 1);
+    int maxX = std::min(targetWidth - 1, x + static_cast<int>(radius) + 1);
+    int minY = std::max(0, y - static_cast<int>(radius) - 1);
+    int maxY = std::min(targetHeight - 1, y + static_cast<int>(radius) + 1);
+
+    // GIMP-style exponent from hardness: harder = sharper falloff curve
+    // At hardness = 1.0: exponent approaches infinity (solid edge)
+    // At hardness = 0.0: exponent = 0.4 (maximum softness)
+    float exponent = 0.4F;
+    if ((1.0F - hardness_) > 0.0001F) {
+        exponent = 0.4F / (1.0F - hardness_);
+    } else {
+        exponent = 1000000.0F;
+    }
+
+    for (int py = minY; py <= maxY; ++py) {
+        for (int px = minX; px <= maxX; ++px) {
+            float dx = static_cast<float>(px - x);
+            float dy = static_cast<float>(py - y);
+            float dist = std::sqrt(dx * dx + dy * dy);
+
+            if (dist > radius) {
+                continue;
+            }
+
+            // GIMP-style falloff: gauss(pow(d / radius, exponent))
+            float normalizedDist = dist / radius;
+            float falloff = gimpGauss(std::pow(normalizedDist, exponent));
+
+            std::uint8_t finalAlpha =
+                static_cast<std::uint8_t>(static_cast<float>(a) * pressure * falloff);
+
+            std::uint8_t* pixel = target + (py * targetWidth + px) * 4;
+            blendPixel(pixel, r, g, b, finalAlpha);
+        }
+    }
+}
+
 void StampBrush::setStamp(std::vector<std::uint8_t> data, int width, int height)
 {
     stampData_ = std::move(data);
@@ -183,6 +260,9 @@ std::unique_ptr<BrushStrategy> createBrushStrategy(const char* typeName)
 {
     if (std::strcmp(typeName, "solid") == 0) {
         return std::make_unique<SolidBrush>();
+    }
+    if (std::strcmp(typeName, "soft") == 0) {
+        return std::make_unique<SoftBrush>();
     }
     if (std::strcmp(typeName, "stamp") == 0) {
         return std::make_unique<StampBrush>();

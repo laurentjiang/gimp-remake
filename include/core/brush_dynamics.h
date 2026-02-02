@@ -91,21 +91,21 @@ class BrushDynamics {
         input.random = dist_(rng_);
 
         if (hasLastPoint_) {
-            // Calculate velocity from distance
             float dx = static_cast<float>(x - lastX_);
             float dy = static_cast<float>(y - lastY_);
             float dist = std::sqrt(dx * dx + dy * dy);
 
             strokeDistance_ += dist;
 
-            // Velocity: normalize to 0-1 range with smoothing
-            // Typical mouse movement is 1-50 pixels per event
-            // Map so that ~30px = 0.5 velocity (more forgiving)
-            float rawVelocity = std::clamp(dist / 60.0F, 0.0F, 1.0F);
+            // Velocity: normalize to 0-1 range
+            // Typical mouse events happen every few ms, distance ~1-30px
+            // Use lower divisor for more sensitivity to speed
+            float rawVelocity = std::clamp(dist / 20.0F, 0.0F, 1.0F);
 
-            // Smooth velocity with exponential moving average to reduce jitter
-            constexpr float kSmoothFactor = 0.3F;
-            smoothedVelocity_ = smoothedVelocity_ * (1.0F - kSmoothFactor) + rawVelocity * kSmoothFactor;
+            // Light smoothing to reduce jitter, but remain responsive
+            constexpr float kSmoothFactor = 0.6F;
+            smoothedVelocity_ =
+                smoothedVelocity_ * (1.0F - kSmoothFactor) + rawVelocity * kSmoothFactor;
             input.velocity = smoothedVelocity_;
 
             // Direction: atan2 normalized to 0-1
@@ -118,6 +118,10 @@ class BrushDynamics {
             if (config_.fadeLength > 0) {
                 input.fade = std::clamp(1.0F - (strokeDistance_ / config_.fadeLength), 0.0F, 1.0F);
             }
+        } else {
+            // First point of stroke: assume medium velocity to avoid starting at full pressure
+            input.velocity = 0.3F;
+            smoothedVelocity_ = 0.3F;
         }
 
         lastX_ = x;

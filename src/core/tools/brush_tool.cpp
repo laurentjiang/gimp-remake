@@ -22,6 +22,9 @@ namespace {
 
 /**
  * @brief Interpolates points along a line between two stroke points.
+ *
+ * Uses tight spacing (10% of brush size) to ensure smooth strokes
+ * without visible scalloping, especially for soft brushes.
  */
 std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
                                                            int fromY,
@@ -37,7 +40,8 @@ std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
     int dy = toY - fromY;
     float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
 
-    float spacing = std::max(1.0F, static_cast<float>(brushSize) / 4.0F);
+    // Spacing at 10% of brush size prevents visible scalloping on soft brushes
+    float spacing = std::max(1.0F, static_cast<float>(brushSize) * 0.1F);
     int steps = std::max(1, static_cast<int>(distance / spacing));
 
     for (int i = 0; i <= steps; ++i) {

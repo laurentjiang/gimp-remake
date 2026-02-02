@@ -226,22 +226,16 @@ std::vector<ToolOption> PencilTool::getOptions() const
 {
     return {
         ToolOption{"brush_size",
-                   "Brush Size",
-                   ToolOption::Type::Slider,
-                   brushSize_,
-                   1.0F,
-                   100.0F,
-                   1.0F,
+                   "Brush Size", ToolOption::Type::Slider,
+                   brushSize_,                          1.0F,
+                   100.0F,                                            1.0F,
                    {},
                    0},
         ToolOption{"opacity",
-                   "Opacity",
-                   ToolOption::Type::Slider,
+                   "Opacity",    ToolOption::Type::Slider,
                    static_cast<int>(opacity_ * 100.0F),
-                   0.0F,
-                   100.0F,
-                   1.0F,
-                   {},
+                   0.0F,                                      100.0F,
+                   1.0F,                                                    {},
                    0}
     };
 }

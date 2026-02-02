@@ -16,10 +16,19 @@
 
 namespace gimp {
 
+namespace {
+// Height of the spin slider widget
+constexpr int kSliderHeight = 20;
+// Border radius for rounded corners
+constexpr int kBorderRadius = 3;
+// Horizontal padding for text
+constexpr int kTextPadding = 6;
+}  // namespace
+
 SpinSlider::SpinSlider(QWidget* parent) : QWidget(parent)
 {
-    setMinimumHeight(24);
-    setMaximumHeight(24);
+    setMinimumHeight(kSliderHeight);
+    setMaximumHeight(kSliderHeight);
     setMinimumWidth(120);
     setCursor(Qt::PointingHandCursor);
     setFocusPolicy(Qt::StrongFocus);
@@ -99,13 +108,14 @@ QString SpinSlider::formatValue() const
 void SpinSlider::paintEvent(QPaintEvent* /*event*/)
 {
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
     QRect rect = this->rect().adjusted(1, 1, -1, -1);
 
-    // Background
+    // Background with rounded corners
     painter.setPen(QPen(QColor(60, 60, 60), 1));
     painter.setBrush(Theme::toQColor(Theme::kSliderBackground));
-    painter.drawRect(rect);
+    painter.drawRoundedRect(rect, kBorderRadius, kBorderRadius);
 
     // Fill bar based on value
     if (max_ > min_) {
@@ -115,7 +125,7 @@ void SpinSlider::paintEvent(QPaintEvent* /*event*/)
             QRect fillRect(rect.x() + 1, rect.y() + 1, fillWidth, rect.height() - 2);
             painter.setPen(Qt::NoPen);
             painter.setBrush(Theme::toQColor(Theme::kSliderFill));
-            painter.drawRect(fillRect);
+            painter.drawRoundedRect(fillRect, kBorderRadius - 1, kBorderRadius - 1);
         }
     }
 
@@ -125,14 +135,13 @@ void SpinSlider::paintEvent(QPaintEvent* /*event*/)
     font.setPointSize(9);
     painter.setFont(font);
 
-    QString text;
-    if (!label_.isEmpty()) {
-        text = label_ + ": " + formatValue();
-    } else {
-        text = formatValue();
-    }
+    QRect textRect = rect.adjusted(kTextPadding, 0, -kTextPadding, 0);
 
-    painter.drawText(rect, Qt::AlignCenter, text);
+    // Label on left, value on right
+    if (!label_.isEmpty()) {
+        painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, label_);
+    }
+    painter.drawText(textRect, Qt::AlignRight | Qt::AlignVCenter, formatValue());
 }
 
 void SpinSlider::mousePressEvent(QMouseEvent* event)

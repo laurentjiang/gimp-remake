@@ -122,6 +122,70 @@ void SolidBrush::renderDab(std::uint8_t* target,
     }
 }
 
+void SoftBrush::renderDab(std::uint8_t* target,
+                          int targetWidth,
+                          int targetHeight,
+                          int x,
+                          int y,
+                          int size,
+                          std::uint32_t color,
+                          float pressure)
+{
+    std::uint8_t r = 0;
+    std::uint8_t g = 0;
+    std::uint8_t b = 0;
+    std::uint8_t a = 0;
+    unpackRGBA(color, r, g, b, a);
+
+    float radius = static_cast<float>(size) / 2.0F;
+    if (radius < 0.5F) {
+        radius = 0.5F;
+    }
+
+    int minX = std::max(0, x - static_cast<int>(radius) - 1);
+    int maxX = std::min(targetWidth - 1, x + static_cast<int>(radius) + 1);
+    int minY = std::max(0, y - static_cast<int>(radius) - 1);
+    int maxY = std::min(targetHeight - 1, y + static_cast<int>(radius) + 1);
+
+    // Gaussian sigma based on hardness: lower hardness = larger sigma = softer
+    // At hardness=1.0, we want a nearly solid circle
+    // At hardness=0.0, we want maximum blur
+    float sigma = radius * (1.0F - hardness_ * 0.8F);
+    if (sigma < 0.1F) {
+        sigma = 0.1F;
+    }
+    float twoSigmaSq = 2.0F * sigma * sigma;
+
+    for (int py = minY; py <= maxY; ++py) {
+        for (int px = minX; px <= maxX; ++px) {
+            float dx = static_cast<float>(px - x);
+            float dy = static_cast<float>(py - y);
+            float distSq = dx * dx + dy * dy;
+            float dist = std::sqrt(distSq);
+
+            if (dist > radius) {
+                continue;
+            }
+
+            // Gaussian falloff combined with hardness
+            float falloff = 1.0F;
+            if (hardness_ < 1.0F) {
+                // Gaussian falloff from center
+                falloff = std::exp(-distSq / twoSigmaSq);
+                // Mix with hard edge based on hardness
+                float hardEdge = (dist <= radius) ? 1.0F : 0.0F;
+                falloff = hardness_ * hardEdge + (1.0F - hardness_) * falloff;
+            }
+
+            std::uint8_t finalAlpha =
+                static_cast<std::uint8_t>(static_cast<float>(a) * pressure * falloff);
+
+            std::uint8_t* pixel = target + (py * targetWidth + px) * 4;
+            blendPixel(pixel, r, g, b, finalAlpha);
+        }
+    }
+}
+
 void StampBrush::setStamp(std::vector<std::uint8_t> data, int width, int height)
 {
     stampData_ = std::move(data);
@@ -183,6 +247,9 @@ std::unique_ptr<BrushStrategy> createBrushStrategy(const char* typeName)
 {
     if (std::strcmp(typeName, "solid") == 0) {
         return std::make_unique<SolidBrush>();
+    }
+    if (std::strcmp(typeName, "soft") == 0) {
+        return std::make_unique<SoftBrush>();
     }
     if (std::strcmp(typeName, "stamp") == 0) {
         return std::make_unique<StampBrush>();

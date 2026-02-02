@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -68,6 +69,40 @@ class SolidBrush : public BrushStrategy {
                    float pressure) override;
 
     [[nodiscard]] const char* typeName() const override { return "solid"; }
+};
+
+/**
+ * @brief Soft brush with configurable hardness using Gaussian falloff.
+ *
+ * Renders circular dabs with variable hardness:
+ * - hardness = 0.0: Full Gaussian falloff (soft, feathered edges)
+ * - hardness = 1.0: Solid circle (same as SolidBrush)
+ */
+class SoftBrush : public BrushStrategy {
+  public:
+    void renderDab(std::uint8_t* target,
+                   int targetWidth,
+                   int targetHeight,
+                   int x,
+                   int y,
+                   int size,
+                   std::uint32_t color,
+                   float pressure) override;
+
+    [[nodiscard]] const char* typeName() const override { return "soft"; }
+
+    /*! @brief Sets the brush hardness.
+     *  @param hardness Value from 0.0 (soft) to 1.0 (hard).
+     */
+    void setHardness(float hardness) { hardness_ = std::clamp(hardness, 0.0F, 1.0F); }
+
+    /*! @brief Returns the current hardness.
+     *  @return Hardness value.
+     */
+    [[nodiscard]] float hardness() const { return hardness_; }
+
+  private:
+    float hardness_ = 0.5F;
 };
 
 /**

@@ -145,4 +145,14 @@ bool BlurFilter::getParameter(const std::string& name, float& value) const
     return false;
 }
 
+float BlurFilter::progress() const
+{
+    return Filter::progress();
+}
+
+bool BlurFilter::isRunning() const
+{
+    return Filter::isRunning();
+}
+
 }  // namespace gimp

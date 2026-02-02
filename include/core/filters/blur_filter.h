@@ -42,6 +42,8 @@ class BlurFilter : public Filter {
     bool apply(std::shared_ptr<Layer> layer) override;
     bool setParameter(const std::string& name, float value) override;
     bool getParameter(const std::string& name, float& value) const override;
+    float progress() const override;
+    bool isRunning() const override;
 
   private:
     /**

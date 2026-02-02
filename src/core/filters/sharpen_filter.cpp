@@ -29,7 +29,7 @@ std::vector<std::uint8_t> SharpenFilter::createBlurredCopy(const std::vector<std
                                                            int height)
 {
     // Create a temporary layer with the data
-    auto tempLayer = std::make_shared<Layer>("temp", width, height);
+    auto tempLayer = std::make_shared<Layer>(width, height);
     tempLayer->data() = data;
 
     // Apply blur using BlurFilter
@@ -91,6 +91,16 @@ bool SharpenFilter::getParameter(const std::string& name, float& value) const
         return true;
     }
     return false;
+}
+
+float SharpenFilter::progress() const
+{
+    return Filter::progress();
+}
+
+bool SharpenFilter::isRunning() const
+{
+    return Filter::isRunning();
 }
 
 }  // namespace gimp

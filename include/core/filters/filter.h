@@ -59,7 +59,7 @@ class Filter {
      * @param value Parameter value (interpretation depends on parameter type).
      * @return True if parameter was recognized and set, false otherwise.
      */
-    virtual bool setParameter(const std::string& name, float value) { return false; }
+    virtual bool setParameter(const std::string& name, float value) = 0;
 
     /**
      * @brief Gets a filter parameter value by name.
@@ -67,19 +67,19 @@ class Filter {
      * @param value Output parameter value.
      * @return True if parameter exists and was retrieved, false otherwise.
      */
-    virtual bool getParameter(const std::string& name, float& value) const { return false; }
+    virtual bool getParameter(const std::string& name, float& value) const = 0;
 
     /**
      * @brief Returns the progress of the current operation (0.0 to 1.0).
      * @return Progress value.
      */
-    [[nodiscard]] virtual float progress() const { return 1.0F; }
+    [[nodiscard]] virtual float progress() const = 0;
 
     /**
      * @brief Checks if the filter is currently processing.
      * @return True if filter is running, false otherwise.
      */
-    [[nodiscard]] virtual bool isRunning() const { return false; }
+    [[nodiscard]] virtual bool isRunning() const = 0;
 };
 
 }  // namespace gimp

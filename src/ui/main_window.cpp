@@ -33,7 +33,9 @@
 
 #include "history/simple_history_manager.h"
 
+#include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QStatusBar>
 #include <QToolBar>
 
@@ -184,12 +186,25 @@ void MainWindow::setupDockWidgets()
     // Light gray background matching workspace (#404040) for left dock widgets
     const QString dockStyle =
         "QDockWidget { background-color: #404040; }"
-        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; "
-        "font-weight: bold; }";
+        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; }";
+
+    // Helper to create custom title bar with bold label
+    auto createTitleBar = [](const QString& title) {
+        auto* titleBar = new QWidget();
+        titleBar->setStyleSheet("background-color: #404040;");
+        auto* layout = new QHBoxLayout(titleBar);
+        layout->setContentsMargins(8, 4, 8, 4);
+        auto* label = new QLabel(title);
+        label->setStyleSheet("color: white; font-weight: bold;");
+        layout->addWidget(label);
+        layout->addStretch();
+        return titleBar;
+    };
 
     // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);
-    m_toolboxDock = new QDockWidget("Toolbox", this);
+    m_toolboxDock = new QDockWidget(this);
+    m_toolboxDock->setTitleBarWidget(createTitleBar("Toolbox"));
     m_toolboxDock->setWidget(m_toolboxPanel);
     m_toolboxDock->setStyleSheet(dockStyle);
     m_toolboxDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
@@ -197,7 +212,16 @@ void MainWindow::setupDockWidgets()
 
     // Tool Options Panel under Toolbox
     m_toolOptionsPanel = new ToolOptionsPanel(this);
-    m_toolOptionsDock = new QDockWidget("Tool Options", this);
+    m_toolOptionsDock = new QDockWidget(this);
+    m_toolOptionsTitleLabel = new QLabel("Tool Options");
+    m_toolOptionsTitleLabel->setStyleSheet("color: white; font-weight: bold;");
+    auto* optionsTitleBar = new QWidget();
+    optionsTitleBar->setStyleSheet("background-color: #404040;");
+    auto* optionsLayout = new QHBoxLayout(optionsTitleBar);
+    optionsLayout->setContentsMargins(8, 4, 8, 4);
+    optionsLayout->addWidget(m_toolOptionsTitleLabel);
+    optionsLayout->addStretch();
+    m_toolOptionsDock->setTitleBarWidget(optionsTitleBar);
     m_toolOptionsDock->setWidget(m_toolOptionsPanel);
     m_toolOptionsDock->setStyleSheet(dockStyle);
     m_toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable |
@@ -352,9 +376,11 @@ void MainWindow::onToolChanged(const Tool* tool)
 {
     if (m_toolOptionsPanel && tool) {
         m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
-        m_toolOptionsDock->setWindowTitle(QString::fromStdString(tool->name()));
-    } else if (m_toolOptionsDock) {
-        m_toolOptionsDock->setWindowTitle("Tool Options");
+        if (m_toolOptionsTitleLabel) {
+            m_toolOptionsTitleLabel->setText(QString::fromStdString(tool->name()));
+        }
+    } else if (m_toolOptionsTitleLabel) {
+        m_toolOptionsTitleLabel->setText("Tool Options");
     }
 }
 

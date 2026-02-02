@@ -11,6 +11,7 @@
 
 #include <QAction>
 #include <QDockWidget>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QShortcut>
@@ -109,6 +110,7 @@ class MainWindow : public QMainWindow {
 
     QDockWidget* m_toolboxDock = nullptr;
     QDockWidget* m_toolOptionsDock = nullptr;
+    QLabel* m_toolOptionsTitleLabel = nullptr;
     QDockWidget* m_rightDock = nullptr;
     QTabWidget* m_rightTabWidget = nullptr;
 

@@ -25,6 +25,7 @@
 #include "ui/debug_hud.h"
 #include "ui/history_panel.h"
 #include "ui/layers_panel.h"
+#include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
 #include "ui/tool_options_bar.h"
 #include "ui/tool_options_panel.h"
@@ -224,6 +225,29 @@ void MainWindow::setupShortcuts()
 {
     auto* paletteShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_P), this);
     connect(paletteShortcut, &QShortcut::activated, this, &MainWindow::onShowCommandPalette);
+
+    m_shortcutManager = new ShortcutManager(this);
+    m_shortcutManager->registerToolShortcuts();
+    m_shortcutManager->registerActionShortcuts();
+
+    connect(m_shortcutManager,
+            &ShortcutManager::toolSwitchRequested,
+            this,
+            &MainWindow::onToolSwitchRequested);
+    connect(m_shortcutManager,
+            &ShortcutManager::brushSizeDecreaseRequested,
+            this,
+            &MainWindow::onBrushSizeDecrease);
+    connect(m_shortcutManager,
+            &ShortcutManager::brushSizeIncreaseRequested,
+            this,
+            &MainWindow::onBrushSizeIncrease);
+    connect(
+        m_shortcutManager, &ShortcutManager::swapColorsRequested, this, &MainWindow::onSwapColors);
+    connect(m_shortcutManager,
+            &ShortcutManager::resetColorsRequested,
+            this,
+            &MainWindow::onResetColors);
 }
 
 void MainWindow::createDocument()
@@ -321,6 +345,59 @@ void MainWindow::onToolChanged(const Tool* tool)
 {
     if (m_toolOptionsPanel && tool) {
         m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
+    }
+}
+
+void MainWindow::onToolSwitchRequested(const QString& toolId)
+{
+    EventBus::instance().publish(ToolSwitchRequestEvent{toolId.toStdString()});
+}
+
+void MainWindow::onBrushSizeDecrease()
+{
+    auto* tool = ToolFactory::instance().activeTool();
+    if (tool == nullptr) {
+        return;
+    }
+
+    int currentSize = tool->brushSize();
+    int newSize = std::max(1, currentSize - 5);
+    tool->setBrushSize(newSize);
+
+    EventBus::instance().publish(
+        ToolPropertyChangedEvent{tool->id(), "brushSize"});
+    statusBar()->showMessage(QString("Brush size: %1").arg(newSize), 1000);
+}
+
+void MainWindow::onBrushSizeIncrease()
+{
+    auto* tool = ToolFactory::instance().activeTool();
+    if (tool == nullptr) {
+        return;
+    }
+
+    int currentSize = tool->brushSize();
+    int newSize = std::min(500, currentSize + 5);
+    tool->setBrushSize(newSize);
+
+    EventBus::instance().publish(
+        ToolPropertyChangedEvent{tool->id(), "brushSize"});
+    statusBar()->showMessage(QString("Brush size: %1").arg(newSize), 1000);
+}
+
+void MainWindow::onSwapColors()
+{
+    if (m_colorChooserPanel != nullptr) {
+        m_colorChooserPanel->swapColors();
+        statusBar()->showMessage("Colors swapped", 1000);
+    }
+}
+
+void MainWindow::onResetColors()
+{
+    if (m_colorChooserPanel != nullptr) {
+        m_colorChooserPanel->resetToDefaults();
+        statusBar()->showMessage("Colors reset to defaults", 1000);
     }
 }
 

@@ -611,6 +611,18 @@ void ColorChooserPanel::onSwapColors()
     publishColorChange();
 }
 
+void ColorChooserPanel::swapColors()
+{
+    onSwapColors();
+}
+
+void ColorChooserPanel::resetToDefaults()
+{
+    setForegroundColor(0x000000FF);  // Black
+    setBackgroundColor(0xFFFFFFFF);  // White
+    publishColorChange();
+}
+
 void ColorChooserPanel::onForegroundClicked()
 {
     editingForeground_ = true;

@@ -27,6 +27,7 @@ class DebugHud;
 class Document;
 class HistoryPanel;
 class LayersPanel;
+class ShortcutManager;
 class SimpleHistoryManager;
 class SkiaCanvasWidget;
 class SkiaRenderer;
@@ -73,6 +74,11 @@ class MainWindow : public QMainWindow {
     void onShowCommandPalette();
     void onUndo();
     void onRedo();
+    void onToolSwitchRequested(const QString& toolId);
+    void onBrushSizeDecrease();
+    void onBrushSizeIncrease();
+    void onSwapColors();
+    void onResetColors();
 
   private:
     void setupMenuBar();
@@ -98,6 +104,7 @@ class MainWindow : public QMainWindow {
     ColorChooserPanel* m_colorChooserPanel = nullptr;
     CommandPalette* m_commandPalette = nullptr;
     DebugHud* m_debugHud = nullptr;
+    ShortcutManager* m_shortcutManager = nullptr;
 
     QDockWidget* m_toolboxDock = nullptr;
     QDockWidget* m_rightDock = nullptr;

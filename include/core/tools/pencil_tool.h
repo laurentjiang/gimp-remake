@@ -33,12 +33,12 @@ class PencilTool : public Tool {
     /*! @brief Sets the brush size in pixels.
      *  @param size Brush diameter (1 to 1000).
      */
-    void setBrushSize(int size) { brushSize_ = size; }
+    void setBrushSize(int size) override { brushSize_ = size; }
 
     /*! @brief Returns the current brush size.
      *  @return Brush diameter in pixels.
      */
-    [[nodiscard]] int brushSize() const { return brushSize_; }
+    [[nodiscard]] int brushSize() const override { return brushSize_; }
 
     /*! @brief Sets the drawing color (updates global foreground color).
      *  @param rgba Color in RGBA format (0xRRGGBBAA).

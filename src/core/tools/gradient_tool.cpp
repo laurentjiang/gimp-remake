@@ -278,4 +278,56 @@ std::uint32_t GradientTool::lerpColor(std::uint32_t color1, std::uint32_t color2
            (static_cast<std::uint32_t>(b) << 8) | static_cast<std::uint32_t>(a);
 }
 
+std::vector<ToolOption> GradientTool::getOptions() const
+{
+    std::vector<ToolOption> options;
+
+    ToolOption shapeOption;
+    shapeOption.id = "gradient_shape";
+    shapeOption.label = "Shape";
+    shapeOption.type = ToolOption::Type::Dropdown;
+    shapeOption.choices = {"Linear", "Radial"};
+    shapeOption.selectedIndex = (mode_ == GradientMode::Linear) ? 0 : 1;
+    shapeOption.value = shapeOption.selectedIndex;
+    options.push_back(shapeOption);
+
+    ToolOption fillOption;
+    fillOption.id = "gradient_fill";
+    fillOption.label = "Fill";
+    fillOption.type = ToolOption::Type::Dropdown;
+    fillOption.choices = {"FG to BG", "FG to Transparent"};
+    fillOption.selectedIndex = (fill_ == GradientFill::ForegroundToBackground) ? 0 : 1;
+    fillOption.value = fillOption.selectedIndex;
+    options.push_back(fillOption);
+
+    return options;
+}
+
+void GradientTool::setOptionValue(const std::string& optionId,
+                                  const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "gradient_shape") {
+        if (const auto* intVal = std::get_if<int>(&value)) {
+            mode_ = (*intVal == 0) ? GradientMode::Linear : GradientMode::Radial;
+        }
+    } else if (optionId == "gradient_fill") {
+        if (const auto* intVal = std::get_if<int>(&value)) {
+            fill_ = (*intVal == 0) ? GradientFill::ForegroundToBackground
+                                   : GradientFill::ForegroundToTransparent;
+        }
+    }
+}
+
+std::variant<int, float, bool, std::string> GradientTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "gradient_shape") {
+        return (mode_ == GradientMode::Linear) ? 0 : 1;
+    }
+    if (optionId == "gradient_fill") {
+        return (fill_ == GradientFill::ForegroundToBackground) ? 0 : 1;
+    }
+    return 0;
+}
+
 }  // namespace gimp

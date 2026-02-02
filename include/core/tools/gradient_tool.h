@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/tool.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <memory>
@@ -46,12 +47,19 @@ enum class GradientFill {
  * - Foreground-to-background and foreground-to-transparent modes
  * - Undo/redo via DrawCommand
  */
-class GradientTool : public Tool {
+class GradientTool : public Tool, public ToolOptions {
   public:
     GradientTool() = default;
 
     [[nodiscard]] std::string id() const override;
     [[nodiscard]] std::string name() const override;
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                        const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const override;
 
     /**
      * @brief Sets the gradient mode (linear or radial).

@@ -19,9 +19,7 @@
 
 namespace gimp {
 
-ToolboxPanel::ToolboxPanel(QWidget* parent)
-    : QWidget(parent),
-      buttonGroup_(new QButtonGroup(this))
+ToolboxPanel::ToolboxPanel(QWidget* parent) : QWidget(parent), buttonGroup_(new QButtonGroup(this))
 {
     setupUi();
     populateTools();
@@ -118,13 +116,20 @@ void ToolboxPanel::reflowButtons()
     int row = 0;
     int col = 0;
     for (auto* button : orderedButtons_) {
-        toolGrid_->addWidget(button, row, col, Qt::AlignLeft | Qt::AlignTop);
+        toolGrid_->addWidget(button, row, col);
         ++col;
         if (col >= currentColumns_) {
             col = 0;
             ++row;
         }
     }
+
+    // Reset column stretch factors to prevent expansion
+    for (int c = 0; c < currentColumns_; ++c) {
+        toolGrid_->setColumnStretch(c, 0);
+    }
+    // Add stretch after last column to push buttons left
+    toolGrid_->setColumnStretch(currentColumns_, 1);
 }
 
 void ToolboxPanel::resizeEvent(QResizeEvent* event)

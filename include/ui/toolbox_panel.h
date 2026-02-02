@@ -66,7 +66,7 @@ class ToolboxPanel : public QWidget {
 
     static constexpr int kButtonSize = 24;
     static constexpr int kButtonSpacing = 1;
-    static constexpr int kMinColumns = 4;
+    static constexpr int kMinColumns = 5;
     static constexpr int kMargin = 4;
 
     QVBoxLayout* mainLayout_ = nullptr;

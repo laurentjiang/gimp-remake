@@ -1,8 +1,8 @@
 /**
  * @file gradient_tool.cpp
  * @brief Implementation of GradientTool.
- * @author Laurent Jiang
- * @date 2026-02-02
+ * @author Aless Tosi
+ * @date 2026-02-01
  */
 
 #include "core/tools/gradient_tool.h"

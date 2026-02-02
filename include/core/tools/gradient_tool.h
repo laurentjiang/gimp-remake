@@ -1,8 +1,8 @@
 /**
  * @file gradient_tool.h
  * @brief Gradient tool for drawing linear and radial gradients.
- * @author Laurent Jiang
- * @date 2026-02-02
+ * @author Aless Tosi
+ * @date 2026-02-01
  */
 
 #pragma once

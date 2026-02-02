@@ -1,8 +1,8 @@
 /**
  * @file test_gradient_tool.cpp
  * @brief Unit tests for GradientTool.
- * @author Laurent Jiang
- * @date 2026-02-02
+ * @author Aless Tosi
+ * @date 2026-02-01
  */
 
 #include "core/command_bus.h"

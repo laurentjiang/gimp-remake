@@ -60,11 +60,17 @@ class SpinSlider : public QWidget {
     void valueChanged(double value);
 
   protected:
+    /*! @brief Paints the slider bar and value text. */
     void paintEvent(QPaintEvent* event) override;
+    /*! @brief Starts dragging when mouse is pressed. */
     void mousePressEvent(QMouseEvent* event) override;
+    /*! @brief Updates value during drag. */
     void mouseMoveEvent(QMouseEvent* event) override;
+    /*! @brief Ends dragging. */
     void mouseReleaseEvent(QMouseEvent* event) override;
+    /*! @brief Adjusts value on scroll wheel. */
     void wheelEvent(QWheelEvent* event) override;
+    /*! @brief Shows text editor on double-click. */
     void mouseDoubleClickEvent(QMouseEvent* event) override;
 
   private slots:

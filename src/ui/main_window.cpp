@@ -10,6 +10,8 @@
 #include "core/command_bus.h"
 #include "core/document.h"
 #include "core/events.h"
+#include "core/filters/blur_filter.h"
+#include "core/filters/sharpen_filter.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
@@ -36,6 +38,7 @@
 #include "history/simple_history_manager.h"
 
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QStatusBar>
@@ -173,6 +176,10 @@ void MainWindow::setupMenuBar()
     layerMenu->addSeparator();
     layerMenu->addAction("&Merge Down", []() {});
     layerMenu->addAction("&Flatten Image", []() {});
+
+    auto* filtersMenu = menuBar()->addMenu("Filte&rs");
+    filtersMenu->addAction("&Blur...", this, &MainWindow::onApplyBlur);
+    filtersMenu->addAction("&Sharpen...", this, &MainWindow::onApplySharpen);
 
     auto* helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction("&About", []() {});
@@ -432,6 +439,60 @@ void MainWindow::onResetColors()
     if (m_colorChooserPanel != nullptr) {
         m_colorChooserPanel->resetToDefaults();
         statusBar()->showMessage("Colors reset to defaults", 1000);
+    }
+}
+
+void MainWindow::onApplyBlur()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to apply filter", 2000);
+        return;
+    }
+
+    bool ok = false;
+    double radius =
+        QInputDialog::getDouble(this, "Blur", "Radius (1-100):", 5.0, 1.0, 100.0, 1, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    auto layer = m_document->layers()[0];
+    BlurFilter filter;
+    filter.setRadius(static_cast<float>(radius));
+
+    if (filter.apply(layer)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage(QString("Applied blur with radius %1").arg(radius), 2000);
+    } else {
+        statusBar()->showMessage("Failed to apply blur filter", 2000);
+    }
+}
+
+void MainWindow::onApplySharpen()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to apply filter", 2000);
+        return;
+    }
+
+    bool ok = false;
+    double amount =
+        QInputDialog::getDouble(this, "Sharpen", "Amount (0.0-2.0):", 1.0, 0.0, 2.0, 2, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    auto layer = m_document->layers()[0];
+    SharpenFilter filter;
+    filter.setAmount(static_cast<float>(amount));
+
+    if (filter.apply(layer)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage(QString("Applied sharpen with amount %1").arg(amount), 2000);
+    } else {
+        statusBar()->showMessage("Failed to apply sharpen filter", 2000);
     }
 }
 

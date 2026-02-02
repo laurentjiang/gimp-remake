@@ -81,6 +81,8 @@ class MainWindow : public QMainWindow {
     void onBrushSizeIncrease();
     void onSwapColors();
     void onResetColors();
+    void onApplyBlur();
+    void onApplySharpen();
 
   private:
     void setupMenuBar();

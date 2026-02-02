@@ -11,7 +11,7 @@ namespace gimp {
 
 bool Filter::setParameter(const std::string& name, float value)
 {
-    (void)name;    // Suppress unused parameter warning
+    (void)name;  // Suppress unused parameter warning
     (void)value;
     return false;
 }

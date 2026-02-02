@@ -63,21 +63,28 @@ class ToolButton : public QToolButton {
     void toolActivated(const std::string& toolId);
 
   protected:
+    /// @brief Custom paint handler for button appearance.
     void paintEvent(QPaintEvent* event) override;
+    /// @brief Handles mouse entering the widget.
     void enterEvent(QEnterEvent* event) override;
+    /// @brief Handles mouse leaving the widget.
     void leaveEvent(QEvent* event) override;
+    /// @brief Handles mouse button press.
     void mousePressEvent(QMouseEvent* event) override;
+    /// @brief Handles right-click context menu.
     void contextMenuEvent(QContextMenuEvent* event) override;
 
   private:
+    /// @brief Updates the button appearance based on current state.
     void updateAppearance();
+    /// @brief Shows the sub-tool popup menu at the given position.
     void showSubToolMenu(const QPoint& pos);
 
-    ToolDescriptor primaryTool_;
-    std::vector<ToolDescriptor> subTools_;
-    std::string currentToolId_;
-    QMenu* subToolMenu_ = nullptr;
-    bool hovered_ = false;
+    ToolDescriptor primaryTool_;              ///< The primary tool descriptor.
+    std::vector<ToolDescriptor> subTools_;    ///< Sub-tools for right-click menu.
+    std::string currentToolId_;               ///< Currently active tool ID.
+    QMenu* subToolMenu_ = nullptr;            ///< Popup menu for sub-tools.
+    bool hovered_ = false;                    ///< Whether the button is hovered.
 };
 
 }  // namespace gimp

@@ -34,7 +34,11 @@ class ToolOptionsPanel : public QWidget {
     Q_OBJECT
 
   public:
+    /*! @brief Constructs the tool options panel.
+     *  @param parent Optional parent widget.
+     */
     explicit ToolOptionsPanel(QWidget* parent = nullptr);
+    /// @brief Destructor.
     ~ToolOptionsPanel() override = default;
 
     /**

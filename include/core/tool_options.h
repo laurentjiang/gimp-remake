@@ -17,26 +17,27 @@ namespace gimp {
  * @brief Represents a single tool option with metadata.
  */
 struct ToolOption {
+    /**
+     * @brief The type of UI control for this option.
+     */
     enum class Type {
-        Slider,
-        Dropdown,
-        Checkbox,
-        ColorPicker
+        Slider,      ///< Numeric slider with min/max range.
+        Dropdown,    ///< Dropdown list with choices.
+        Checkbox,    ///< Boolean checkbox.
+        ColorPicker  ///< Color selection control.
     };
 
-    std::string id;                                     ///< Unique identifier for the option
-    std::string label;                                  ///< Display name
-    Type type;                                          ///< Option type
-    std::variant<int, float, bool, std::string> value;  ///< Current value
+    std::string id;                                     ///< Unique identifier for the option.
+    std::string label;                                  ///< Display name.
+    Type type;                                          ///< Option type.
+    std::variant<int, float, bool, std::string> value;  ///< Current value.
 
-    // For Slider type
-    float minValue = 0.0F;
-    float maxValue = 100.0F;
-    float step = 1.0F;
+    float minValue = 0.0F;   ///< Minimum value (for Slider type).
+    float maxValue = 100.0F; ///< Maximum value (for Slider type).
+    float step = 1.0F;       ///< Step increment (for Slider type).
 
-    // For Dropdown type
-    std::vector<std::string> choices;
-    int selectedIndex = 0;
+    std::vector<std::string> choices;  ///< Available choices (for Dropdown type).
+    int selectedIndex = 0;             ///< Currently selected index (for Dropdown type).
 };
 
 /**

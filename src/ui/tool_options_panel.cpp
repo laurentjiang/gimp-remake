@@ -10,6 +10,7 @@
 #include "ui/spin_slider.h"
 
 #include <QCheckBox>
+#include <QColor>
 #include <QComboBox>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -22,10 +23,15 @@ namespace gimp {
 
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
+    // Set background via palette to ensure all areas are filled
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    setPalette(pal);
+    setAutoFillBackground(true);
+
     setStyleSheet(
-        "QWidget { background-color: #404040; }"
-        "QLabel { color: #ffffff; }"
-        "QCheckBox { color: #ffffff; }"
+        "QLabel { color: #ffffff; background: transparent; }"
+        "QCheckBox { color: #ffffff; background: transparent; }"
         "QCheckBox::indicator { width: 16px; height: 16px; }"
         "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; }"
         "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; }");
@@ -39,14 +45,24 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
 
+    // Style scroll area and viewport with same background
+    scrollArea->setStyleSheet("QScrollArea { background: #404040; border: none; }"
+                              "QScrollArea > QWidget > QWidget { background: #404040; }");
+    scrollArea->viewport()->setAutoFillBackground(true);
+    QPalette scrollPal = scrollArea->viewport()->palette();
+    scrollPal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    scrollArea->viewport()->setPalette(scrollPal);
+
     auto* optionsWidget = new QWidget();
+    optionsWidget->setAutoFillBackground(true);
+    optionsWidget->setPalette(scrollPal);
     m_mainLayout = new QVBoxLayout(optionsWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(8);
     m_mainLayout->setAlignment(Qt::AlignTop);
 
     scrollArea->setWidget(optionsWidget);
-    containerLayout->addWidget(scrollArea, 1);  // Stretch factor 1 to fill space
+    containerLayout->addWidget(scrollArea, 1);
 
     setLayout(containerLayout);
 }

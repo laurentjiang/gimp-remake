@@ -11,6 +11,7 @@
 #include "core/events.h"
 #include "core/tool_registry.h"
 
+#include <QColor>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -37,12 +38,17 @@ ToolboxPanel::~ToolboxPanel()
 
 void ToolboxPanel::setupUi()
 {
+    // Set background via palette to ensure all areas are filled
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    setPalette(pal);
+    setAutoFillBackground(true);
+
     mainLayout_ = new QVBoxLayout(this);
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    setStyleSheet("QWidget { background-color: #404040; }"
-                  "QLabel { color: #ffffff; }"
+    setStyleSheet("QLabel { color: #ffffff; background: transparent; }"
                   "QGroupBox { color: #ffffff; background-color: #404040; "
                   "border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");

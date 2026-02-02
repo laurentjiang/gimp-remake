@@ -20,8 +20,9 @@ namespace gimp {
 
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
+    // Match workspace background color (#404040)
     setStyleSheet(
-        "ToolOptionsPanel { background-color: #707070; }"
+        "ToolOptionsPanel { background-color: #404040; }"
         "QLabel { color: #ffffff; }"
         "QCheckBox { color: #ffffff; }"
         "QCheckBox::indicator { width: 16px; height: 16px; }"

@@ -53,10 +53,6 @@ void ToolboxPanel::setupUi()
                   "border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");
 
-    auto* titleLabel = new QLabel("Toolbox", this);
-    titleLabel->setStyleSheet("font-weight: bold; font-size: 12px;");
-    mainLayout_->addWidget(titleLabel);
-
     setMinimumWidth(80);
 }
 

@@ -184,7 +184,8 @@ void MainWindow::setupDockWidgets()
     // Light gray background matching workspace (#404040) for left dock widgets
     const QString dockStyle =
         "QDockWidget { background-color: #404040; }"
-        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; }";
+        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; "
+        "font-weight: bold; }";
 
     // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);

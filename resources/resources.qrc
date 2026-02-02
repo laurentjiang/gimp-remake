@@ -18,5 +18,6 @@
         <file>icons/zoom.svg</file>
         <file>icons/eye-visible.svg</file>
         <file>icons/eye-hidden.svg</file>
+        <file>icons/check.svg</file>
     </qresource>
 </RCC>

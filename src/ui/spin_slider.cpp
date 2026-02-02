@@ -113,7 +113,7 @@ void SpinSlider::paintEvent(QPaintEvent* /*event*/)
         if (fillWidth > 0) {
             QRect fillRect(rect.x() + 1, rect.y() + 1, fillWidth, rect.height() - 2);
             painter.setPen(Qt::NoPen);
-            painter.setBrush(QColor(90, 130, 180));
+            painter.setBrush(QColor(85, 85, 85));
             painter.drawRoundedRect(fillRect, 2, 2);
         }
     }

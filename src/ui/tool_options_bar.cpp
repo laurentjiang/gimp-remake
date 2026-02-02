@@ -54,6 +54,14 @@ void ToolOptionsBar::setupUi()
     mainLayout_->addWidget(separator);
 
     optionsContainer_ = new QWidget(this);
+    optionsContainer_->setStyleSheet(
+        "QCheckBox::indicator { width: 14px; height: 14px; }"
+        "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; "
+        "border-radius: 2px; }"
+        "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; "
+        "border-radius: 2px; image: url(:/icons/check.svg); }"
+        "QCheckBox::indicator:checked:hover { background-color: #666; }"
+        "QCheckBox::indicator:unchecked:hover { background-color: #4a4a4a; }");
     auto* optionsLayout = new QHBoxLayout(optionsContainer_);
     optionsLayout->setContentsMargins(0, 0, 0, 0);
     optionsLayout->setSpacing(8);

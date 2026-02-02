@@ -41,14 +41,14 @@ void ToolboxPanel::setupUi()
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    // Match workspace background color (#404040)
+    // Dark background matching spin slider background (#2b2b2b)
     setAutoFillBackground(true);
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(64, 64, 64));
+    pal.setColor(QPalette::Window, QColor(43, 43, 43));
     setPalette(pal);
 
     setStyleSheet("QLabel { color: #ffffff; }"
-                  "QGroupBox { color: #ffffff; background-color: #404040; "
+                  "QGroupBox { color: #ffffff; background-color: #2b2b2b; "
                   "border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");
 

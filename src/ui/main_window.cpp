@@ -181,10 +181,10 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
-    // Match workspace background color (#404040) for left dock widgets
+    // Dark background matching spin slider background (#2b2b2b) for left dock widgets
     const QString dockStyle =
-        "QDockWidget { background-color: #404040; }"
-        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; }";
+        "QDockWidget { background-color: #2b2b2b; }"
+        "QDockWidget::title { background-color: #2b2b2b; color: white; padding: 4px; }";
 
     // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);
@@ -351,6 +351,10 @@ void MainWindow::onToolChanged(const Tool* tool)
 {
     if (m_toolOptionsPanel && tool) {
         m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
+        // Update dock title with tool name
+        m_toolOptionsDock->setWindowTitle(QString::fromStdString(tool->name()) + " Options");
+    } else if (m_toolOptionsDock) {
+        m_toolOptionsDock->setWindowTitle("Tool Options");
     }
 }
 

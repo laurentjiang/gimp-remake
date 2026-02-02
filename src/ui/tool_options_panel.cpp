@@ -22,14 +22,14 @@ namespace gimp {
 
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
-    // Match workspace background color (#404040)
+    // Dark background matching spin slider background (#2b2b2b)
     setAutoFillBackground(true);
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(64, 64, 64));
+    pal.setColor(QPalette::Window, QColor(43, 43, 43));
     setPalette(pal);
 
     setStyleSheet(
-        "QWidget { background-color: #404040; }"
+        "QWidget { background-color: #2b2b2b; }"
         "QLabel { color: #ffffff; background: transparent; }"
         "QCheckBox { color: #ffffff; background: transparent; }"
         "QCheckBox::indicator { width: 16px; height: 16px; }"
@@ -40,10 +40,7 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     containerLayout->setContentsMargins(8, 8, 8, 8);
     containerLayout->setSpacing(4);
 
-    // Tool name header
-    m_toolNameLabel = new QLabel("No Tool Selected", this);
-    m_toolNameLabel->setStyleSheet("font-weight: bold; font-size: 12px; margin-bottom: 8px;");
-    containerLayout->addWidget(m_toolNameLabel);
+    // Tool name header (removed - now shown in dock title)
 
     // Scroll area for options
     auto* scrollArea = new QScrollArea(this);
@@ -70,11 +67,8 @@ void ToolOptionsPanel::setTool(Tool* tool)
     clearOptions();
 
     if (!m_currentTool) {
-        m_toolNameLabel->setText("No Tool Selected");
         return;
     }
-
-    m_toolNameLabel->setText(QString::fromStdString(m_currentTool->name()));
 
     if (m_toolOptions) {
         populateOptions();

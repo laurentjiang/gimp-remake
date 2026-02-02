@@ -64,7 +64,6 @@ class ToolOptionsPanel : public QWidget {
     ToolOptions* m_toolOptions = nullptr;
 
     QVBoxLayout* m_mainLayout = nullptr;
-    QLabel* m_toolNameLabel = nullptr;
 
     // Maps option ID to its widget for quick lookup
     std::map<std::string, QWidget*> m_optionWidgets;

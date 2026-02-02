@@ -100,19 +100,19 @@ void SpinSlider::paintEvent(QPaintEvent* /*event*/)
 
     QRect rect = this->rect().adjusted(1, 1, -1, -1);
 
-    // Background
-    painter.setPen(QPen(QColor(80, 80, 80), 1));
-    painter.setBrush(QColor(60, 60, 60));
+    // Background (darker like current UI)
+    painter.setPen(QPen(QColor(60, 60, 60), 1));
+    painter.setBrush(QColor(43, 43, 43));  // #2b2b2b
     painter.drawRect(rect);
 
-    // Fill bar based on value
+    // Fill bar based on value (light gray)
     if (max_ > min_) {
         double ratio = (value_ - min_) / (max_ - min_);
         int fillWidth = static_cast<int>(static_cast<double>(rect.width() - 2) * ratio);
         if (fillWidth > 0) {
             QRect fillRect(rect.x() + 1, rect.y() + 1, fillWidth, rect.height() - 2);
             painter.setPen(Qt::NoPen);
-            painter.setBrush(QColor(85, 85, 85));
+            painter.setBrush(QColor(160, 160, 160));  // Light gray fill
             painter.drawRect(fillRect);
         }
     }

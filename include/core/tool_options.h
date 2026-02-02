@@ -17,11 +17,16 @@ namespace gimp {
  * @brief Represents a single tool option with metadata.
  */
 struct ToolOption {
-    enum class Type { Slider, Dropdown, Checkbox, ColorPicker };
+    enum class Type {
+        Slider,
+        Dropdown,
+        Checkbox,
+        ColorPicker
+    };
 
-    std::string id;           ///< Unique identifier for the option
-    std::string label;        ///< Display name
-    Type type;                ///< Option type
+    std::string id;                                     ///< Unique identifier for the option
+    std::string label;                                  ///< Display name
+    Type type;                                          ///< Option type
     std::variant<int, float, bool, std::string> value;  ///< Current value
 
     // For Slider type
@@ -53,15 +58,15 @@ class ToolOptions {
      * @param value The new value.
      */
     virtual void setOptionValue(const std::string& optionId,
-                               const std::variant<int, float, bool, std::string>& value) = 0;
+                                const std::variant<int, float, bool, std::string>& value) = 0;
 
     /**
      * @brief Get a specific option value.
      * @param optionId The option identifier.
      * @return The current value.
      */
-    [[nodiscard]] virtual std::variant<int, float, bool, std::string>
-    getOptionValue(const std::string& optionId) const = 0;
+    [[nodiscard]] virtual std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const = 0;
 };
 
 }  // namespace gimp

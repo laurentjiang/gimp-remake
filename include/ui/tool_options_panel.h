@@ -10,17 +10,17 @@
 #include "core/tool.h"
 #include "core/tool_options.h"
 
-#include <QWidget>
-#include <QVBoxLayout>
-#include <QSlider>
-#include <QComboBox>
 #include <QCheckBox>
-#include <QLabel>
-#include <QSpinBox>
+#include <QComboBox>
 #include <QDoubleSpinBox>
+#include <QLabel>
+#include <QSlider>
+#include <QSpinBox>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include <memory>
 #include <map>
+#include <memory>
 
 namespace gimp {
 

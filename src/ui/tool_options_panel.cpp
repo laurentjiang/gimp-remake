@@ -24,8 +24,7 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
         "ToolOptionsPanel { background-color: #2b2b2b; }"
         "QLabel { color: #ffffff; }"
         "QSlider::groove:horizontal { background: #444; height: 8px; }"
-        "QSlider::handle:horizontal { background: #0078d4; width: 18px; margin: -5px 0; }"
-    );
+        "QSlider::handle:horizontal { background: #0078d4; width: 18px; margin: -5px 0; }");
 
     auto* containerLayout = new QVBoxLayout(this);
     containerLayout->setContentsMargins(8, 8, 8, 8);
@@ -159,7 +158,8 @@ void ToolOptionsPanel::createOptionWidget(const ToolOption& option)
                     static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                     this,
                     [this, option](int index) {
-                        if (m_toolOptions && index >= 0 && index < static_cast<int>(option.choices.size())) {
+                        if (m_toolOptions && index >= 0 &&
+                            index < static_cast<int>(option.choices.size())) {
                             m_toolOptions->setOptionValue(option.id, option.choices[index]);
                         }
                     });
@@ -174,11 +174,14 @@ void ToolOptionsPanel::createOptionWidget(const ToolOption& option)
                 checkBox->setChecked(std::get<bool>(option.value));
             }
 
-            connect(checkBox, &QCheckBox::checkStateChanged, this, [this, option](Qt::CheckState state) {
-                if (m_toolOptions) {
-                    m_toolOptions->setOptionValue(option.id, state == Qt::Checked);
-                }
-            });
+            connect(checkBox,
+                    &QCheckBox::checkStateChanged,
+                    this,
+                    [this, option](Qt::CheckState state) {
+                        if (m_toolOptions) {
+                            m_toolOptions->setOptionValue(option.id, state == Qt::Checked);
+                        }
+                    });
 
             widget = checkBox;
             break;

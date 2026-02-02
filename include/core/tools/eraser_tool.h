@@ -50,8 +50,8 @@ class EraserTool : public Tool, public ToolOptions {
     [[nodiscard]] std::vector<ToolOption> getOptions() const override;
     void setOptionValue(const std::string& optionId,
                         const std::variant<int, float, bool, std::string>& value) override;
-    [[nodiscard]] std::variant<int, float, bool, std::string>
-    getOptionValue(const std::string& optionId) const override;
+    [[nodiscard]] std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const override;
 
   private:
     /**

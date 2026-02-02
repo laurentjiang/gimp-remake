@@ -331,8 +331,7 @@ void MainWindow::onRedo()
 
 void MainWindow::onToolSwitchRequested(const QString& toolId)
 {
-    auto& factory = ToolFactory::instance();
-    factory.setActiveTool(toolId.toStdString());
+    EventBus::instance().publish(ToolSwitchRequestEvent{toolId.toStdString()});
 }
 
 void MainWindow::onBrushSizeDecrease()

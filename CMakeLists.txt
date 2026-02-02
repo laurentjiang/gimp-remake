@@ -45,6 +45,7 @@ add_executable(gimp-remake
     "src/core/tools/move_tool.cpp"
     "src/core/tools/color_picker_tool.cpp"
     "src/core/tools/fill_tool.cpp"
+    "src/core/tools/gradient_tool.cpp"
     "src/core/commands/add_layer_command.cpp"
     "src/core/commands/fill_color_command.cpp"
     "src/core/commands/draw_command.cpp"
@@ -176,6 +177,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_eraser_tool.cpp"
         "tests/unit/test_pencil_tool.cpp"
         "tests/unit/test_fill_tool.cpp"
+        "tests/unit/test_gradient_tool.cpp"
         "tests/unit/test_color_chooser_panel.cpp"
         # Integration tests (file I/O, rendering)
         "tests/integration/test_compositor.cpp"
@@ -190,6 +192,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/core/tools/move_tool.cpp"
         "src/core/tools/color_picker_tool.cpp"
         "src/core/tools/fill_tool.cpp"
+        "src/core/tools/gradient_tool.cpp"
         "src/core/commands/draw_command.cpp"
         "src/history/history_stack.cpp"
         "src/history/simple_history_manager.cpp"

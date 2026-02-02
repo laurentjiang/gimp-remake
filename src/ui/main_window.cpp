@@ -17,6 +17,7 @@
 #include "core/tools/color_picker_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/fill_tool.h"
+#include "core/tools/gradient_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
 #include "render/skia_renderer.h"
@@ -90,6 +91,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
     factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });
     factory.registerTool("bucket_fill", []() { return std::make_unique<FillTool>(); });
+    factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =

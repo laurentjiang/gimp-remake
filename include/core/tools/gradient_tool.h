@@ -120,9 +120,9 @@ class GradientTool : public Tool {
      * @param startColor Starting color (RGBA).
      * @param endColor Ending color (RGBA).
      */
-    void applyLinearGradient(std::shared_ptr<Layer> layer,
+    void applyLinearGradient(const std::shared_ptr<Layer>& layer,
                              std::uint32_t startColor,
-                             std::uint32_t endColor);
+                             std::uint32_t endColor) const;
 
     /**
      * @brief Applies a radial gradient to the layer.
@@ -130,9 +130,9 @@ class GradientTool : public Tool {
      * @param startColor Starting color (RGBA).
      * @param endColor Ending color (RGBA).
      */
-    void applyRadialGradient(std::shared_ptr<Layer> layer,
+    void applyRadialGradient(const std::shared_ptr<Layer>& layer,
                              std::uint32_t startColor,
-                             std::uint32_t endColor);
+                             std::uint32_t endColor) const;
 
     GradientMode mode_ = GradientMode::Linear;
     GradientFill fill_ = GradientFill::ForegroundToBackground;

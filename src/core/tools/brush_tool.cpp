@@ -248,19 +248,25 @@ std::vector<ToolOption> BrushTool::getOptions() const
 {
     return {
         ToolOption{
-                   "brush_size", "Size", ToolOption::Type::Slider, brushSize_, 1.0F, 1000.0F, 1.0F, {}, 0},
+                   "brush_size",        "Size", ToolOption::Type::Slider,   brushSize_, 1.0F, 1000.0F, 1.0F, {}, 0},
         ToolOption{"opacity",
-                   "Opacity",            ToolOption::Type::Slider,
+                   "Opacity",                   ToolOption::Type::Slider,
                    static_cast<int>(opacity_ * 100.0F),
-                   0.0F,                                                             100.0F,
-                   1.0F,                                                                            {},
-                   0                                                                                     },
+                   0.0F,                                                                      100.0F,
+                   1.0F,                                                                                     {},
+                   0                                                                                              },
         ToolOption{"hardness",
-                   "Hardness",           ToolOption::Type::Slider,
+                   "Hardness",                  ToolOption::Type::Slider,
                    static_cast<int>(hardness_ * 100.0F),
-                   0.0F,                                                             100.0F,
-                   1.0F,                                                                            {},
-                   0                                                                                     }
+                   0.0F,                                                                      100.0F,
+                   1.0F,                                                                                     {},
+                   0                                                                                              },
+        ToolOption{"velocity_dynamics",
+                   "Velocity Dynamics",         ToolOption::Type::Checkbox,
+                   velocityDynamics(),
+                   0.0F,                                                                      0.0F,
+                   0.0F,                                                                                     {},
+                   0                                                                                              }
     };
 }
 
@@ -273,6 +279,8 @@ void BrushTool::setOptionValue(const std::string& optionId,
         setOpacity(static_cast<float>(std::get<int>(value)) / 100.0F);
     } else if (optionId == "hardness" && std::holds_alternative<int>(value)) {
         setHardness(static_cast<float>(std::get<int>(value)) / 100.0F);
+    } else if (optionId == "velocity_dynamics" && std::holds_alternative<bool>(value)) {
+        setVelocityDynamics(std::get<bool>(value));
     }
 }
 
@@ -287,6 +295,9 @@ std::variant<int, float, bool, std::string> BrushTool::getOptionValue(
     }
     if (optionId == "hardness") {
         return static_cast<int>(hardness_ * 100.0F);
+    }
+    if (optionId == "velocity_dynamics") {
+        return velocityDynamics();
     }
     return 0;
 }

@@ -181,10 +181,10 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
-    // Dark background matching spin slider background (#2b2b2b) for left dock widgets
+    // Light gray background matching workspace (#404040) for left dock widgets
     const QString dockStyle =
-        "QDockWidget { background-color: #2b2b2b; }"
-        "QDockWidget::title { background-color: #2b2b2b; color: white; padding: 4px; }";
+        "QDockWidget { background-color: #404040; }"
+        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; }";
 
     // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);

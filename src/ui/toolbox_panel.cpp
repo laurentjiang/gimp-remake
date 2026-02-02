@@ -41,9 +41,9 @@ void ToolboxPanel::setupUi()
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    setStyleSheet("QWidget { background-color: #2b2b2b; }"
+    setStyleSheet("QWidget { background-color: #404040; }"
                   "QLabel { color: #ffffff; }"
-                  "QGroupBox { color: #ffffff; background-color: #2b2b2b; "
+                  "QGroupBox { color: #ffffff; background-color: #404040; "
                   "border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");
 

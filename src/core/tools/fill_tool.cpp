@@ -239,8 +239,15 @@ void FillTool::cancelStroke()
 std::vector<ToolOption> FillTool::getOptions() const
 {
     return {
-        ToolOption{
-                   "tolerance", "Tolerance", ToolOption::Type::Slider, tolerance_, 0.0F, 255.0F, 1.0F}
+        ToolOption{"tolerance",
+                   "Tolerance",
+                   ToolOption::Type::Slider,
+                   tolerance_,
+                   0.0F,
+                   255.0F,
+                   1.0F,
+                   {},
+                   0}
     };
 }
 

@@ -12,6 +12,7 @@
 #include "core/tool_registry.h"
 #include "core/tools/brush_tool.h"
 #include "core/tools/fill_tool.h"
+#include "ui/spin_slider.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -154,102 +155,74 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
     }
 
     if (toolId == "bucket_fill") {
-        // Tolerance slider for bucket fill tool (0-255)
-        auto* label = new QLabel("Tolerance:", optionsContainer_);
-        auto* slider = new QSlider(Qt::Horizontal, optionsContainer_);
-        slider->setRange(0, 255);
-        slider->setValue(0);
-        slider->setFixedWidth(100);
-        auto* valueLabel = new QLabel("0", optionsContainer_);
-        valueLabel->setFixedWidth(30);
+        auto* toleranceSlider = new SpinSlider(optionsContainer_);
+        toleranceSlider->setRange(0, 255);
+        toleranceSlider->setLabel("Tolerance");
+        toleranceSlider->setFixedWidth(140);
+        toleranceSlider->setValue(0);
+        layout->addWidget(toleranceSlider);
 
-        layout->addWidget(label);
-        layout->addWidget(slider);
-        layout->addWidget(valueLabel);
-
-        connect(slider, &QSlider::valueChanged, [valueLabel](int value) {
-            valueLabel->setText(QString::number(value));
+        connect(toleranceSlider, &SpinSlider::valueChanged, [](double value) {
             auto* activeTool = ToolFactory::instance().activeTool();
             if (auto* fillTool = dynamic_cast<FillTool*>(activeTool)) {
-                fillTool->setTolerance(value);
+                fillTool->setTolerance(static_cast<int>(value));
             }
         });
 
     } else if (tool->category == "Paint") {
-        // Size spinner
-        auto* sizeLabel = new QLabel("Size:", optionsContainer_);
-        auto* sizeSpinner = new QSpinBox(optionsContainer_);
-        sizeSpinner->setRange(1, 1000);
-        sizeSpinner->setSuffix(" px");
-        layout->addWidget(sizeLabel);
-        layout->addWidget(sizeSpinner);
-
-        // Get current brush size from active tool
         auto* activeTool = ToolFactory::instance().activeTool();
-        int currentSize = activeTool ? activeTool->brushSize() : 20;
-        sizeSpinner->setValue(currentSize > 0 ? currentSize : 20);
 
-        connect(sizeSpinner, QOverload<int>::of(&QSpinBox::valueChanged), [](int value) {
+        // Size SpinSlider
+        auto* sizeSlider = new SpinSlider(optionsContainer_);
+        sizeSlider->setRange(1, 1000);
+        sizeSlider->setSuffix(" px");
+        sizeSlider->setLabel("Size");
+        sizeSlider->setFixedWidth(140);
+        int currentSize = activeTool ? activeTool->brushSize() : 20;
+        sizeSlider->setValue(currentSize > 0 ? currentSize : 20);
+        layout->addWidget(sizeSlider);
+
+        connect(sizeSlider, &SpinSlider::valueChanged, [](double value) {
             auto* tool = ToolFactory::instance().activeTool();
             if (tool) {
-                tool->setBrushSize(value);
+                tool->setBrushSize(static_cast<int>(value));
             }
         });
 
-        addSeparator(layout);
-
-        // Opacity slider (0-100%)
-        auto* opacityLabel = new QLabel("Opacity:", optionsContainer_);
-        auto* opacitySlider = new QSlider(Qt::Horizontal, optionsContainer_);
+        // Opacity SpinSlider
+        auto* opacitySlider = new SpinSlider(optionsContainer_);
         opacitySlider->setRange(0, 100);
-        opacitySlider->setFixedWidth(80);
-        auto* opacityValueLabel = new QLabel("100%", optionsContainer_);
-        opacityValueLabel->setFixedWidth(40);
-
-        // Get current opacity from BrushTool if applicable
+        opacitySlider->setSuffix("%");
+        opacitySlider->setLabel("Opacity");
+        opacitySlider->setFixedWidth(140);
         float currentOpacity = 1.0F;
         if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
             currentOpacity = brushTool->opacity();
         }
-        opacitySlider->setValue(static_cast<int>(currentOpacity * 100));
-        opacityValueLabel->setText(QString::number(static_cast<int>(currentOpacity * 100)) + "%");
-
-        layout->addWidget(opacityLabel);
+        opacitySlider->setValue(static_cast<double>(currentOpacity * 100));
         layout->addWidget(opacitySlider);
-        layout->addWidget(opacityValueLabel);
 
-        connect(opacitySlider, &QSlider::valueChanged, [opacityValueLabel](int value) {
-            opacityValueLabel->setText(QString::number(value) + "%");
+        connect(opacitySlider, &SpinSlider::valueChanged, [](double value) {
             auto* tool = ToolFactory::instance().activeTool();
             if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
                 brushTool->setOpacity(static_cast<float>(value) / 100.0F);
             }
         });
 
-        addSeparator(layout);
-
-        // Hardness slider (0-100%)
-        auto* hardnessLabel = new QLabel("Hardness:", optionsContainer_);
-        auto* hardnessSlider = new QSlider(Qt::Horizontal, optionsContainer_);
+        // Hardness SpinSlider
+        auto* hardnessSlider = new SpinSlider(optionsContainer_);
         hardnessSlider->setRange(0, 100);
-        hardnessSlider->setFixedWidth(80);
-        auto* hardnessValueLabel = new QLabel("50%", optionsContainer_);
-        hardnessValueLabel->setFixedWidth(40);
-
-        // Get current hardness from BrushTool if applicable
+        hardnessSlider->setSuffix("%");
+        hardnessSlider->setLabel("Hardness");
+        hardnessSlider->setFixedWidth(140);
         float currentHardness = 0.5F;
         if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
             currentHardness = brushTool->hardness();
         }
-        hardnessSlider->setValue(static_cast<int>(currentHardness * 100));
-        hardnessValueLabel->setText(QString::number(static_cast<int>(currentHardness * 100)) + "%");
-
-        layout->addWidget(hardnessLabel);
+        hardnessSlider->setValue(static_cast<double>(currentHardness * 100));
         layout->addWidget(hardnessSlider);
-        layout->addWidget(hardnessValueLabel);
 
-        connect(hardnessSlider, &QSlider::valueChanged, [hardnessValueLabel](int value) {
-            hardnessValueLabel->setText(QString::number(value) + "%");
+        connect(hardnessSlider, &SpinSlider::valueChanged, [](double value) {
             auto* tool = ToolFactory::instance().activeTool();
             if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
                 brushTool->setHardness(static_cast<float>(value) / 100.0F);
@@ -265,7 +238,6 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
                 "Simulate pressure from mouse speed (fast = light, slow = heavy)");
             layout->addWidget(dynamicsCheck);
 
-            // Get current state from BrushTool
             if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
                 dynamicsCheck->setChecked(brushTool->velocityDynamics());
             }

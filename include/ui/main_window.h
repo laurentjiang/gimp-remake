@@ -30,8 +30,10 @@ class LayersPanel;
 class SimpleHistoryManager;
 class SkiaCanvasWidget;
 class SkiaRenderer;
+class Tool;
 class ToolboxPanel;
 class ToolOptionsBar;
+class ToolOptionsPanel;
 
 /**
  * @brief Main application window with Photoshop-like docking layout.
@@ -73,6 +75,7 @@ class MainWindow : public QMainWindow {
     void onShowCommandPalette();
     void onUndo();
     void onRedo();
+    void onToolChanged(const Tool* tool);
 
   private:
     void setupMenuBar();
@@ -93,6 +96,7 @@ class MainWindow : public QMainWindow {
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;
     ToolOptionsBar* m_toolOptionsBar = nullptr;
+    ToolOptionsPanel* m_toolOptionsPanel = nullptr;
     LayersPanel* m_layersPanel = nullptr;
     HistoryPanel* m_historyPanel = nullptr;
     ColorChooserPanel* m_colorChooserPanel = nullptr;

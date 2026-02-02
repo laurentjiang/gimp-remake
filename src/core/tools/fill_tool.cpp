@@ -239,4 +239,35 @@ void FillTool::cancelStroke()
     fillPending_ = false;
 }
 
+std::vector<ToolOption> FillTool::getOptions() const
+{
+    return {
+        ToolOption{
+            "tolerance",
+            "Tolerance",
+            ToolOption::Type::Slider,
+            tolerance_,
+            0.0F,
+            255.0F,
+            1.0F
+        }
+    };
+}
+
+void FillTool::setOptionValue(const std::string& optionId,
+                             const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "tolerance" && std::holds_alternative<int>(value)) {
+        setTolerance(std::get<int>(value));
+    }
+}
+
+std::variant<int, float, bool, std::string> FillTool::getOptionValue(const std::string& optionId) const
+{
+    if (optionId == "tolerance") {
+        return tolerance_;
+    }
+    return 0;
+}
+
 }  // namespace gimp

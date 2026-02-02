@@ -9,6 +9,7 @@
 
 #include "core/tool.h"
 #include "core/tool_factory.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <vector>
@@ -21,7 +22,7 @@ namespace gimp {
  * The fill tool uses a scanline flood-fill algorithm for efficient filling.
  * It supports tolerance settings to control color matching threshold.
  */
-class FillTool : public Tool {
+class FillTool : public Tool, public ToolOptions {
   public:
     FillTool() = default;
 
@@ -53,6 +54,13 @@ class FillTool : public Tool {
     void continueStroke(const ToolInputEvent& event) override;
     void endStroke(const ToolInputEvent& event) override;
     void cancelStroke() override;
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                       const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string>
+    getOptionValue(const std::string& optionId) const override;
 
   private:
     /**

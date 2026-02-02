@@ -27,6 +27,7 @@
 #include "ui/layers_panel.h"
 #include "ui/skia_canvas_widget.h"
 #include "ui/tool_options_bar.h"
+#include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
 #include "history/simple_history_manager.h"
@@ -93,8 +94,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =
-        EventBus::instance().subscribe<ToolChangedEvent>([](const ToolChangedEvent& event) {
+        EventBus::instance().subscribe<ToolChangedEvent>([this](const ToolChangedEvent& event) {
             ToolFactory::instance().setActiveTool(event.currentToolId);
+            auto& factory = ToolFactory::instance();
+            Tool* currentTool = factory.getTool(event.currentToolId);
+            onToolChanged(currentTool);
         });
 
     // Subscribe to color changes to update status bar and foreground color
@@ -186,6 +190,14 @@ void MainWindow::setupDockWidgets()
     m_toolboxDock->setWidget(m_toolboxPanel);
     m_toolboxDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::LeftDockWidgetArea, m_toolboxDock);
+
+    // Tool Options Panel (top right)
+    m_toolOptionsPanel = new ToolOptionsPanel(this);
+    auto* toolOptionsDock = new QDockWidget("Tool Options", this);
+    toolOptionsDock->setWidget(m_toolOptionsPanel);
+    toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+    toolOptionsDock->setMinimumWidth(200);
+    addDockWidget(Qt::RightDockWidgetArea, toolOptionsDock);
 
     m_layersPanel = new LayersPanel(this);
     m_historyPanel = new HistoryPanel(this);
@@ -302,6 +314,13 @@ void MainWindow::onRedo()
             m_canvasWidget->invalidateCache();
         }
         statusBar()->showMessage("Redo", 2000);
+    }
+}
+
+void MainWindow::onToolChanged(const Tool* tool)
+{
+    if (m_toolOptionsPanel && tool) {
+        m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
     }
 }
 

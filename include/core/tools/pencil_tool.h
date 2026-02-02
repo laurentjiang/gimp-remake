@@ -10,6 +10,7 @@
 #include "core/commands/draw_command.h"
 #include "core/tool.h"
 #include "core/tool_factory.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <vector>
@@ -23,7 +24,7 @@ namespace gimp {
  * It collects stroke points during the Active state and issues a command
  * on commit.
  */
-class PencilTool : public Tool {
+class PencilTool : public Tool, public ToolOptions {
   public:
     PencilTool() = default;
 
@@ -56,6 +57,13 @@ class PencilTool : public Tool {
     void endStroke(const ToolInputEvent& event) override;
     void cancelStroke() override;
 
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                       const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string>
+    getOptionValue(const std::string& optionId) const override;
+
   private:
     /**
      * @brief Single point in a stroke.
@@ -77,6 +85,7 @@ class PencilTool : public Tool {
     std::vector<StrokePoint> strokePoints_;
     std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
     int brushSize_ = 3;
+    float opacity_ = 1.0F;  ///< Opacity/alpha value (0.0 to 1.0)
 };
 
 }  // namespace gimp

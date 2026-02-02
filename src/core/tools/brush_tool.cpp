@@ -244,4 +244,51 @@ void BrushTool::cancelStroke()
     strokePoints_.clear();
 }
 
+std::vector<ToolOption> BrushTool::getOptions() const
+{
+    return {
+        ToolOption{
+                   "brush_size", "Size", ToolOption::Type::Slider, brushSize_, 1.0F, 1000.0F, 1.0F, {}, 0},
+        ToolOption{"opacity",
+                   "Opacity",            ToolOption::Type::Slider,
+                   static_cast<int>(opacity_ * 100.0F),
+                   0.0F,                                                             100.0F,
+                   1.0F,                                                                            {},
+                   0                                                                                     },
+        ToolOption{"hardness",
+                   "Hardness",           ToolOption::Type::Slider,
+                   static_cast<int>(hardness_ * 100.0F),
+                   0.0F,                                                             100.0F,
+                   1.0F,                                                                            {},
+                   0                                                                                     }
+    };
+}
+
+void BrushTool::setOptionValue(const std::string& optionId,
+                               const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
+        setBrushSize(std::get<int>(value));
+    } else if (optionId == "opacity" && std::holds_alternative<int>(value)) {
+        setOpacity(static_cast<float>(std::get<int>(value)) / 100.0F);
+    } else if (optionId == "hardness" && std::holds_alternative<int>(value)) {
+        setHardness(static_cast<float>(std::get<int>(value)) / 100.0F);
+    }
+}
+
+std::variant<int, float, bool, std::string> BrushTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "brush_size") {
+        return brushSize_;
+    }
+    if (optionId == "opacity") {
+        return static_cast<int>(opacity_ * 100.0F);
+    }
+    if (optionId == "hardness") {
+        return static_cast<int>(hardness_ * 100.0F);
+    }
+    return 0;
+}
+
 }  // namespace gimp

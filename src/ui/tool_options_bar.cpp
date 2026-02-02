@@ -261,7 +261,8 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
             addSeparator(layout);
 
             auto* dynamicsCheck = new QCheckBox("Velocity dynamics", optionsContainer_);
-            dynamicsCheck->setToolTip("Simulate pressure from mouse speed (fast = light, slow = heavy)");
+            dynamicsCheck->setToolTip(
+                "Simulate pressure from mouse speed (fast = light, slow = heavy)");
             layout->addWidget(dynamicsCheck);
 
             // Get current state from BrushTool

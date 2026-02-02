@@ -57,10 +57,14 @@ class BrushDynamics {
      */
     void setConfig(const DynamicsConfig& config) { config_ = config; }
 
-    /*! @brief Returns the current configuration.
-     *  @return Reference to the dynamics configuration.
+    /*! @brief Returns the current configuration (const).
+     *  @return Const reference to the dynamics configuration.
      */
     [[nodiscard]] const DynamicsConfig& config() const { return config_; }
+
+    /*! @brief Returns the current configuration for modification.
+     *  @return Mutable reference to the dynamics configuration.
+     */
     [[nodiscard]] DynamicsConfig& config() { return config_; }
 
     /*! @brief Starts a new stroke, resetting fade distance.

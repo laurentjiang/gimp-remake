@@ -121,7 +121,8 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
     beforeState_ = layer->data();
 
     // Compute initial pressure from dynamics
-    DynamicsInput dynInput = dynamics_.update(event.canvasPos.x(), event.canvasPos.y(), event.pressure);
+    DynamicsInput dynInput =
+        dynamics_.update(event.canvasPos.x(), event.canvasPos.y(), event.pressure);
     float effectivePressure = dynamics_.computePressure(dynInput);
 
     strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), effectivePressure});

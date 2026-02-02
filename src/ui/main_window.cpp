@@ -28,6 +28,7 @@
 #include "ui/layers_panel.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
+#include "ui/theme.h"
 #include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
@@ -183,19 +184,16 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
-    // Light gray background matching workspace (#404040) for left dock widgets
-    const QString dockStyle =
-        "QDockWidget { background-color: #404040; }"
-        "QDockWidget::title { background-color: #404040; color: white; padding: 4px; }";
+    const QString dockStyle = Theme::dockStyleSheet();
 
     // Helper to create custom title bar with bold label
     auto createTitleBar = [](const QString& title) {
         auto* titleBar = new QWidget();
-        titleBar->setStyleSheet("background-color: #404040;");
+        titleBar->setStyleSheet(Theme::titleBarStyleSheet());
         auto* layout = new QHBoxLayout(titleBar);
         layout->setContentsMargins(8, 4, 8, 4);
         auto* label = new QLabel(title);
-        label->setStyleSheet("color: white; font-weight: bold;");
+        label->setStyleSheet(Theme::boldLabelStyleSheet());
         layout->addWidget(label);
         layout->addStretch();
         return titleBar;
@@ -214,9 +212,9 @@ void MainWindow::setupDockWidgets()
     m_toolOptionsPanel = new ToolOptionsPanel(this);
     m_toolOptionsDock = new QDockWidget(this);
     m_toolOptionsTitleLabel = new QLabel("Tool Options");
-    m_toolOptionsTitleLabel->setStyleSheet("color: white; font-weight: bold;");
+    m_toolOptionsTitleLabel->setStyleSheet(Theme::boldLabelStyleSheet());
     auto* optionsTitleBar = new QWidget();
-    optionsTitleBar->setStyleSheet("background-color: #404040;");
+    optionsTitleBar->setStyleSheet(Theme::titleBarStyleSheet());
     auto* optionsLayout = new QHBoxLayout(optionsTitleBar);
     optionsLayout->setContentsMargins(8, 4, 8, 4);
     optionsLayout->addWidget(m_toolOptionsTitleLabel);

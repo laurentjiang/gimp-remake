@@ -8,9 +8,9 @@
 #include "ui/tool_options_panel.h"
 
 #include "ui/spin_slider.h"
+#include "ui/theme.h"
 
 #include <QCheckBox>
-#include <QColor>
 #include <QComboBox>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -25,16 +25,20 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
     // Set background via palette to ensure all areas are filled
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    pal.setColor(QPalette::Window, Theme::toQColor(Theme::kPanelBackground));
     setPalette(pal);
     setAutoFillBackground(true);
 
     setStyleSheet(
-        "QLabel { color: #ffffff; background: transparent; }"
-        "QCheckBox { color: #ffffff; background: transparent; }"
-        "QCheckBox::indicator { width: 16px; height: 16px; }"
-        "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; }"
-        "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; }");
+        QString("QLabel { color: %1; background: transparent; }"
+                "QCheckBox { color: %1; background: transparent; }"
+                "QCheckBox::indicator { width: 16px; height: 16px; }"
+                "QCheckBox::indicator:unchecked { background-color: %2; border: 1px solid %3; }"
+                "QCheckBox::indicator:checked { background-color: %4; border: 1px solid #777; }")
+            .arg(Theme::toHex(Theme::kTextPrimary),
+                 Theme::toHex(Theme::kCheckboxUnchecked),
+                 Theme::toHex(Theme::kCheckboxBorder),
+                 Theme::toHex(Theme::kCheckboxChecked)));
 
     auto* containerLayout = new QVBoxLayout(this);
     containerLayout->setContentsMargins(8, 8, 8, 8);
@@ -46,11 +50,13 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     scrollArea->setFrameShape(QFrame::NoFrame);
 
     // Style scroll area and viewport with same background
-    scrollArea->setStyleSheet("QScrollArea { background: #404040; border: none; }"
-                              "QScrollArea > QWidget > QWidget { background: #404040; }");
+    const QString scrollStyle = QString("QScrollArea { background: %1; border: none; }"
+                                        "QScrollArea > QWidget > QWidget { background: %1; }")
+                                    .arg(Theme::toHex(Theme::kPanelBackground));
+    scrollArea->setStyleSheet(scrollStyle);
     scrollArea->viewport()->setAutoFillBackground(true);
     QPalette scrollPal = scrollArea->viewport()->palette();
-    scrollPal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    scrollPal.setColor(QPalette::Window, Theme::toQColor(Theme::kPanelBackground));
     scrollArea->viewport()->setPalette(scrollPal);
 
     auto* optionsWidget = new QWidget();
@@ -110,7 +116,8 @@ void ToolOptionsPanel::populateOptions()
         // For sliders, the SpinSlider has its own label; skip creating separate label
         if (option.type != ToolOption::Type::Slider) {
             auto* label = new QLabel(QString::fromStdString(option.label), this);
-            label->setStyleSheet("color: #cccccc; font-size: 11px;");
+            label->setStyleSheet(
+                QString("color: %1; font-size: 11px;").arg(Theme::toHex(Theme::kTextSecondary)));
             m_mainLayout->addWidget(label);
             m_optionLabels[option.id] = label;
         }

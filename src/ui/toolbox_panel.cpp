@@ -10,8 +10,8 @@
 #include "core/event_bus.h"
 #include "core/events.h"
 #include "core/tool_registry.h"
+#include "ui/theme.h"
 
-#include <QColor>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
@@ -40,7 +40,7 @@ void ToolboxPanel::setupUi()
 {
     // Set background via palette to ensure all areas are filled
     QPalette pal = palette();
-    pal.setColor(QPalette::Window, QColor(0x40, 0x40, 0x40));
+    pal.setColor(QPalette::Window, Theme::toQColor(Theme::kPanelBackground));
     setPalette(pal);
     setAutoFillBackground(true);
 
@@ -48,10 +48,13 @@ void ToolboxPanel::setupUi()
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    setStyleSheet("QLabel { color: #ffffff; background: transparent; }"
-                  "QGroupBox { color: #ffffff; background-color: #404040; "
-                  "border: 1px solid #666; margin-top: 8px; }"
-                  "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");
+    setStyleSheet(QString("QLabel { color: %1; background: transparent; }"
+                          "QGroupBox { color: %1; background-color: %2; "
+                          "border: 1px solid %3; margin-top: 8px; }"
+                          "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }")
+                      .arg(Theme::toHex(Theme::kTextPrimary),
+                           Theme::toHex(Theme::kPanelBackground),
+                           Theme::toHex(Theme::kBorderLight)));
 
     setMinimumWidth(80);
 }

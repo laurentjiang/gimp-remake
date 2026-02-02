@@ -72,6 +72,7 @@ class BrushDynamics {
     void beginStroke()
     {
         strokeDistance_ = 0.0F;
+        smoothedVelocity_ = 0.0F;
         lastX_ = 0;
         lastY_ = 0;
         hasLastPoint_ = false;
@@ -97,11 +98,15 @@ class BrushDynamics {
 
             strokeDistance_ += dist;
 
-            // Velocity: normalize to 0-1 range
+            // Velocity: normalize to 0-1 range with smoothing
             // Typical mouse movement is 1-50 pixels per event
-            // Map so that ~20px = 0.5 velocity
-            float rawVelocity = dist / 40.0F;
-            input.velocity = std::clamp(rawVelocity, 0.0F, 1.0F);
+            // Map so that ~30px = 0.5 velocity (more forgiving)
+            float rawVelocity = std::clamp(dist / 60.0F, 0.0F, 1.0F);
+
+            // Smooth velocity with exponential moving average to reduce jitter
+            constexpr float kSmoothFactor = 0.3F;
+            smoothedVelocity_ = smoothedVelocity_ * (1.0F - kSmoothFactor) + rawVelocity * kSmoothFactor;
+            input.velocity = smoothedVelocity_;
 
             // Direction: atan2 normalized to 0-1
             if (dist > 0.5F) {
@@ -157,7 +162,10 @@ class BrushDynamics {
             return 1.0F;
         }
 
-        return std::clamp(total / static_cast<float>(factors), 0.0F, 1.0F);
+        // Apply minimum pressure floor so strokes don't vanish entirely
+        constexpr float kMinPressure = 0.15F;
+        float result = total / static_cast<float>(factors);
+        return std::clamp(result, kMinPressure, 1.0F);
     }
 
     /*! @brief Computes effective size multiplier from dynamics.
@@ -179,6 +187,7 @@ class BrushDynamics {
   private:
     DynamicsConfig config_;
     float strokeDistance_ = 0.0F;
+    float smoothedVelocity_ = 0.0F;
     int lastX_ = 0;
     int lastY_ = 0;
     bool hasLastPoint_ = false;

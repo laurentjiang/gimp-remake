@@ -13,8 +13,8 @@
 #include "core/layer.h"
 #include "core/tool_factory.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 namespace gimp {
 

@@ -32,9 +32,9 @@ struct ToolOption {
     Type type;                                          ///< Option type.
     std::variant<int, float, bool, std::string> value;  ///< Current value.
 
-    float minValue = 0.0F;   ///< Minimum value (for Slider type).
-    float maxValue = 100.0F; ///< Maximum value (for Slider type).
-    float step = 1.0F;       ///< Step increment (for Slider type).
+    float minValue = 0.0F;    ///< Minimum value (for Slider type).
+    float maxValue = 100.0F;  ///< Maximum value (for Slider type).
+    float step = 1.0F;        ///< Step increment (for Slider type).
 
     std::vector<std::string> choices;  ///< Available choices (for Dropdown type).
     int selectedIndex = 0;             ///< Currently selected index (for Dropdown type).

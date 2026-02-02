@@ -33,8 +33,8 @@ enum class GradientMode {
  * @brief Gradient fill mode.
  */
 enum class GradientFill {
-    ForegroundToBackground,   ///< Gradient from foreground to background color
-    ForegroundToTransparent   ///< Gradient from foreground to transparent
+    ForegroundToBackground,  ///< Gradient from foreground to background color
+    ForegroundToTransparent  ///< Gradient from foreground to transparent
 };
 
 /**

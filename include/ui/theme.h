@@ -21,22 +21,22 @@ namespace gimp {
 namespace Theme {
 
 // Panel backgrounds
-inline constexpr int kPanelBackground = 0x404040;      ///< Light gray panel/workspace background
-inline constexpr int kSliderBackground = 0x2b2b2b;     ///< Dark background for sliders
-inline constexpr int kSliderFill = 0xa0a0a0;           ///< Light gray slider fill color
+inline constexpr int kPanelBackground = 0x404040;   ///< Light gray panel/workspace background
+inline constexpr int kSliderBackground = 0x2b2b2b;  ///< Dark background for sliders
+inline constexpr int kSliderFill = 0xa0a0a0;        ///< Light gray slider fill color
 
 // Text colors
-inline constexpr int kTextPrimary = 0xffffff;          ///< White primary text
-inline constexpr int kTextSecondary = 0xcccccc;        ///< Light gray secondary text
+inline constexpr int kTextPrimary = 0xffffff;    ///< White primary text
+inline constexpr int kTextSecondary = 0xcccccc;  ///< Light gray secondary text
 
 // Border colors
-inline constexpr int kBorderLight = 0x666666;          ///< Light border for group boxes
-inline constexpr int kBorderDark = 0x555555;           ///< Dark border
+inline constexpr int kBorderLight = 0x666666;  ///< Light border for group boxes
+inline constexpr int kBorderDark = 0x555555;   ///< Dark border
 
 // Control colors
-inline constexpr int kCheckboxUnchecked = 0x3c3c3c;    ///< Unchecked checkbox background
-inline constexpr int kCheckboxChecked = 0x555555;      ///< Checked checkbox background
-inline constexpr int kCheckboxBorder = 0x555555;       ///< Checkbox border
+inline constexpr int kCheckboxUnchecked = 0x3c3c3c;  ///< Unchecked checkbox background
+inline constexpr int kCheckboxChecked = 0x555555;    ///< Checked checkbox background
+inline constexpr int kCheckboxBorder = 0x555555;     ///< Checkbox border
 
 /**
  * @brief Converts a hex color value to QColor.

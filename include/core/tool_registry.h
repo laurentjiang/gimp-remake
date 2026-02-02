@@ -19,13 +19,13 @@ namespace gimp {
  * @brief Describes a tool available in the application.
  */
 struct ToolDescriptor {
-    std::string id;        ///< Unique tool identifier.
-    std::string name;      ///< Human-readable tool name.
-    std::string iconName;  ///< Resource path to the tool icon.
-    std::string shortcut;  ///< Keyboard shortcut (e.g., "P" for paintbrush).
-    std::string category;  ///< Tool category (e.g., "Paint", "Selection").
-    std::string groupId;   ///< Tool group ID for grouping similar tools (empty if standalone).
-    bool isPrimary = true; ///< Whether this is the primary tool shown in the toolbox.
+    std::string id;         ///< Unique tool identifier.
+    std::string name;       ///< Human-readable tool name.
+    std::string iconName;   ///< Resource path to the tool icon.
+    std::string shortcut;   ///< Keyboard shortcut (e.g., "P" for paintbrush).
+    std::string category;   ///< Tool category (e.g., "Paint", "Selection").
+    std::string groupId;    ///< Tool group ID for grouping similar tools (empty if standalone).
+    bool isPrimary = true;  ///< Whether this is the primary tool shown in the toolbox.
 };
 
 /**
@@ -139,35 +139,53 @@ class ToolRegistry {
     void registerDefaultTools()
     {
         // Selection tools - grouped
-        registerTool({"select_rect", "Rectangle Select", ":/icons/select-rect.svg", "R",
-                      "Selection", "selection", true});
-        registerTool({"select_ellipse", "Ellipse Select", ":/icons/select-ellipse.svg", "E",
-                      "Selection", "selection", false});
-        registerTool({"select_free", "Free Select", ":/icons/select-lasso.svg", "F",
-                      "Selection", "selection", false});
+        registerTool({"select_rect",
+                      "Rectangle Select",
+                      ":/icons/select-rect.svg",
+                      "R",
+                      "Selection",
+                      "selection",
+                      true});
+        registerTool({"select_ellipse",
+                      "Ellipse Select",
+                      ":/icons/select-ellipse.svg",
+                      "E",
+                      "Selection",
+                      "selection",
+                      false});
+        registerTool({"select_free",
+                      "Free Select",
+                      ":/icons/select-lasso.svg",
+                      "F",
+                      "Selection",
+                      "selection",
+                      false});
 
         // Transform tools - standalone
         registerTool({"move", "Move", ":/icons/move.svg", "M", "Transform", "", true});
-        registerTool({"rotate", "Rotate", ":/icons/rotate.svg", "", "Transform", "transform", true});
+        registerTool(
+            {"rotate", "Rotate", ":/icons/rotate.svg", "", "Transform", "transform", true});
         registerTool({"scale", "Scale", ":/icons/scale.svg", "", "Transform", "transform", false});
         registerTool({"crop", "Crop", ":/icons/crop.svg", "C", "Transform", "", true});
 
         // Paint tools - paintbrush group
-        registerTool({"paintbrush", "Paintbrush", ":/icons/paintbrush.svg", "P",
-                      "Paint", "brush", true});
-        registerTool({"pencil", "Pencil", ":/icons/pencil.svg", "N",
-                      "Paint", "brush", false});
-        registerTool({"eraser", "Eraser", ":/icons/eraser.svg", "Shift+E",
-                      "Paint", "", true});
-        registerTool({"bucket_fill", "Bucket Fill", ":/icons/bucket-fill.svg", "Shift+B",
-                      "Paint", "", true});
-        registerTool({"gradient", "Gradient", ":/icons/gradient.svg", "G",
-                      "Paint", "", true});
+        registerTool(
+            {"paintbrush", "Paintbrush", ":/icons/paintbrush.svg", "P", "Paint", "brush", true});
+        registerTool({"pencil", "Pencil", ":/icons/pencil.svg", "N", "Paint", "brush", false});
+        registerTool({"eraser", "Eraser", ":/icons/eraser.svg", "Shift+E", "Paint", "", true});
+        registerTool({"bucket_fill",
+                      "Bucket Fill",
+                      ":/icons/bucket-fill.svg",
+                      "Shift+B",
+                      "Paint",
+                      "",
+                      true});
+        registerTool({"gradient", "Gradient", ":/icons/gradient.svg", "G", "Paint", "", true});
 
         // Other tools - standalone
         registerTool({"text", "Text", ":/icons/text.svg", "T", "Other", "", true});
-        registerTool({"color_picker", "Color Picker", ":/icons/color-picker.svg", "O",
-                      "Other", "", true});
+        registerTool(
+            {"color_picker", "Color Picker", ":/icons/color-picker.svg", "O", "Other", "", true});
         registerTool({"zoom", "Zoom", ":/icons/zoom.svg", "Z", "Other", "", true});
 
         activeToolId_ = "paintbrush";

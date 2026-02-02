@@ -21,8 +21,7 @@ namespace {
 constexpr int kGridColumns = 3;
 }  // namespace
 
-ToolboxPanel::ToolboxPanel(QWidget* parent)
-    : QWidget(parent), buttonGroup_(new QButtonGroup(this))
+ToolboxPanel::ToolboxPanel(QWidget* parent) : QWidget(parent), buttonGroup_(new QButtonGroup(this))
 {
     setupUi();
     populateTools();

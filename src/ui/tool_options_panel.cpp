@@ -41,8 +41,8 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
                  Theme::toHex(Theme::kCheckboxChecked)));
 
     auto* containerLayout = new QVBoxLayout(this);
-    containerLayout->setContentsMargins(8, 8, 8, 8);
-    containerLayout->setSpacing(4);
+    containerLayout->setContentsMargins(4, 4, 4, 4);
+    containerLayout->setSpacing(2);
 
     // Scroll area for options
     auto* scrollArea = new QScrollArea(this);
@@ -64,7 +64,7 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     optionsWidget->setPalette(scrollPal);
     m_mainLayout = new QVBoxLayout(optionsWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainLayout->setSpacing(8);
+    m_mainLayout->setSpacing(4);
     m_mainLayout->setAlignment(Qt::AlignTop);
 
     scrollArea->setWidget(optionsWidget);

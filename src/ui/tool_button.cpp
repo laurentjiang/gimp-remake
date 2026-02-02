@@ -23,7 +23,9 @@ constexpr int kTriangleSize = 5;
 }  // namespace
 
 ToolButton::ToolButton(const ToolDescriptor& descriptor, QWidget* parent)
-    : QToolButton(parent), primaryTool_(descriptor), currentToolId_(descriptor.id)
+    : QToolButton(parent),
+      primaryTool_(descriptor),
+      currentToolId_(descriptor.id)
 {
     setFixedSize(kButtonSize, kButtonSize);
     setCheckable(true);
@@ -54,9 +56,8 @@ void ToolButton::setSubTools(const std::vector<ToolDescriptor>& subTools)
                      Theme::toHex(Theme::kSliderBackground)));
 
         for (const auto& tool : subTools_) {
-            QAction* action = subToolMenu_->addAction(
-                QIcon(QString::fromStdString(tool.iconName)),
-                QString::fromStdString(tool.name));
+            QAction* action = subToolMenu_->addAction(QIcon(QString::fromStdString(tool.iconName)),
+                                                      QString::fromStdString(tool.name));
             action->setData(QString::fromStdString(tool.id));
             connect(action, &QAction::triggered, this, [this, toolId = tool.id]() {
                 setCurrentTool(toolId);
@@ -79,14 +80,15 @@ void ToolButton::setCurrentTool(const std::string& toolId)
     // Find the tool descriptor and update icon
     if (toolId == primaryTool_.id) {
         setIcon(QIcon(QString::fromStdString(primaryTool_.iconName)));
-        setToolTip(QString::fromStdString(primaryTool_.name +
+        setToolTip(QString::fromStdString(
+            primaryTool_.name +
             (primaryTool_.shortcut.empty() ? "" : " (" + primaryTool_.shortcut + ")")));
     } else {
         for (const auto& tool : subTools_) {
             if (tool.id == toolId) {
                 setIcon(QIcon(QString::fromStdString(tool.iconName)));
-                setToolTip(QString::fromStdString(tool.name +
-                    (tool.shortcut.empty() ? "" : " (" + tool.shortcut + ")")));
+                setToolTip(QString::fromStdString(
+                    tool.name + (tool.shortcut.empty() ? "" : " (" + tool.shortcut + ")")));
                 break;
             }
         }
@@ -126,8 +128,7 @@ void ToolButton::paintEvent(QPaintEvent* /*event*/)
         QPolygon triangle;
         int x = rect.right() - kTriangleSize - 1;
         int y = rect.bottom() - kTriangleSize - 1;
-        triangle << QPoint(x + kTriangleSize, y)
-                 << QPoint(x + kTriangleSize, y + kTriangleSize)
+        triangle << QPoint(x + kTriangleSize, y) << QPoint(x + kTriangleSize, y + kTriangleSize)
                  << QPoint(x, y + kTriangleSize);
         painter.drawPolygon(triangle);
     }

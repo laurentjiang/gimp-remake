@@ -61,6 +61,14 @@ class Tool {
      */
     [[nodiscard]] virtual std::string name() const = 0;
 
+    /*! @brief Returns the brush size for this tool.
+     *  @return Brush size in pixels. Default is 0 for tools that don't use brush.
+     */
+    [[nodiscard]] virtual int brushSize() const { return 0; }
+
+    /*! @brief Sets the brush size for this tool. Does nothing for tools without brush. */
+    virtual void setBrushSize(int /*size*/) {}
+
     /*! @brief Returns the current tool state.
      *  @return Current ToolState.
      */

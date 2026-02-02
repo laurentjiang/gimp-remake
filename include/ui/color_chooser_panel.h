@@ -177,6 +177,12 @@ class ColorChooserPanel : public QWidget {
      */
     [[nodiscard]] std::uint32_t backgroundColor() const { return backgroundColor_; }
 
+    /*! @brief Swaps the foreground and background colors. */
+    void swapColors();
+
+    /*! @brief Resets colors to defaults (black foreground, white background). */
+    void resetToDefaults();
+
   protected:
     /*! @brief Event filter for handling swatch clicks.
      *  @param watched The watched object.

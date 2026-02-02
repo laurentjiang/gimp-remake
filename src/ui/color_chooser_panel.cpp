@@ -202,10 +202,8 @@ ColorChooserPanel::ColorChooserPanel(QWidget* parent) : QWidget(parent)
         });
 
     // Subscribe to color used events (when a stroke is completed with a color)
-    colorUsedSub_ =
-        EventBus::instance().subscribe<ColorUsedEvent>([this](const ColorUsedEvent& event) {
-            addToRecentColors(event.color);
-        });
+    colorUsedSub_ = EventBus::instance().subscribe<ColorUsedEvent>(
+        [this](const ColorUsedEvent& event) { addToRecentColors(event.color); });
 }
 
 ColorChooserPanel::~ColorChooserPanel()
@@ -608,6 +606,18 @@ void ColorChooserPanel::onSwapColors()
     const std::uint32_t temp = foregroundColor_;
     setForegroundColor(backgroundColor_);
     setBackgroundColor(temp);
+    publishColorChange();
+}
+
+void ColorChooserPanel::swapColors()
+{
+    onSwapColors();
+}
+
+void ColorChooserPanel::resetToDefaults()
+{
+    setForegroundColor(0x000000FF);  // Black
+    setBackgroundColor(0xFFFFFFFF);  // White
     publishColorChange();
 }
 

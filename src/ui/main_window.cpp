@@ -181,10 +181,16 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
+    // Match workspace background color for left dock widgets
+    const QString dockStyle =
+        "QDockWidget { background-color: #4d4d4d; }"
+        "QDockWidget::title { background-color: #4d4d4d; color: white; padding: 4px; }";
+
     // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);
     m_toolboxDock = new QDockWidget("Toolbox", this);
     m_toolboxDock->setWidget(m_toolboxPanel);
+    m_toolboxDock->setStyleSheet(dockStyle);
     m_toolboxDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::LeftDockWidgetArea, m_toolboxDock);
 
@@ -192,6 +198,7 @@ void MainWindow::setupDockWidgets()
     m_toolOptionsPanel = new ToolOptionsPanel(this);
     m_toolOptionsDock = new QDockWidget("Tool Options", this);
     m_toolOptionsDock->setWidget(m_toolOptionsPanel);
+    m_toolOptionsDock->setStyleSheet(dockStyle);
     m_toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable |
                                    QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::LeftDockWidgetArea, m_toolOptionsDock);

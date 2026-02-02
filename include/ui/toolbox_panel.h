@@ -10,19 +10,22 @@
 #include "core/event_bus.h"
 
 #include <QButtonGroup>
-#include <QToolButton>
+#include <QGridLayout>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <string>
+#include <unordered_map>
 
 namespace gimp {
+
+class ToolButton;
 
 /**
  * @brief Panel displaying available tools from the ToolRegistry.
  *
- * Displays tools as icon buttons organized by category. When a tool is
- * selected, it emits a signal and publishes a ToolChangedEvent.
+ * Displays tools as icon buttons in a flat grid layout. Similar tools
+ * are grouped with right-click menus for sub-tool selection.
  */
 class ToolboxPanel : public QWidget {
     Q_OBJECT
@@ -49,17 +52,18 @@ class ToolboxPanel : public QWidget {
      */
     void toolSelected(const QString& toolId);
 
-  private slots:
-    void onToolButtonClicked(int id);
-
   private:
     void setupUi();
     void populateTools();
+    void onToolActivated(const std::string& toolId);
 
     QVBoxLayout* mainLayout_ = nullptr;
+    QGridLayout* toolGrid_ = nullptr;
     QButtonGroup* buttonGroup_ = nullptr;
+    std::unordered_map<std::string, ToolButton*> toolButtons_;
+    std::unordered_map<std::string, std::string> toolToGroupMap_;
     std::string activeToolId_;
-    EventBus::SubscriptionId toolSwitchSub_ = 0;  ///< Subscription for tool switch requests.
+    EventBus::SubscriptionId toolSwitchSub_ = 0;
 };
 
 }  // namespace gimp

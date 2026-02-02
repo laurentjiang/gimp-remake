@@ -21,10 +21,12 @@ namespace gimp {
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
     setStyleSheet(
-        "ToolOptionsPanel { background-color: #2b2b2b; }"
+        "ToolOptionsPanel { background-color: #707070; }"
         "QLabel { color: #ffffff; }"
-        "QSlider::groove:horizontal { background: #444; height: 8px; }"
-        "QSlider::handle:horizontal { background: #0078d4; width: 18px; margin: -5px 0; }");
+        "QCheckBox { color: #ffffff; }"
+        "QCheckBox::indicator { width: 16px; height: 16px; }"
+        "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; }"
+        "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; }");
 
     auto* containerLayout = new QVBoxLayout(this);
     containerLayout->setContentsMargins(8, 8, 8, 8);

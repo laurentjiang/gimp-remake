@@ -14,6 +14,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QPalette>
 #include <QScrollArea>
 
 namespace gimp {
@@ -40,10 +41,15 @@ void ToolboxPanel::setupUi()
     mainLayout_->setContentsMargins(4, 4, 4, 4);
     mainLayout_->setSpacing(8);
 
-    // Match workspace background color (#4d4d4d)
-    setStyleSheet("ToolboxPanel { background-color: #4d4d4d; }"
-                  "QLabel { color: #ffffff; }"
-                  "QGroupBox { color: #ffffff; border: 1px solid #666; margin-top: 8px; }"
+    // Match workspace background color (#404040)
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(64, 64, 64));
+    setPalette(pal);
+
+    setStyleSheet("QLabel { color: #ffffff; }"
+                  "QGroupBox { color: #ffffff; background-color: #404040; "
+                  "border: 1px solid #666; margin-top: 8px; }"
                   "QGroupBox::title { subcontrol-origin: margin; padding: 0 4px; }");
 
     auto* titleLabel = new QLabel("Toolbox", this);

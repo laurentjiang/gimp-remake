@@ -11,8 +11,10 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPalette>
 #include <QScrollArea>
 #include <QVBoxLayout>
 
@@ -20,11 +22,16 @@ namespace gimp {
 
 ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 {
-    // Match workspace background color (#4d4d4d)
+    // Match workspace background color (#404040)
+    setAutoFillBackground(true);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QColor(64, 64, 64));
+    setPalette(pal);
+
     setStyleSheet(
-        "ToolOptionsPanel { background-color: #4d4d4d; }"
-        "QLabel { color: #ffffff; }"
-        "QCheckBox { color: #ffffff; }"
+        "QWidget { background-color: #404040; }"
+        "QLabel { color: #ffffff; background: transparent; }"
+        "QCheckBox { color: #ffffff; background: transparent; }"
         "QCheckBox::indicator { width: 16px; height: 16px; }"
         "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; }"
         "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; }");
@@ -41,7 +48,7 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
     // Scroll area for options
     auto* scrollArea = new QScrollArea(this);
     scrollArea->setWidgetResizable(true);
-    scrollArea->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+    scrollArea->setFrameShape(QFrame::NoFrame);
 
     auto* optionsWidget = new QWidget();
     m_mainLayout = new QVBoxLayout(optionsWidget);

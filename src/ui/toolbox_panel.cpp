@@ -15,13 +15,13 @@
 
 #include <QPalette>
 
+#include <algorithm>
+
 namespace gimp {
 
-namespace {
-constexpr int kGridColumns = 3;
-}  // namespace
-
-ToolboxPanel::ToolboxPanel(QWidget* parent) : QWidget(parent), buttonGroup_(new QButtonGroup(this))
+ToolboxPanel::ToolboxPanel(QWidget* parent)
+    : QWidget(parent),
+      buttonGroup_(new QButtonGroup(this))
 {
     setupUi();
     populateTools();
@@ -55,7 +55,9 @@ void ToolboxPanel::setupUi()
     mainLayout_->addLayout(toolGrid_);
     mainLayout_->addStretch();
 
-    setMinimumWidth(80);
+    // Minimum width: 4 buttons + spacing + margins
+    int minWidth = kMinColumns * kButtonSize + (kMinColumns - 1) * kButtonSpacing + 2 * kMargin;
+    setMinimumWidth(minWidth);
 }
 
 void ToolboxPanel::populateTools()
@@ -64,8 +66,6 @@ void ToolboxPanel::populateTools()
     auto primaryTools = registry.getPrimaryTools();
 
     int buttonId = 0;
-    int row = 0;
-    int col = 0;
 
     for (const auto& tool : primaryTools) {
         auto* button = new ToolButton(tool, this);
@@ -84,17 +84,10 @@ void ToolboxPanel::populateTools()
         }
 
         toolButtons_[tool.id] = button;
+        orderedButtons_.push_back(button);
         buttonGroup_->addButton(button, buttonId);
 
         connect(button, &ToolButton::toolActivated, this, &ToolboxPanel::onToolActivated);
-
-        toolGrid_->addWidget(button, row, col);
-
-        ++col;
-        if (col >= kGridColumns) {
-            col = 0;
-            ++row;
-        }
 
         if (tool.id == registry.getActiveTool()) {
             button->setChecked(true);
@@ -102,6 +95,46 @@ void ToolboxPanel::populateTools()
         }
 
         ++buttonId;
+    }
+
+    reflowButtons();
+}
+
+int ToolboxPanel::calculateColumns(int width) const
+{
+    int availableWidth = width - 2 * kMargin;
+    int cols = (availableWidth + kButtonSpacing) / (kButtonSize + kButtonSpacing);
+    return std::max(cols, kMinColumns);
+}
+
+void ToolboxPanel::reflowButtons()
+{
+    // Remove all widgets from grid without deleting them
+    while (toolGrid_->count() > 0) {
+        toolGrid_->takeAt(0);
+    }
+
+    // Re-add buttons with current column count
+    int row = 0;
+    int col = 0;
+    for (auto* button : orderedButtons_) {
+        toolGrid_->addWidget(button, row, col, Qt::AlignLeft | Qt::AlignTop);
+        ++col;
+        if (col >= currentColumns_) {
+            col = 0;
+            ++row;
+        }
+    }
+}
+
+void ToolboxPanel::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+
+    int newColumns = calculateColumns(event->size().width());
+    if (newColumns != currentColumns_) {
+        currentColumns_ = newColumns;
+        reflowButtons();
     }
 }
 

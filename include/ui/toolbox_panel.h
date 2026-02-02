@@ -11,11 +11,13 @@
 
 #include <QButtonGroup>
 #include <QGridLayout>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace gimp {
 
@@ -52,17 +54,29 @@ class ToolboxPanel : public QWidget {
      */
     void toolSelected(const QString& toolId);
 
+  protected:
+    void resizeEvent(QResizeEvent* event) override;
+
   private:
     void setupUi();
     void populateTools();
+    void reflowButtons();
     void onToolActivated(const std::string& toolId);
+    [[nodiscard]] int calculateColumns(int width) const;
+
+    static constexpr int kButtonSize = 24;
+    static constexpr int kButtonSpacing = 1;
+    static constexpr int kMinColumns = 4;
+    static constexpr int kMargin = 4;
 
     QVBoxLayout* mainLayout_ = nullptr;
     QGridLayout* toolGrid_ = nullptr;
     QButtonGroup* buttonGroup_ = nullptr;
+    std::vector<ToolButton*> orderedButtons_;
     std::unordered_map<std::string, ToolButton*> toolButtons_;
     std::unordered_map<std::string, std::string> toolToGroupMap_;
     std::string activeToolId_;
+    int currentColumns_ = kMinColumns;
     EventBus::SubscriptionId toolSwitchSub_ = 0;
 };
 

@@ -59,6 +59,19 @@ class ShortcutManager : public QObject {
      */
     void registerActionShortcuts();
 
+    /*! @brief Rebinds an existing shortcut to a new key.
+     *  @param actionId The action identifier (e.g., "tool:pencil" or "action:swap_colors").
+     *  @param newKey The new key sequence to bind.
+     *  @return True if rebinding succeeded, false if actionId not found.
+     */
+    bool rebindShortcut(const std::string& actionId, const QKeySequence& newKey);
+
+    /*! @brief Returns the current key binding for an action.
+     *  @param actionId The action identifier.
+     *  @return The bound key sequence, or empty if not found.
+     */
+    [[nodiscard]] QKeySequence getBinding(const std::string& actionId) const;
+
   signals:
     /*! @brief Emitted when a tool switch shortcut is activated.
      *  @param toolId The ID of the tool to switch to.
@@ -78,10 +91,13 @@ class ShortcutManager : public QObject {
     void resetColorsRequested();
 
   private:
-    void createShortcut(const QKeySequence& key, const std::function<void()>& callback);
+    void registerShortcut(const std::string& actionId,
+                         const QKeySequence& key,
+                         const std::function<void()>& callback);
 
     QWidget* parentWidget_ = nullptr;
-    std::vector<std::unique_ptr<QShortcut>> shortcuts_;
+    std::unordered_map<std::string, std::unique_ptr<QShortcut>> shortcuts_;
+    std::unordered_map<std::string, std::function<void()>> callbacks_;
 };
 
 }  // namespace gimp

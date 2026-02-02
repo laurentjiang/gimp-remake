@@ -17,13 +17,34 @@ ShortcutManager::ShortcutManager(QWidget* parent) : QObject(parent), parentWidge
 
 ShortcutManager::~ShortcutManager() = default;
 
-void ShortcutManager::createShortcut(const QKeySequence& key,
-                                     const std::function<void()>& callback)
+void ShortcutManager::registerShortcut(const std::string& actionId,
+                                       const QKeySequence& key,
+                                       const std::function<void()>& callback)
 {
     auto shortcut = std::make_unique<QShortcut>(key, parentWidget_);
     shortcut->setContext(Qt::WindowShortcut);
     connect(shortcut.get(), &QShortcut::activated, callback);
-    shortcuts_.push_back(std::move(shortcut));
+    shortcuts_[actionId] = std::move(shortcut);
+    callbacks_[actionId] = callback;
+}
+
+bool ShortcutManager::rebindShortcut(const std::string& actionId, const QKeySequence& newKey)
+{
+    auto it = shortcuts_.find(actionId);
+    if (it == shortcuts_.end()) {
+        return false;
+    }
+    it->second->setKey(newKey);
+    return true;
+}
+
+QKeySequence ShortcutManager::getBinding(const std::string& actionId) const
+{
+    auto it = shortcuts_.find(actionId);
+    if (it == shortcuts_.end()) {
+        return {};
+    }
+    return it->second->key();
 }
 
 void ShortcutManager::registerToolShortcuts()
@@ -40,8 +61,9 @@ void ShortcutManager::registerToolShortcuts()
             continue;
         }
 
+        std::string actionId = "tool:" + tool.id;
         std::string capturedId = tool.id;
-        createShortcut(keySeq, [this, capturedId]() {
+        registerShortcut(actionId, keySeq, [this, capturedId]() {
             emit toolSwitchRequested(QString::fromStdString(capturedId));
         });
     }
@@ -49,19 +71,17 @@ void ShortcutManager::registerToolShortcuts()
 
 void ShortcutManager::registerActionShortcuts()
 {
-    // Brush size decrease: [
-    createShortcut(QKeySequence(Qt::Key_BracketLeft),
-                   [this]() { emit brushSizeDecreaseRequested(); });
+    registerShortcut("action:brush_size_decrease", QKeySequence(Qt::Key_BracketLeft),
+                     [this]() { emit brushSizeDecreaseRequested(); });
 
-    // Brush size increase: ]
-    createShortcut(QKeySequence(Qt::Key_BracketRight),
-                   [this]() { emit brushSizeIncreaseRequested(); });
+    registerShortcut("action:brush_size_increase", QKeySequence(Qt::Key_BracketRight),
+                     [this]() { emit brushSizeIncreaseRequested(); });
 
-    // Swap colors: X
-    createShortcut(QKeySequence(Qt::Key_X), [this]() { emit swapColorsRequested(); });
+    registerShortcut("action:swap_colors", QKeySequence(Qt::Key_X),
+                     [this]() { emit swapColorsRequested(); });
 
-    // Reset to default colors: D
-    createShortcut(QKeySequence(Qt::Key_D), [this]() { emit resetColorsRequested(); });
+    registerShortcut("action:reset_colors", QKeySequence(Qt::Key_D),
+                     [this]() { emit resetColorsRequested(); });
 }
 
 }  // namespace gimp

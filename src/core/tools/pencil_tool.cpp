@@ -88,7 +88,9 @@ void PencilTool::renderSegment(int fromX,
         interpolatePoints(fromX, fromY, fromPressure, toX, toY, toPressure, brushSize_);
 
     for (const auto& [x, y, pressure] : interpolated) {
-        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color, pressure);
+        // Pencil tool ignores pressure for consistent hard-edged strokes
+        (void)pressure;
+        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color, 1.0F);
     }
 }
 
@@ -114,6 +116,7 @@ void PencilTool::beginStroke(const ToolInputEvent& event)
 
     SolidBrush brush;
     std::uint32_t color = ToolFactory::instance().foregroundColor();
+    // Pencil tool ignores pressure for consistent hard-edged strokes
     brush.renderDab(pixelData,
                     layerWidth,
                     layerHeight,
@@ -121,7 +124,7 @@ void PencilTool::beginStroke(const ToolInputEvent& event)
                     event.canvasPos.y(),
                     brushSize_,
                     color,
-                    event.pressure);
+                    1.0F);
 }
 
 void PencilTool::continueStroke(const ToolInputEvent& event)

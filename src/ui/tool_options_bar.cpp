@@ -256,6 +256,27 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
             }
         });
 
+        // Velocity dynamics checkbox (only for BrushTool)
+        if (toolId == "paintbrush") {
+            addSeparator(layout);
+
+            auto* dynamicsCheck = new QCheckBox("Velocity dynamics", optionsContainer_);
+            dynamicsCheck->setToolTip("Simulate pressure from mouse speed (fast = light, slow = heavy)");
+            layout->addWidget(dynamicsCheck);
+
+            // Get current state from BrushTool
+            if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+                dynamicsCheck->setChecked(brushTool->velocityDynamics());
+            }
+
+            connect(dynamicsCheck, &QCheckBox::toggled, [](bool checked) {
+                auto* tool = ToolFactory::instance().activeTool();
+                if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                    brushTool->setVelocityDynamics(checked);
+                }
+            });
+        }
+
     } else if (tool->category == "Selection") {
         auto* featherCheck = new QCheckBox("Feather edges", optionsContainer_);
         layout->addWidget(featherCheck);

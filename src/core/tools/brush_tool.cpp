@@ -69,6 +69,13 @@ void BrushTool::setOpacity(float opacity)
     opacity_ = std::clamp(opacity, 0.0F, 1.0F);
 }
 
+void BrushTool::setVelocityDynamics(bool enabled)
+{
+    dynamics_.config().useVelocity = enabled;
+    // When using velocity dynamics, don't use raw tablet pressure
+    dynamics_.config().usePressure = !enabled;
+}
+
 void BrushTool::renderSegment(int fromX,
                               int fromY,
                               float fromPressure,
@@ -104,6 +111,7 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
 {
     strokePoints_.clear();
     beforeState_.clear();
+    dynamics_.beginStroke();
 
     if (!document_ || document_->layers().count() == 0) {
         return;
@@ -112,7 +120,11 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
     auto layer = document_->layers()[0];
     beforeState_ = layer->data();
 
-    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+    // Compute initial pressure from dynamics
+    DynamicsInput dynInput = dynamics_.update(event.canvasPos.x(), event.canvasPos.y(), event.pressure);
+    float effectivePressure = dynamics_.computePressure(dynInput);
+
+    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), effectivePressure});
 
     auto* pixelData = layer->data().data();
     int layerWidth = layer->width();
@@ -131,7 +143,7 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
                       event.canvasPos.y(),
                       brushSize_,
                       color,
-                      event.pressure);
+                      effectivePressure);
 }
 
 void BrushTool::continueStroke(const ToolInputEvent& event)
@@ -145,8 +157,12 @@ void BrushTool::continueStroke(const ToolInputEvent& event)
     int newY = event.canvasPos.y();
 
     if (newX != lastPoint.x || newY != lastPoint.y) {
-        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
-        strokePoints_.push_back({newX, newY, event.pressure});
+        // Compute pressure from dynamics
+        DynamicsInput dynInput = dynamics_.update(newX, newY, event.pressure);
+        float effectivePressure = dynamics_.computePressure(dynInput);
+
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, effectivePressure);
+        strokePoints_.push_back({newX, newY, effectivePressure});
     }
 }
 
@@ -183,8 +199,10 @@ void BrushTool::endStroke(const ToolInputEvent& event)
     int newX = event.canvasPos.x();
     int newY = event.canvasPos.y();
     if (newX != lastPoint.x || newY != lastPoint.y) {
-        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
-        strokePoints_.push_back({newX, newY, event.pressure});
+        DynamicsInput dynInput = dynamics_.update(newX, newY, event.pressure);
+        float effectivePressure = dynamics_.computePressure(dynInput);
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, effectivePressure);
+        strokePoints_.push_back({newX, newY, effectivePressure});
     }
 
     if (!document_ || !commandBus_) {

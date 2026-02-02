@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "core/brush_dynamics.h"
 #include "core/brush_strategy.h"
 #include "core/commands/draw_command.h"
 #include "core/tool.h"
@@ -72,6 +73,21 @@ class BrushTool : public Tool {
      */
     [[nodiscard]] std::uint32_t color() const { return ToolFactory::instance().foregroundColor(); }
 
+    /*! @brief Enables or disables velocity-based dynamics.
+     *  @param enabled True to enable velocity dynamics.
+     */
+    void setVelocityDynamics(bool enabled);
+
+    /*! @brief Returns whether velocity dynamics is enabled.
+     *  @return True if velocity dynamics is enabled.
+     */
+    [[nodiscard]] bool velocityDynamics() const { return dynamics_.config().useVelocity; }
+
+    /*! @brief Returns a reference to the dynamics configuration.
+     *  @return Reference to DynamicsConfig for full customization.
+     */
+    [[nodiscard]] DynamicsConfig& dynamicsConfig() { return dynamics_.config(); }
+
   protected:
     void beginStroke(const ToolInputEvent& event) override;
     void continueStroke(const ToolInputEvent& event) override;
@@ -97,6 +113,7 @@ class BrushTool : public Tool {
                        float toPressure);
 
     std::unique_ptr<SoftBrush> brush_;
+    BrushDynamics dynamics_;
     std::vector<StrokePoint> strokePoints_;
     std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
     int brushSize_ = 20;

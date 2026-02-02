@@ -11,6 +11,7 @@
 #include "core/tool.h"
 #include "core/tool_options.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -39,6 +40,26 @@ class EraserTool : public Tool, public ToolOptions {
      *  @return Brush diameter in pixels.
      */
     [[nodiscard]] int brushSize() const override { return brushSize_; }
+
+    /*! @brief Sets the eraser hardness.
+     *  @param hardness Value from 0.0 (soft edges) to 1.0 (hard edges).
+     */
+    void setHardness(float hardness) { hardness_ = std::clamp(hardness, 0.0F, 1.0F); }
+
+    /*! @brief Returns the current eraser hardness.
+     *  @return Hardness value (0.0 to 1.0).
+     */
+    [[nodiscard]] float hardness() const { return hardness_; }
+
+    /*! @brief Sets the eraser opacity.
+     *  @param opacity Value from 0.0 (transparent) to 1.0 (opaque).
+     */
+    void setOpacity(float opacity) { opacity_ = std::clamp(opacity, 0.0F, 1.0F); }
+
+    /*! @brief Returns the current eraser opacity.
+     *  @return Opacity value (0.0 to 1.0).
+     */
+    [[nodiscard]] float opacity() const { return opacity_; }
 
   protected:
     void beginStroke(const ToolInputEvent& event) override;
@@ -75,6 +96,8 @@ class EraserTool : public Tool, public ToolOptions {
     std::vector<StrokePoint> strokePoints_;
     std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
     int brushSize_ = 10;
+    float hardness_ = 0.5F;
+    float opacity_ = 1.0F;
 };
 
 }  // namespace gimp

@@ -23,7 +23,8 @@ class SharpenFilter : public Filter {
 
     [[nodiscard]] std::string id() const override { return "sharpen"; }
     [[nodiscard]] std::string name() const override { return "Sharpen"; }
-    [[nodiscard]] std::string description() const override {
+    [[nodiscard]] std::string description() const override
+    {
         return "Sharpen edges using unsharp masking";
     }
 
@@ -68,10 +69,10 @@ class SharpenFilter : public Filter {
      */
     std::vector<std::uint8_t> createBlurredCopy(const std::vector<std::uint8_t>& data,
                                                 int width,
-                                                int height);
+                                                int height) const;
 
-    float amount_ = 1.0F;   ///< Sharpening strength (0.0-2.0).
-    float radius_ = 1.0F;   ///< Blur radius for unsharp mask.
+    float amount_ = 1.0F;  ///< Sharpening strength (0.0-2.0).
+    float radius_ = 1.0F;  ///< Blur radius for unsharp mask.
 };
 
 }  // namespace gimp

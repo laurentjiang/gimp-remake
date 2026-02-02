@@ -26,7 +26,7 @@ void SharpenFilter::setRadius(float radius)
 
 std::vector<std::uint8_t> SharpenFilter::createBlurredCopy(const std::vector<std::uint8_t>& data,
                                                            int width,
-                                                           int height)
+                                                           int height) const
 {
     // Create a temporary layer with the data
     auto tempLayer = std::make_shared<Layer>(width, height);

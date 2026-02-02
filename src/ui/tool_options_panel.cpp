@@ -31,10 +31,11 @@ ToolOptionsPanel::ToolOptionsPanel(QWidget* parent) : QWidget(parent)
 
     setStyleSheet(
         QString("QLabel { color: %1; background: transparent; }"
-                "QCheckBox { color: %1; background: transparent; }"
-                "QCheckBox::indicator { width: 16px; height: 16px; }"
+                "QCheckBox { color: %1; background: transparent; spacing: 6px; }"
+                "QCheckBox::indicator { width: 14px; height: 14px; }"
                 "QCheckBox::indicator:unchecked { background-color: %2; border: 1px solid %3; }"
-                "QCheckBox::indicator:checked { background-color: %4; border: 1px solid #777; }")
+                "QCheckBox::indicator:checked { background-color: %4; border: 1px solid %3; "
+                "image: url(:/icons/check.svg); }")
             .arg(Theme::toHex(Theme::kTextPrimary),
                  Theme::toHex(Theme::kCheckboxUnchecked),
                  Theme::toHex(Theme::kCheckboxBorder),
@@ -113,8 +114,8 @@ void ToolOptionsPanel::populateOptions()
     auto options = m_toolOptions->getOptions();
 
     for (const auto& option : options) {
-        // For sliders, the SpinSlider has its own label; skip creating separate label
-        if (option.type != ToolOption::Type::Slider) {
+        // For sliders and checkboxes, the widget has its own label
+        if (option.type != ToolOption::Type::Slider && option.type != ToolOption::Type::Checkbox) {
             auto* label = new QLabel(QString::fromStdString(option.label), this);
             label->setStyleSheet(
                 QString("color: %1; font-size: 11px;").arg(Theme::toHex(Theme::kTextSecondary)));
@@ -189,7 +190,7 @@ void ToolOptionsPanel::createOptionWidget(const ToolOption& option)
         }
 
         case ToolOption::Type::Checkbox: {
-            auto* checkBox = new QCheckBox(this);
+            auto* checkBox = new QCheckBox(QString::fromStdString(option.label), this);
             if (std::holds_alternative<bool>(option.value)) {
                 checkBox->setChecked(std::get<bool>(option.value));
             }

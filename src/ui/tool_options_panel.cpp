@@ -7,15 +7,14 @@
 
 #include "ui/tool_options_panel.h"
 
-#include <QVBoxLayout>
+#include "ui/spin_slider.h"
+
+#include <QCheckBox>
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QSlider>
-#include <QSpinBox>
-#include <QDoubleSpinBox>
-#include <QComboBox>
-#include <QCheckBox>
 #include <QScrollArea>
+#include <QVBoxLayout>
 
 namespace gimp {
 
@@ -99,11 +98,13 @@ void ToolOptionsPanel::populateOptions()
     auto options = m_toolOptions->getOptions();
 
     for (const auto& option : options) {
-        // Create label
-        auto* label = new QLabel(QString::fromStdString(option.label), this);
-        label->setStyleSheet("color: #cccccc; font-size: 11px;");
-        m_mainLayout->addWidget(label);
-        m_optionLabels[option.id] = label;
+        // For sliders, the SpinSlider has its own label; skip creating separate label
+        if (option.type != ToolOption::Type::Slider) {
+            auto* label = new QLabel(QString::fromStdString(option.label), this);
+            label->setStyleSheet("color: #cccccc; font-size: 11px;");
+            m_mainLayout->addWidget(label);
+            m_optionLabels[option.id] = label;
+        }
 
         // Create option widget
         createOptionWidget(option);
@@ -116,38 +117,34 @@ void ToolOptionsPanel::createOptionWidget(const ToolOption& option)
 
     switch (option.type) {
         case ToolOption::Type::Slider: {
-            auto* slider = new QSlider(Qt::Horizontal, this);
-            slider->setMinimum(static_cast<int>(option.minValue));
-            slider->setMaximum(static_cast<int>(option.maxValue));
-            slider->setSingleStep(static_cast<int>(option.step));
+            auto* spinSlider = new SpinSlider(this);
+            spinSlider->setLabel(QString::fromStdString(option.label));
+            spinSlider->setRange(option.minValue, option.maxValue);
+            spinSlider->setSingleStep(option.step);
+            spinSlider->setDecimals(option.step < 1.0F ? 1 : 0);
 
             // Set current value
             if (std::holds_alternative<int>(option.value)) {
-                slider->setValue(std::get<int>(option.value));
+                spinSlider->setValue(std::get<int>(option.value));
             } else if (std::holds_alternative<float>(option.value)) {
-                slider->setValue(static_cast<int>(std::get<float>(option.value)));
+                spinSlider->setValue(static_cast<double>(std::get<float>(option.value)));
             }
 
-            // Create layout with slider and value label
-            auto* hLayout = new QHBoxLayout();
-            hLayout->addWidget(slider);
+            // Determine suffix based on option
+            if (option.id.find("size") != std::string::npos) {
+                spinSlider->setSuffix(" px");
+            } else if (option.id.find("opacity") != std::string::npos ||
+                       option.id.find("hardness") != std::string::npos) {
+                spinSlider->setSuffix("%");
+            }
 
-            auto* valueLabel = new QLabel(QString::number(slider->value()), this);
-            valueLabel->setMaximumWidth(40);
-            valueLabel->setStyleSheet("color: #0078d4;");
-            hLayout->addWidget(valueLabel);
-
-            // Connect slider changes
-            connect(slider, &QSlider::valueChanged, this, [this, valueLabel, option](int value) {
-                valueLabel->setText(QString::number(value));
+            connect(spinSlider, &SpinSlider::valueChanged, this, [this, option](double value) {
                 if (m_toolOptions) {
-                    m_toolOptions->setOptionValue(option.id, value);
+                    m_toolOptions->setOptionValue(option.id, static_cast<int>(value));
                 }
             });
 
-            auto* container = new QWidget();
-            container->setLayout(hLayout);
-            widget = container;
+            widget = spinSlider;
             break;
         }
 

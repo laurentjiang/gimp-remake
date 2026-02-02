@@ -24,10 +24,7 @@ void FillTool::setTolerance(int tolerance)
     tolerance_ = std::clamp(tolerance, 0, 255);
 }
 
-std::uint32_t FillTool::getPixelColor(const std::vector<uint8_t>& data,
-                                      int x,
-                                      int y,
-                                      int width)
+std::uint32_t FillTool::getPixelColor(const std::vector<uint8_t>& data, int x, int y, int width)
 {
     std::size_t index = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
                          static_cast<std::size_t>(x)) *

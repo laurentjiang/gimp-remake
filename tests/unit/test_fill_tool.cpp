@@ -202,9 +202,9 @@ TEST_CASE("FillTool respects region boundaries", "[fill_tool][unit]")
     for (int y = 0; y < 10; ++y) {
         for (int x = 0; x < 5; ++x) {
             int idx = (y * 10 + x) * 4;
-            REQUIRE(data[idx] == 255);      // R
-            REQUIRE(data[idx + 1] == 0);    // G
-            REQUIRE(data[idx + 2] == 0);    // B
+            REQUIRE(data[idx] == 255);    // R
+            REQUIRE(data[idx + 1] == 0);  // G
+            REQUIRE(data[idx + 2] == 0);  // B
         }
     }
 
@@ -400,9 +400,9 @@ TEST_CASE("FillTool does not fill when clicking on target color", "[fill_tool][u
 
     // Pixels should remain red
     int idx = (5 * 10 + 5) * 4;
-    REQUIRE(data[idx] == 255);      // R
-    REQUIRE(data[idx + 1] == 0);    // G
-    REQUIRE(data[idx + 2] == 0);    // B
+    REQUIRE(data[idx] == 255);    // R
+    REQUIRE(data[idx + 1] == 0);  // G
+    REQUIRE(data[idx + 2] == 0);  // B
 }
 
 // ============================================================================
@@ -517,4 +517,3 @@ TEST_CASE("FillTool handles right mouse button (no action)", "[fill_tool][unit]"
     REQUIRE(data[1] == origG);
     REQUIRE(data[2] == origB);
 }
-

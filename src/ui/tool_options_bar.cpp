@@ -10,7 +10,9 @@
 #include "core/events.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/brush_tool.h"
 #include "core/tools/fill_tool.h"
+#include "ui/spin_slider.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -52,6 +54,14 @@ void ToolOptionsBar::setupUi()
     mainLayout_->addWidget(separator);
 
     optionsContainer_ = new QWidget(this);
+    optionsContainer_->setStyleSheet(
+        "QCheckBox::indicator { width: 14px; height: 14px; }"
+        "QCheckBox::indicator:unchecked { background-color: #3c3c3c; border: 1px solid #555; "
+        "border-radius: 2px; }"
+        "QCheckBox::indicator:checked { background-color: #555; border: 1px solid #777; "
+        "border-radius: 2px; image: url(:/icons/check.svg); }"
+        "QCheckBox::indicator:checked:hover { background-color: #666; }"
+        "QCheckBox::indicator:unchecked:hover { background-color: #4a4a4a; }");
     auto* optionsLayout = new QHBoxLayout(optionsContainer_);
     optionsLayout->setContentsMargins(0, 0, 0, 0);
     optionsLayout->setSpacing(8);
@@ -153,38 +163,100 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
     }
 
     if (toolId == "bucket_fill") {
-        // Tolerance slider for bucket fill tool (0-255)
-        auto* label = new QLabel("Tolerance:", optionsContainer_);
-        auto* slider = new QSlider(Qt::Horizontal, optionsContainer_);
-        slider->setRange(0, 255);
-        slider->setValue(0);
-        slider->setFixedWidth(100);
-        auto* valueLabel = new QLabel("0", optionsContainer_);
-        valueLabel->setFixedWidth(30);
+        auto* toleranceSlider = new SpinSlider(optionsContainer_);
+        toleranceSlider->setRange(0, 255);
+        toleranceSlider->setLabel("Tolerance");
+        toleranceSlider->setFixedWidth(140);
+        toleranceSlider->setValue(0);
+        layout->addWidget(toleranceSlider);
 
-        layout->addWidget(label);
-        layout->addWidget(slider);
-        layout->addWidget(valueLabel);
-
-        connect(slider, &QSlider::valueChanged, [valueLabel](int value) {
-            valueLabel->setText(QString::number(value));
+        connect(toleranceSlider, &SpinSlider::valueChanged, [](double value) {
             auto* activeTool = ToolFactory::instance().activeTool();
             if (auto* fillTool = dynamic_cast<FillTool*>(activeTool)) {
-                fillTool->setTolerance(value);
+                fillTool->setTolerance(static_cast<int>(value));
             }
         });
 
     } else if (tool->category == "Paint") {
-        // Size option group
-        addSpinBox(layout, "Size:", 1, 1000, 20, " px");
-        addSeparator(layout);
+        auto* activeTool = ToolFactory::instance().activeTool();
 
-        // Opacity option group
-        addSliderWithLabel(layout, "Opacity:", 0, 100, 100);
-        addSeparator(layout);
+        // Size SpinSlider
+        auto* sizeSlider = new SpinSlider(optionsContainer_);
+        sizeSlider->setRange(1, 1000);
+        sizeSlider->setSuffix(" px");
+        sizeSlider->setLabel("Size");
+        sizeSlider->setFixedWidth(140);
+        int currentSize = activeTool ? activeTool->brushSize() : 20;
+        sizeSlider->setValue(currentSize > 0 ? currentSize : 20);
+        layout->addWidget(sizeSlider);
 
-        // Hardness option group
-        addSliderWithLabel(layout, "Hardness:", 0, 100, 100);
+        connect(sizeSlider, &SpinSlider::valueChanged, [](double value) {
+            auto* tool = ToolFactory::instance().activeTool();
+            if (tool) {
+                tool->setBrushSize(static_cast<int>(value));
+            }
+        });
+
+        // Opacity SpinSlider
+        auto* opacitySlider = new SpinSlider(optionsContainer_);
+        opacitySlider->setRange(0, 100);
+        opacitySlider->setSuffix("%");
+        opacitySlider->setLabel("Opacity");
+        opacitySlider->setFixedWidth(140);
+        float currentOpacity = 1.0F;
+        if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+            currentOpacity = brushTool->opacity();
+        }
+        opacitySlider->setValue(static_cast<double>(currentOpacity * 100));
+        layout->addWidget(opacitySlider);
+
+        connect(opacitySlider, &SpinSlider::valueChanged, [](double value) {
+            auto* tool = ToolFactory::instance().activeTool();
+            if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                brushTool->setOpacity(static_cast<float>(value) / 100.0F);
+            }
+        });
+
+        // Hardness SpinSlider
+        auto* hardnessSlider = new SpinSlider(optionsContainer_);
+        hardnessSlider->setRange(0, 100);
+        hardnessSlider->setSuffix("%");
+        hardnessSlider->setLabel("Hardness");
+        hardnessSlider->setFixedWidth(140);
+        float currentHardness = 0.5F;
+        if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+            currentHardness = brushTool->hardness();
+        }
+        hardnessSlider->setValue(static_cast<double>(currentHardness * 100));
+        layout->addWidget(hardnessSlider);
+
+        connect(hardnessSlider, &SpinSlider::valueChanged, [](double value) {
+            auto* tool = ToolFactory::instance().activeTool();
+            if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                brushTool->setHardness(static_cast<float>(value) / 100.0F);
+            }
+        });
+
+        // Velocity dynamics checkbox (only for BrushTool)
+        if (toolId == "paintbrush") {
+            addSeparator(layout);
+
+            auto* dynamicsCheck = new QCheckBox("Velocity dynamics", optionsContainer_);
+            dynamicsCheck->setToolTip(
+                "Simulate pressure from mouse speed (fast = light, slow = heavy)");
+            layout->addWidget(dynamicsCheck);
+
+            if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+                dynamicsCheck->setChecked(brushTool->velocityDynamics());
+            }
+
+            connect(dynamicsCheck, &QCheckBox::toggled, [](bool checked) {
+                auto* tool = ToolFactory::instance().activeTool();
+                if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                    brushTool->setVelocityDynamics(checked);
+                }
+            });
+        }
 
     } else if (tool->category == "Selection") {
         auto* featherCheck = new QCheckBox("Feather edges", optionsContainer_);

@@ -1,19 +1,19 @@
 /**
- * @file pencil_tool.cpp
- * @brief Implementation of PencilTool.
+ * @file brush_tool.cpp
+ * @brief Implementation of BrushTool.
  * @author Laurent Jiang
- * @date 2026-01-26
+ * @date 2026-02-02
  */
 
-#include "core/tools/pencil_tool.h"
+#include "core/tools/brush_tool.h"
 
-#include "core/brush_strategy.h"
 #include "core/command_bus.h"
 #include "core/commands/draw_command.h"
 #include "core/document.h"
 #include "core/layer.h"
 #include "core/tool_factory.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace gimp {
@@ -23,16 +23,8 @@ namespace {
 /**
  * @brief Interpolates points along a line between two stroke points.
  *
- * Uses linear interpolation to ensure smooth, continuous strokes without gaps.
- *
- * @param fromX Starting X position.
- * @param fromY Starting Y position.
- * @param fromPressure Starting pressure.
- * @param toX Ending X position.
- * @param toY Ending Y position.
- * @param toPressure Ending pressure.
- * @param brushSize Spacing is approximately 1/4 the brush size.
- * @return Vector of interpolated points including endpoints.
+ * Uses tight spacing (10% of brush size) to ensure smooth strokes
+ * without visible scalloping, especially for soft brushes.
  */
 std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
                                                            int fromY,
@@ -48,8 +40,8 @@ std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
     int dy = toY - fromY;
     float distance = std::sqrt(static_cast<float>(dx * dx + dy * dy));
 
-    // Spacing: at most 1/4 the brush size for smooth strokes
-    float spacing = std::max(1.0F, static_cast<float>(brushSize) / 4.0F);
+    // Spacing at 10% of brush size prevents visible scalloping on soft brushes
+    float spacing = std::max(1.0F, static_cast<float>(brushSize) * 0.1F);
     int steps = std::max(1, static_cast<int>(distance / spacing));
 
     for (int i = 0; i <= steps; ++i) {
@@ -65,12 +57,35 @@ std::vector<std::tuple<int, int, float>> interpolatePoints(int fromX,
 
 }  // namespace
 
-void PencilTool::renderSegment(int fromX,
-                               int fromY,
-                               float fromPressure,
-                               int toX,
-                               int toY,
-                               float toPressure)
+BrushTool::BrushTool() : brush_(std::make_unique<SoftBrush>())
+{
+    brush_->setHardness(hardness_);
+}
+
+void BrushTool::setHardness(float hardness)
+{
+    hardness_ = std::clamp(hardness, 0.0F, 1.0F);
+    brush_->setHardness(hardness_);
+}
+
+void BrushTool::setOpacity(float opacity)
+{
+    opacity_ = std::clamp(opacity, 0.0F, 1.0F);
+}
+
+void BrushTool::setVelocityDynamics(bool enabled)
+{
+    dynamics_.config().useVelocity = enabled;
+    // When using velocity dynamics, don't use raw tablet pressure
+    dynamics_.config().usePressure = !enabled;
+}
+
+void BrushTool::renderSegment(int fromX,
+                              int fromY,
+                              float fromPressure,
+                              int toX,
+                              int toY,
+                              float toPressure)
 {
     if (!document_ || document_->layers().count() == 0) {
         return;
@@ -81,53 +96,62 @@ void PencilTool::renderSegment(int fromX,
     int layerWidth = layer->width();
     int layerHeight = layer->height();
 
-    SolidBrush brush;
     std::uint32_t color = ToolFactory::instance().foregroundColor();
+    // Apply opacity to the alpha channel
+    std::uint8_t colorAlpha = static_cast<std::uint8_t>(color & 0xFF);
+    std::uint8_t adjustedAlpha =
+        static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
+    color = (color & 0xFFFFFF00) | adjustedAlpha;
 
     auto interpolated =
         interpolatePoints(fromX, fromY, fromPressure, toX, toY, toPressure, brushSize_);
 
     for (const auto& [x, y, pressure] : interpolated) {
-        // Pencil tool ignores pressure for consistent hard-edged strokes
-        (void)pressure;
-        brush.renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color, 1.0F);
+        brush_->renderDab(pixelData, layerWidth, layerHeight, x, y, brushSize_, color, pressure);
     }
 }
 
-void PencilTool::beginStroke(const ToolInputEvent& event)
+void BrushTool::beginStroke(const ToolInputEvent& event)
 {
     strokePoints_.clear();
     beforeState_.clear();
+    dynamics_.beginStroke();
 
     if (!document_ || document_->layers().count() == 0) {
         return;
     }
 
-    // Capture the layer state before we start drawing
     auto layer = document_->layers()[0];
     beforeState_ = layer->data();
 
-    // Add first point and render it
-    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
+    // Compute initial pressure from dynamics
+    DynamicsInput dynInput =
+        dynamics_.update(event.canvasPos.x(), event.canvasPos.y(), event.pressure);
+    float effectivePressure = dynamics_.computePressure(dynInput);
+
+    strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), effectivePressure});
 
     auto* pixelData = layer->data().data();
     int layerWidth = layer->width();
     int layerHeight = layer->height();
 
-    SolidBrush brush;
     std::uint32_t color = ToolFactory::instance().foregroundColor();
-    // Pencil tool ignores pressure for consistent hard-edged strokes
-    brush.renderDab(pixelData,
-                    layerWidth,
-                    layerHeight,
-                    event.canvasPos.x(),
-                    event.canvasPos.y(),
-                    brushSize_,
-                    color,
-                    1.0F);
+    std::uint8_t colorAlpha = static_cast<std::uint8_t>(color & 0xFF);
+    std::uint8_t adjustedAlpha =
+        static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
+    color = (color & 0xFFFFFF00) | adjustedAlpha;
+
+    brush_->renderDab(pixelData,
+                      layerWidth,
+                      layerHeight,
+                      event.canvasPos.x(),
+                      event.canvasPos.y(),
+                      brushSize_,
+                      color,
+                      effectivePressure);
 }
 
-void PencilTool::continueStroke(const ToolInputEvent& event)
+void BrushTool::continueStroke(const ToolInputEvent& event)
 {
     if (strokePoints_.empty()) {
         return;
@@ -137,14 +161,17 @@ void PencilTool::continueStroke(const ToolInputEvent& event)
     int newX = event.canvasPos.x();
     int newY = event.canvasPos.y();
 
-    // Only render if the mouse moved
     if (newX != lastPoint.x || newY != lastPoint.y) {
-        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
-        strokePoints_.push_back({newX, newY, event.pressure});
+        // Compute pressure from dynamics
+        DynamicsInput dynInput = dynamics_.update(newX, newY, event.pressure);
+        float effectivePressure = dynamics_.computePressure(dynInput);
+
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, effectivePressure);
+        strokePoints_.push_back({newX, newY, effectivePressure});
     }
 }
 
-std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, int minY, int maxY)
+std::shared_ptr<DrawCommand> BrushTool::buildDrawCommand(int minX, int maxX, int minY, int maxY)
 {
     for (const auto& pt : strokePoints_) {
         int radius = brushSize_ / 2;
@@ -165,7 +192,7 @@ std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, in
     return std::make_shared<DrawCommand>(document_->layers()[0], minX, minY, width, height);
 }
 
-void PencilTool::endStroke(const ToolInputEvent& event)
+void BrushTool::endStroke(const ToolInputEvent& event)
 {
     if (strokePoints_.empty() || beforeState_.empty()) {
         strokePoints_.clear();
@@ -173,13 +200,14 @@ void PencilTool::endStroke(const ToolInputEvent& event)
         return;
     }
 
-    // Render the final segment
     const auto& lastPoint = strokePoints_.back();
     int newX = event.canvasPos.x();
     int newY = event.canvasPos.y();
     if (newX != lastPoint.x || newY != lastPoint.y) {
-        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, event.pressure);
-        strokePoints_.push_back({newX, newY, event.pressure});
+        DynamicsInput dynInput = dynamics_.update(newX, newY, event.pressure);
+        float effectivePressure = dynamics_.computePressure(dynInput);
+        renderSegment(lastPoint.x, lastPoint.y, lastPoint.pressure, newX, newY, effectivePressure);
+        strokePoints_.push_back({newX, newY, effectivePressure});
     }
 
     if (!document_ || !commandBus_) {
@@ -188,82 +216,32 @@ void PencilTool::endStroke(const ToolInputEvent& event)
         return;
     }
 
-    // Create command for the affected region
     auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
     if (!drawCmd) {
         beforeState_.clear();
         return;
     }
 
-    // The layer now has the "after" state (with the stroke)
-    // We need to swap in the "before" state, capture it, then swap back
     auto layer = document_->layers()[0];
     std::vector<uint8_t> afterState = layer->data();
 
-    // Temporarily restore before state
     layer->data() = beforeState_;
     drawCmd->captureBeforeState();
 
-    // Restore after state (the drawn stroke)
     layer->data() = afterState;
     drawCmd->captureAfterState();
 
     commandBus_->dispatch(drawCmd);
 
-    // Mark the foreground color as used for recent colors tracking
     ToolFactory::instance().markForegroundColorUsed();
 
     strokePoints_.clear();
     beforeState_.clear();
 }
 
-void PencilTool::cancelStroke()
+void BrushTool::cancelStroke()
 {
     strokePoints_.clear();
-}
-
-std::vector<ToolOption> PencilTool::getOptions() const
-{
-    return {
-        ToolOption{
-            "brush_size",
-            "Brush Size",
-            ToolOption::Type::Slider,
-            brushSize_,
-            1.0F,
-            100.0F,
-            1.0F
-        },
-        ToolOption{
-            "opacity",
-            "Opacity",
-            ToolOption::Type::Slider,
-            static_cast<int>(opacity_ * 100.0F),
-            0.0F,
-            100.0F,
-            1.0F
-        }
-    };
-}
-
-void PencilTool::setOptionValue(const std::string& optionId,
-                               const std::variant<int, float, bool, std::string>& value)
-{
-    if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
-        setBrushSize(std::get<int>(value));
-    } else if (optionId == "opacity" && std::holds_alternative<int>(value)) {
-        opacity_ = std::get<int>(value) / 100.0F;
-    }
-}
-
-std::variant<int, float, bool, std::string> PencilTool::getOptionValue(const std::string& optionId) const
-{
-    if (optionId == "brush_size") {
-        return brushSize_;
-    } else if (optionId == "opacity") {
-        return static_cast<int>(opacity_ * 100.0F);
-    }
-    return 0;
 }
 
 }  // namespace gimp

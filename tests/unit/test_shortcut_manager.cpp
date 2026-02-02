@@ -117,4 +117,3 @@ TEST_CASE("ToolRegistry getAllTools returns tools with shortcuts", "[shortcut][r
 
     REQUIRE(toolsWithShortcuts >= 10);
 }
-

@@ -19,6 +19,7 @@
 #include "core/tools/fill_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
+#include "core/tools/brush_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
@@ -87,6 +88,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     // Register tools with the factory
     auto& factory = ToolFactory::instance();
     factory.registerTool("pencil", []() { return std::make_unique<PencilTool>(); });
+    factory.registerTool("paintbrush", []() { return std::make_unique<BrushTool>(); });
     factory.registerTool("eraser", []() { return std::make_unique<EraserTool>(); });
     factory.registerTool("move", []() { return std::make_unique<MoveTool>(); });
     factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });

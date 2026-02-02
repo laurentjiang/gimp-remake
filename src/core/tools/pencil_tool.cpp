@@ -241,7 +241,7 @@ void PencilTool::setOptionValue(const std::string& optionId,
     if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
         setBrushSize(std::get<int>(value));
     } else if (optionId == "opacity" && std::holds_alternative<int>(value)) {
-        opacity_ = std::get<int>(value) / 100.0F;
+        opacity_ = static_cast<float>(std::get<int>(value)) / 100.0F;
     }
 }
 

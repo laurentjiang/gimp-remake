@@ -159,7 +159,7 @@ void ToolOptionsPanel::createOptionWidget(const ToolOption& option)
                     this,
                     [this, option](int index) {
                         if (m_toolOptions && index >= 0 &&
-                            index < static_cast<int>(option.choices.size())) {
+                            static_cast<std::size_t>(index) < option.choices.size()) {
                             m_toolOptions->setOptionValue(option.id, option.choices[index]);
                         }
                     });

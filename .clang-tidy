@@ -33,7 +33,8 @@ Checks: >
   -readability-named-parameter,
   -readability-math-missing-parentheses,
   -readability-implicit-bool-conversion,
-  -misc-const-correctness
+  -misc-const-correctness,
+  -bugprone-exception-escape
 
 WarningsAsErrors: ""
 

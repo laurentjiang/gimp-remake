@@ -137,10 +137,7 @@ void SoftBrush::renderDab(std::uint8_t* target,
     std::uint8_t a = 0;
     unpackRGBA(color, r, g, b, a);
 
-    float radius = static_cast<float>(size) / 2.0F;
-    if (radius < 0.5F) {
-        radius = 0.5F;
-    }
+    float radius = std::max(static_cast<float>(size) / 2.0F, 0.5F);
 
     int minX = std::max(0, x - static_cast<int>(radius) - 1);
     int maxX = std::min(targetWidth - 1, x + static_cast<int>(radius) + 1);
@@ -150,10 +147,7 @@ void SoftBrush::renderDab(std::uint8_t* target,
     // Gaussian sigma based on hardness: lower hardness = larger sigma = softer
     // At hardness=1.0, we want a nearly solid circle
     // At hardness=0.0, we want maximum blur
-    float sigma = radius * (1.0F - hardness_ * 0.8F);
-    if (sigma < 0.1F) {
-        sigma = 0.1F;
-    }
+    float sigma = std::max(radius * (1.0F - hardness_ * 0.8F), 0.1F);
     float twoSigmaSq = 2.0F * sigma * sigma;
 
     for (int py = minY; py <= maxY; ++py) {

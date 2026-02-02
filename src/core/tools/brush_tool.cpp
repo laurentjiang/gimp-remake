@@ -88,7 +88,8 @@ void BrushTool::renderSegment(int fromX,
     std::uint32_t color = ToolFactory::instance().foregroundColor();
     // Apply opacity to the alpha channel
     std::uint8_t colorAlpha = static_cast<std::uint8_t>(color & 0xFF);
-    std::uint8_t adjustedAlpha = static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
+    std::uint8_t adjustedAlpha =
+        static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
     color = (color & 0xFFFFFF00) | adjustedAlpha;
 
     auto interpolated =
@@ -119,7 +120,8 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
 
     std::uint32_t color = ToolFactory::instance().foregroundColor();
     std::uint8_t colorAlpha = static_cast<std::uint8_t>(color & 0xFF);
-    std::uint8_t adjustedAlpha = static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
+    std::uint8_t adjustedAlpha =
+        static_cast<std::uint8_t>(static_cast<float>(colorAlpha) * opacity_);
     color = (color & 0xFFFFFF00) | adjustedAlpha;
 
     brush_->renderDab(pixelData,

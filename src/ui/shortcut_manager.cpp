@@ -71,18 +71,19 @@ void ShortcutManager::registerToolShortcuts()
 
 void ShortcutManager::registerActionShortcuts()
 {
-    registerShortcut("action:brush_size_decrease", QKeySequence(Qt::Key_BracketLeft),
-                     [this]() { emit brushSizeDecreaseRequested(); });
+    registerShortcut("action:brush_size_decrease", QKeySequence(Qt::Key_BracketLeft), [this]() {
+        emit brushSizeDecreaseRequested();
+    });
 
-    registerShortcut("action:brush_size_increase", QKeySequence(Qt::Key_BracketRight),
-                     [this]() { emit brushSizeIncreaseRequested(); });
+    registerShortcut("action:brush_size_increase", QKeySequence(Qt::Key_BracketRight), [this]() {
+        emit brushSizeIncreaseRequested();
+    });
 
-    registerShortcut("action:swap_colors", QKeySequence(Qt::Key_X),
-                     [this]() { emit swapColorsRequested(); });
+    registerShortcut(
+        "action:swap_colors", QKeySequence(Qt::Key_X), [this]() { emit swapColorsRequested(); });
 
-    registerShortcut("action:reset_colors", QKeySequence(Qt::Key_D),
-                     [this]() { emit resetColorsRequested(); });
+    registerShortcut(
+        "action:reset_colors", QKeySequence(Qt::Key_D), [this]() { emit resetColorsRequested(); });
 }
 
 }  // namespace gimp
-

@@ -14,12 +14,12 @@
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
 #include "core/tool_factory.h"
+#include "core/tools/brush_tool.h"
 #include "core/tools/color_picker_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/fill_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
-#include "core/tools/brush_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
@@ -347,8 +347,7 @@ void MainWindow::onBrushSizeDecrease()
     int newSize = std::max(1, currentSize - 5);
     tool->setBrushSize(newSize);
 
-    EventBus::instance().publish(
-        ToolPropertyChangedEvent{tool->id(), "brushSize"});
+    EventBus::instance().publish(ToolPropertyChangedEvent{tool->id(), "brushSize"});
     statusBar()->showMessage(QString("Brush size: %1").arg(newSize), 1000);
 }
 
@@ -363,8 +362,7 @@ void MainWindow::onBrushSizeIncrease()
     int newSize = std::min(500, currentSize + 5);
     tool->setBrushSize(newSize);
 
-    EventBus::instance().publish(
-        ToolPropertyChangedEvent{tool->id(), "brushSize"});
+    EventBus::instance().publish(ToolPropertyChangedEvent{tool->id(), "brushSize"});
     statusBar()->showMessage(QString("Brush size: %1").arg(newSize), 1000);
 }
 

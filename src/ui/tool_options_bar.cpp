@@ -10,6 +10,7 @@
 #include "core/events.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/brush_tool.h"
 #include "core/tools/fill_tool.h"
 
 #include <QCheckBox>
@@ -175,16 +176,85 @@ void ToolOptionsBar::updateForTool(const std::string& toolId)
         });
 
     } else if (tool->category == "Paint") {
-        // Size option group
-        addSpinBox(layout, "Size:", 1, 1000, 20, " px");
+        // Size spinner
+        auto* sizeLabel = new QLabel("Size:", optionsContainer_);
+        auto* sizeSpinner = new QSpinBox(optionsContainer_);
+        sizeSpinner->setRange(1, 1000);
+        sizeSpinner->setSuffix(" px");
+        layout->addWidget(sizeLabel);
+        layout->addWidget(sizeSpinner);
+
+        // Get current brush size from active tool
+        auto* activeTool = ToolFactory::instance().activeTool();
+        int currentSize = activeTool ? activeTool->brushSize() : 20;
+        sizeSpinner->setValue(currentSize > 0 ? currentSize : 20);
+
+        connect(sizeSpinner, QOverload<int>::of(&QSpinBox::valueChanged), [](int value) {
+            auto* tool = ToolFactory::instance().activeTool();
+            if (tool) {
+                tool->setBrushSize(value);
+            }
+        });
+
         addSeparator(layout);
 
-        // Opacity option group
-        addSliderWithLabel(layout, "Opacity:", 0, 100, 100);
+        // Opacity slider (0-100%)
+        auto* opacityLabel = new QLabel("Opacity:", optionsContainer_);
+        auto* opacitySlider = new QSlider(Qt::Horizontal, optionsContainer_);
+        opacitySlider->setRange(0, 100);
+        opacitySlider->setFixedWidth(80);
+        auto* opacityValueLabel = new QLabel("100%", optionsContainer_);
+        opacityValueLabel->setFixedWidth(40);
+
+        // Get current opacity from BrushTool if applicable
+        float currentOpacity = 1.0F;
+        if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+            currentOpacity = brushTool->opacity();
+        }
+        opacitySlider->setValue(static_cast<int>(currentOpacity * 100));
+        opacityValueLabel->setText(QString::number(static_cast<int>(currentOpacity * 100)) + "%");
+
+        layout->addWidget(opacityLabel);
+        layout->addWidget(opacitySlider);
+        layout->addWidget(opacityValueLabel);
+
+        connect(opacitySlider, &QSlider::valueChanged, [opacityValueLabel](int value) {
+            opacityValueLabel->setText(QString::number(value) + "%");
+            auto* tool = ToolFactory::instance().activeTool();
+            if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                brushTool->setOpacity(static_cast<float>(value) / 100.0F);
+            }
+        });
+
         addSeparator(layout);
 
-        // Hardness option group
-        addSliderWithLabel(layout, "Hardness:", 0, 100, 100);
+        // Hardness slider (0-100%)
+        auto* hardnessLabel = new QLabel("Hardness:", optionsContainer_);
+        auto* hardnessSlider = new QSlider(Qt::Horizontal, optionsContainer_);
+        hardnessSlider->setRange(0, 100);
+        hardnessSlider->setFixedWidth(80);
+        auto* hardnessValueLabel = new QLabel("50%", optionsContainer_);
+        hardnessValueLabel->setFixedWidth(40);
+
+        // Get current hardness from BrushTool if applicable
+        float currentHardness = 0.5F;
+        if (auto* brushTool = dynamic_cast<BrushTool*>(activeTool)) {
+            currentHardness = brushTool->hardness();
+        }
+        hardnessSlider->setValue(static_cast<int>(currentHardness * 100));
+        hardnessValueLabel->setText(QString::number(static_cast<int>(currentHardness * 100)) + "%");
+
+        layout->addWidget(hardnessLabel);
+        layout->addWidget(hardnessSlider);
+        layout->addWidget(hardnessValueLabel);
+
+        connect(hardnessSlider, &QSlider::valueChanged, [hardnessValueLabel](int value) {
+            hardnessValueLabel->setText(QString::number(value) + "%");
+            auto* tool = ToolFactory::instance().activeTool();
+            if (auto* brushTool = dynamic_cast<BrushTool*>(tool)) {
+                brushTool->setHardness(static_cast<float>(value) / 100.0F);
+            }
+        });
 
     } else if (tool->category == "Selection") {
         auto* featherCheck = new QCheckBox("Feather edges", optionsContainer_);

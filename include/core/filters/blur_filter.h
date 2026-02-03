@@ -23,7 +23,8 @@ class BlurFilter : public Filter {
 
     [[nodiscard]] std::string id() const override { return "blur"; }
     [[nodiscard]] std::string name() const override { return "Blur"; }
-    [[nodiscard]] std::string description() const override {
+    [[nodiscard]] std::string description() const override
+    {
         return "Apply Gaussian blur to the layer";
     }
 

@@ -19,11 +19,13 @@ namespace gimp {
  * @brief Describes a tool available in the application.
  */
 struct ToolDescriptor {
-    std::string id;        ///< Unique tool identifier.
-    std::string name;      ///< Human-readable tool name.
-    std::string iconName;  ///< Resource path to the tool icon.
-    std::string shortcut;  ///< Keyboard shortcut (e.g., "P" for paintbrush).
-    std::string category;  ///< Tool category (e.g., "Paint", "Selection").
+    std::string id;         ///< Unique tool identifier.
+    std::string name;       ///< Human-readable tool name.
+    std::string iconName;   ///< Resource path to the tool icon.
+    std::string shortcut;   ///< Keyboard shortcut (e.g., "P" for paintbrush).
+    std::string category;   ///< Tool category (e.g., "Paint", "Selection").
+    std::string groupId;    ///< Tool group ID for grouping similar tools (empty if standalone).
+    bool isPrimary = true;  ///< Whether this is the primary tool shown in the toolbox.
 };
 
 /**
@@ -91,6 +93,37 @@ class ToolRegistry {
         return result;
     }
 
+    /*! @brief Returns tools in a specific group.
+     *  @param groupId The group ID to filter by.
+     *  @return Vector of matching tool descriptors.
+     */
+    [[nodiscard]] std::vector<ToolDescriptor> getToolsByGroup(const std::string& groupId) const
+    {
+        std::vector<ToolDescriptor> result;
+        for (const auto& id : orderedIds_) {
+            auto it = tools_.find(id);
+            if (it != tools_.end() && it->second.groupId == groupId) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
+    /*! @brief Returns only primary tools (shown in toolbox).
+     *  @return Vector of primary tool descriptors.
+     */
+    [[nodiscard]] std::vector<ToolDescriptor> getPrimaryTools() const
+    {
+        std::vector<ToolDescriptor> result;
+        for (const auto& id : orderedIds_) {
+            auto it = tools_.find(id);
+            if (it != tools_.end() && it->second.isPrimary) {
+                result.push_back(it->second);
+            }
+        }
+        return result;
+    }
+
     /*! @brief Sets the active tool.
      *  @param id The tool ID to activate.
      */
@@ -105,28 +138,57 @@ class ToolRegistry {
 
     void registerDefaultTools()
     {
+        // Selection tools - grouped
+        registerTool({"select_rect",
+                      "Rectangle Select",
+                      ":/icons/select-rect.svg",
+                      "R",
+                      "Selection",
+                      "selection",
+                      true});
+        registerTool({"select_ellipse",
+                      "Ellipse Select",
+                      ":/icons/select-ellipse.svg",
+                      "E",
+                      "Selection",
+                      "selection",
+                      false});
+        registerTool({"select_free",
+                      "Free Select",
+                      ":/icons/select-lasso.svg",
+                      "F",
+                      "Selection",
+                      "selection",
+                      false});
+
+        // Transform tools - standalone
+        registerTool({"move", "Move", ":/icons/move.svg", "M", "Transform", "", true});
         registerTool(
-            {"select_rect", "Rectangle Select", ":/icons/select-rect.svg", "R", "Selection"});
+            {"rotate", "Rotate", ":/icons/rotate.svg", "", "Transform", "transform", true});
+        registerTool({"scale", "Scale", ":/icons/scale.svg", "", "Transform", "transform", false});
+        registerTool({"crop", "Crop", ":/icons/crop.svg", "C", "Transform", "", true});
+
+        // Paint tools - paintbrush group
         registerTool(
-            {"select_ellipse", "Ellipse Select", ":/icons/select-ellipse.svg", "E", "Selection"});
-        registerTool({"select_free", "Free Select", ":/icons/select-lasso.svg", "F", "Selection"});
+            {"paintbrush", "Paintbrush", ":/icons/paintbrush.svg", "P", "Paint", "brush", true});
+        registerTool({"pencil", "Pencil", ":/icons/pencil.svg", "N", "Paint", "brush", false});
+        registerTool({"eraser", "Eraser", ":/icons/eraser.svg", "Shift+E", "Paint", "", true});
+        registerTool({"bucket_fill",
+                      "Bucket Fill",
+                      ":/icons/bucket-fill.svg",
+                      "Shift+B",
+                      "Paint",
+                      "",
+                      true});
+        registerTool({"gradient", "Gradient", ":/icons/gradient.svg", "G", "Paint", "", true});
 
-        registerTool({"move", "Move", ":/icons/move.svg", "M", "Transform"});
-        registerTool({"rotate", "Rotate", ":/icons/rotate.svg", "", "Transform"});
-        registerTool({"scale", "Scale", ":/icons/scale.svg", "", "Transform"});
-        registerTool({"crop", "Crop", ":/icons/crop.svg", "C", "Transform"});
+        // Other tools - standalone
+        registerTool({"text", "Text", ":/icons/text.svg", "T", "Other", "", true});
+        registerTool(
+            {"color_picker", "Color Picker", ":/icons/color-picker.svg", "O", "Other", "", true});
+        registerTool({"zoom", "Zoom", ":/icons/zoom.svg", "Z", "Other", "", true});
 
-        registerTool({"paintbrush", "Paintbrush", ":/icons/paintbrush.svg", "P", "Paint"});
-        registerTool({"pencil", "Pencil", ":/icons/pencil.svg", "N", "Paint"});
-        registerTool({"eraser", "Eraser", ":/icons/eraser.svg", "Shift+E", "Paint"});
-        registerTool({"bucket_fill", "Bucket Fill", ":/icons/bucket-fill.svg", "Shift+B", "Paint"});
-        registerTool({"gradient", "Gradient", ":/icons/gradient.svg", "G", "Paint"});
-
-        registerTool({"text", "Text", ":/icons/text.svg", "T", "Other"});
-        registerTool({"color_picker", "Color Picker", ":/icons/color-picker.svg", "O", "Other"});
-        registerTool({"zoom", "Zoom", ":/icons/zoom.svg", "Z", "Other"});
-
-        activeToolId_ = "pencil";
+        activeToolId_ = "paintbrush";
     }
 
     std::unordered_map<std::string, ToolDescriptor> tools_;

@@ -22,11 +22,16 @@ CommandPalette::CommandPalette(QWidget* parent)
     setupUi();
 
     // NOLINTBEGIN(modernize-use-designated-initializers)
-    registerCommand({"file.new", "New Image", "File", "Ctrl+N", []() {}});
-    registerCommand({"file.open", "Open Image", "File", "Ctrl+O", []() {}});
-    registerCommand({"file.save", "Save", "File", "Ctrl+S", []() {}});
-    registerCommand({"file.save_as", "Save As...", "File", "Ctrl+Shift+S", []() {}});
-    registerCommand({"file.export", "Export As...", "File", "Ctrl+E", []() {}});
+    registerCommand({"file.new", "New Image", "File", "Ctrl+N", []() {
+                     }});
+    registerCommand({"file.open", "Open Image", "File", "Ctrl+O", []() {
+                     }});
+    registerCommand({"file.save", "Save", "File", "Ctrl+S", []() {
+                     }});
+    registerCommand({"file.save_as", "Save As...", "File", "Ctrl+Shift+S", []() {
+                     }});
+    registerCommand({"file.export", "Export As...", "File", "Ctrl+E", []() {
+                     }});
 
     registerCommand({"edit.undo", "Undo", "Edit", "Ctrl+Z", [this]() {
                          if (historyManager_) {
@@ -38,32 +43,54 @@ CommandPalette::CommandPalette(QWidget* parent)
                              historyManager_->redo();
                          }
                      }});
-    registerCommand({"edit.cut", "Cut", "Edit", "Ctrl+X", []() {}});
-    registerCommand({"edit.copy", "Copy", "Edit", "Ctrl+C", []() {}});
-    registerCommand({"edit.paste", "Paste", "Edit", "Ctrl+V", []() {}});
+    registerCommand({"edit.cut", "Cut", "Edit", "Ctrl+X", []() {
+                     }});
+    registerCommand({"edit.copy", "Copy", "Edit", "Ctrl+C", []() {
+                     }});
+    registerCommand({"edit.paste", "Paste", "Edit", "Ctrl+V", []() {
+                     }});
 
-    registerCommand({"select.all", "Select All", "Select", "Ctrl+A", []() {}});
-    registerCommand({"select.none", "Select None", "Select", "Ctrl+Shift+A", []() {}});
-    registerCommand({"select.invert", "Invert Selection", "Select", "Ctrl+I", []() {}});
+    registerCommand({"select.all", "Select All", "Select", "Ctrl+A", []() {
+                     }});
+    registerCommand({"select.none", "Select None", "Select", "Ctrl+Shift+A", []() {
+                     }});
+    registerCommand({"select.invert", "Invert Selection", "Select", "Ctrl+I", []() {
+                     }});
 
-    registerCommand({"view.zoom_in", "Zoom In", "View", "Ctrl++", []() {}});
-    registerCommand({"view.zoom_out", "Zoom Out", "View", "Ctrl+-", []() {}});
-    registerCommand({"view.fit_window", "Fit in Window", "View", "Shift+Ctrl+E", []() {}});
-    registerCommand({"view.actual_size", "Actual Size (1:1)", "View", "1", []() {}});
-    registerCommand({"view.toggle_debug", "Toggle Debug HUD", "View", "F12", []() {}});
+    registerCommand({"view.zoom_in", "Zoom In", "View", "Ctrl++", []() {
+                     }});
+    registerCommand({"view.zoom_out", "Zoom Out", "View", "Ctrl+-", []() {
+                     }});
+    registerCommand({"view.fit_window", "Fit in Window", "View", "Shift+Ctrl+E", []() {
+                     }});
+    registerCommand({"view.actual_size", "Actual Size (1:1)", "View", "1", []() {
+                     }});
+    registerCommand({"view.toggle_debug", "Toggle Debug HUD", "View", "F12", []() {
+                     }});
 
-    registerCommand({"layer.new", "New Layer", "Layer", "Shift+Ctrl+N", []() {}});
-    registerCommand({"layer.duplicate", "Duplicate Layer", "Layer", "Ctrl+J", []() {}});
-    registerCommand({"layer.delete", "Delete Layer", "Layer", "", []() {}});
-    registerCommand({"layer.merge_down", "Merge Down", "Layer", "Ctrl+E", []() {}});
-    registerCommand({"layer.flatten", "Flatten Image", "Layer", "", []() {}});
+    registerCommand({"layer.new", "New Layer", "Layer", "Shift+Ctrl+N", []() {
+                     }});
+    registerCommand({"layer.duplicate", "Duplicate Layer", "Layer", "Ctrl+J", []() {
+                     }});
+    registerCommand({"layer.delete", "Delete Layer", "Layer", "", []() {
+                     }});
+    registerCommand({"layer.merge_down", "Merge Down", "Layer", "Ctrl+E", []() {
+                     }});
+    registerCommand({"layer.flatten", "Flatten Image", "Layer", "", []() {
+                     }});
 
-    registerCommand({"image.resize", "Resize Image", "Image", "", []() {}});
-    registerCommand({"image.crop_to_selection", "Crop to Selection", "Image", "", []() {}});
-    registerCommand({"image.rotate_90cw", "Rotate 90° CW", "Image", "", []() {}});
-    registerCommand({"image.rotate_90ccw", "Rotate 90° CCW", "Image", "", []() {}});
-    registerCommand({"image.flip_horizontal", "Flip Horizontal", "Image", "", []() {}});
-    registerCommand({"image.flip_vertical", "Flip Vertical", "Image", "", []() {}});
+    registerCommand({"image.resize", "Resize Image", "Image", "", []() {
+                     }});
+    registerCommand({"image.crop_to_selection", "Crop to Selection", "Image", "", []() {
+                     }});
+    registerCommand({"image.rotate_90cw", "Rotate 90° CW", "Image", "", []() {
+                     }});
+    registerCommand({"image.rotate_90ccw", "Rotate 90° CCW", "Image", "", []() {
+                     }});
+    registerCommand({"image.flip_horizontal", "Flip Horizontal", "Image", "", []() {
+                     }});
+    registerCommand({"image.flip_vertical", "Flip Vertical", "Image", "", []() {
+                     }});
     // NOLINTEND(modernize-use-designated-initializers)
 }
 

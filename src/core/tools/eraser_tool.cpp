@@ -11,6 +11,7 @@
 #include "core/commands/draw_command.h"
 #include "core/document.h"
 #include "core/layer.h"
+#include "core/tool_options.h"
 
 #include <algorithm>
 #include <cmath>
@@ -86,10 +87,26 @@ void EraserTool::eraseAt(int x, int y, float pressure)
         for (int px = minX; px <= maxX; ++px) {
             int dx = px - x;
             int dy = py - y;
-            if (dx * dx + dy * dy <= radiusSq) {
+            int distSq = dx * dx + dy * dy;
+            if (distSq <= radiusSq) {
+                // Calculate distance-based falloff for softness
+                float dist = std::sqrt(static_cast<float>(distSq));
+                float normalizedDist = (radius > 0) ? dist / static_cast<float>(radius) : 0.0F;
+
+                // Apply hardness to falloff
+                // hardness=1.0: hard edge (full strength until the edge)
+                // hardness=0.0: soft edge (linear falloff from center)
+                float edgeFalloff = 1.0F;
+                if (hardness_ < 1.0F && normalizedDist > hardness_) {
+                    edgeFalloff = 1.0F - (normalizedDist - hardness_) / (1.0F - hardness_ + 0.001F);
+                    edgeFalloff = std::max(0.0F, edgeFalloff);
+                }
+
+                // Final erase strength combines pressure, opacity, and edge falloff
+                float eraseStrength = pressure * opacity_ * edgeFalloff;
+
                 std::uint8_t* pixel = pixelData + (py * layerWidth + px) * 4;
-                // Erase by blending towards white background based on pressure
-                float eraseStrength = pressure;
+                // Erase by blending towards white background
                 pixel[0] = static_cast<std::uint8_t>(
                     static_cast<float>(pixel[0]) * (1.0F - eraseStrength) + 255.0F * eraseStrength);
                 pixel[1] = static_cast<std::uint8_t>(
@@ -225,6 +242,53 @@ void EraserTool::endStroke(const ToolInputEvent& event)
 void EraserTool::cancelStroke()
 {
     strokePoints_.clear();
+}
+
+std::vector<ToolOption> EraserTool::getOptions() const
+{
+    return {
+        ToolOption{
+                   "brush_size", "Size", ToolOption::Type::Slider, brushSize_, 1.0F, 1000.0F, 1.0F, {}, 0},
+        ToolOption{"opacity",
+                   "Opacity",            ToolOption::Type::Slider,
+                   static_cast<int>(opacity_ * 100.0F),
+                   0.0F,                                                             100.0F,
+                   1.0F,                                                                            {},
+                   0                                                                                     },
+        ToolOption{"hardness",
+                   "Hardness",           ToolOption::Type::Slider,
+                   static_cast<int>(hardness_ * 100.0F),
+                   0.0F,                                                             100.0F,
+                   1.0F,                                                                            {},
+                   0                                                                                     }
+    };
+}
+
+void EraserTool::setOptionValue(const std::string& optionId,
+                                const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
+        setBrushSize(std::get<int>(value));
+    } else if (optionId == "opacity" && std::holds_alternative<int>(value)) {
+        setOpacity(static_cast<float>(std::get<int>(value)) / 100.0F);
+    } else if (optionId == "hardness" && std::holds_alternative<int>(value)) {
+        setHardness(static_cast<float>(std::get<int>(value)) / 100.0F);
+    }
+}
+
+std::variant<int, float, bool, std::string> EraserTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "brush_size") {
+        return brushSize_;
+    }
+    if (optionId == "opacity") {
+        return static_cast<int>(opacity_ * 100.0F);
+    }
+    if (optionId == "hardness") {
+        return static_cast<int>(hardness_ * 100.0F);
+    }
+    return 0;
 }
 
 }  // namespace gimp

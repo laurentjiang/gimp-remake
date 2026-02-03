@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/tool.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <memory>
@@ -33,8 +34,8 @@ enum class GradientMode {
  * @brief Gradient fill mode.
  */
 enum class GradientFill {
-    ForegroundToBackground,   ///< Gradient from foreground to background color
-    ForegroundToTransparent   ///< Gradient from foreground to transparent
+    ForegroundToBackground,  ///< Gradient from foreground to background color
+    ForegroundToTransparent  ///< Gradient from foreground to transparent
 };
 
 /**
@@ -46,12 +47,19 @@ enum class GradientFill {
  * - Foreground-to-background and foreground-to-transparent modes
  * - Undo/redo via DrawCommand
  */
-class GradientTool : public Tool {
+class GradientTool : public Tool, public ToolOptions {
   public:
     GradientTool() = default;
 
     [[nodiscard]] std::string id() const override;
     [[nodiscard]] std::string name() const override;
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                        const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const override;
 
     /**
      * @brief Sets the gradient mode (linear or radial).
@@ -120,9 +128,9 @@ class GradientTool : public Tool {
      * @param startColor Starting color (RGBA).
      * @param endColor Ending color (RGBA).
      */
-    void applyLinearGradient(std::shared_ptr<Layer> layer,
+    void applyLinearGradient(const std::shared_ptr<Layer>& layer,
                              std::uint32_t startColor,
-                             std::uint32_t endColor);
+                             std::uint32_t endColor) const;
 
     /**
      * @brief Applies a radial gradient to the layer.
@@ -130,9 +138,9 @@ class GradientTool : public Tool {
      * @param startColor Starting color (RGBA).
      * @param endColor Ending color (RGBA).
      */
-    void applyRadialGradient(std::shared_ptr<Layer> layer,
+    void applyRadialGradient(const std::shared_ptr<Layer>& layer,
                              std::uint32_t startColor,
-                             std::uint32_t endColor);
+                             std::uint32_t endColor) const;
 
     GradientMode mode_ = GradientMode::Linear;
     GradientFill fill_ = GradientFill::ForegroundToBackground;

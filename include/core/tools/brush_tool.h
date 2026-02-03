@@ -12,6 +12,7 @@
 #include "core/commands/draw_command.h"
 #include "core/tool.h"
 #include "core/tool_factory.h"
+#include "core/tool_options.h"
 
 #include <cstdint>
 #include <memory>
@@ -26,7 +27,7 @@ namespace gimp {
  * variable edge softness controlled by the hardness parameter.
  * Opacity controls the overall transparency of the stroke.
  */
-class BrushTool : public Tool {
+class BrushTool : public Tool, public ToolOptions {
   public:
     BrushTool();
 
@@ -93,6 +94,13 @@ class BrushTool : public Tool {
     void continueStroke(const ToolInputEvent& event) override;
     void endStroke(const ToolInputEvent& event) override;
     void cancelStroke() override;
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                        const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const override;
 
   private:
     /**

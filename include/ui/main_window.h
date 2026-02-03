@@ -11,6 +11,7 @@
 
 #include <QAction>
 #include <QDockWidget>
+#include <QLabel>
 #include <QMainWindow>
 #include <QMenuBar>
 #include <QShortcut>
@@ -31,15 +32,15 @@ class ShortcutManager;
 class SimpleHistoryManager;
 class SkiaCanvasWidget;
 class SkiaRenderer;
+class Tool;
 class ToolboxPanel;
-class ToolOptionsBar;
+class ToolOptionsPanel;
 
 /**
  * @brief Main application window with Photoshop-like docking layout.
  *
  * Layout:
- * - Left dock: Toolbox panel
- * - Top bar: Tool options
+ * - Left dock: Toolbox panel and Tool Options panel (stacked)
  * - Center: Canvas widget
  * - Right dock: Layers and History panels (tabbed)
  * - Overlay: Debug HUD (toggleable)
@@ -74,11 +75,14 @@ class MainWindow : public QMainWindow {
     void onShowCommandPalette();
     void onUndo();
     void onRedo();
+    void onToolChanged(const Tool* tool);
     void onToolSwitchRequested(const QString& toolId);
     void onBrushSizeDecrease();
     void onBrushSizeIncrease();
     void onSwapColors();
     void onResetColors();
+    void onApplyBlur();
+    void onApplySharpen();
 
   private:
     void setupMenuBar();
@@ -98,7 +102,7 @@ class MainWindow : public QMainWindow {
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;
-    ToolOptionsBar* m_toolOptionsBar = nullptr;
+    ToolOptionsPanel* m_toolOptionsPanel = nullptr;
     LayersPanel* m_layersPanel = nullptr;
     HistoryPanel* m_historyPanel = nullptr;
     ColorChooserPanel* m_colorChooserPanel = nullptr;
@@ -107,6 +111,8 @@ class MainWindow : public QMainWindow {
     ShortcutManager* m_shortcutManager = nullptr;
 
     QDockWidget* m_toolboxDock = nullptr;
+    QDockWidget* m_toolOptionsDock = nullptr;
+    QLabel* m_toolOptionsTitleLabel = nullptr;
     QDockWidget* m_rightDock = nullptr;
     QTabWidget* m_rightTabWidget = nullptr;
 

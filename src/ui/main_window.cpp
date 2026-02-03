@@ -10,6 +10,8 @@
 #include "core/command_bus.h"
 #include "core/document.h"
 #include "core/events.h"
+#include "core/filters/blur_filter.h"
+#include "core/filters/sharpen_filter.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
 #include "core/tile_store.h"
@@ -29,12 +31,16 @@
 #include "ui/layers_panel.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
-#include "ui/tool_options_bar.h"
+#include "ui/theme.h"
+#include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
 #include "history/simple_history_manager.h"
 
+#include <QHBoxLayout>
+#include <QInputDialog>
 #include <QKeyEvent>
+#include <QLabel>
 #include <QStatusBar>
 #include <QToolBar>
 
@@ -98,8 +104,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =
-        EventBus::instance().subscribe<ToolChangedEvent>([](const ToolChangedEvent& event) {
+        EventBus::instance().subscribe<ToolChangedEvent>([this](const ToolChangedEvent& event) {
             ToolFactory::instance().setActiveTool(event.currentToolId);
+            auto& factory = ToolFactory::instance();
+            Tool* currentTool = factory.getTool(event.currentToolId);
+            onToolChanged(currentTool);
         });
 
     // Subscribe to color changes to update status bar and foreground color
@@ -168,6 +177,10 @@ void MainWindow::setupMenuBar()
     layerMenu->addAction("&Merge Down", []() {});
     layerMenu->addAction("&Flatten Image", []() {});
 
+    auto* filtersMenu = menuBar()->addMenu("Filte&rs");
+    filtersMenu->addAction("&Blur...", this, &MainWindow::onApplyBlur);
+    filtersMenu->addAction("&Sharpen...", this, &MainWindow::onApplySharpen);
+
     auto* helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction("&About", []() {});
     helpMenu->addAction("Command &Palette",
@@ -180,17 +193,47 @@ void MainWindow::setupDockWidgets()
 {
     setDockNestingEnabled(true);
 
-    m_toolOptionsBar = new ToolOptionsBar(this);
-    auto* optionsToolbar = new QToolBar("Tool Options", this);
-    optionsToolbar->setMovable(false);
-    optionsToolbar->addWidget(m_toolOptionsBar);
-    addToolBar(Qt::TopToolBarArea, optionsToolbar);
+    const QString dockStyle = Theme::dockStyleSheet();
 
+    // Helper to create custom title bar with bold label
+    auto createTitleBar = [](const QString& title) {
+        auto* titleBar = new QWidget();
+        titleBar->setStyleSheet(Theme::titleBarStyleSheet());
+        auto* layout = new QHBoxLayout(titleBar);
+        layout->setContentsMargins(8, 4, 8, 4);
+        auto* label = new QLabel(title);
+        label->setStyleSheet(Theme::boldLabelStyleSheet());
+        layout->addWidget(label);
+        layout->addStretch();
+        return titleBar;
+    };
+
+    // Toolbox at top of left dock
     m_toolboxPanel = new ToolboxPanel(this);
-    m_toolboxDock = new QDockWidget("Toolbox", this);
+    m_toolboxDock = new QDockWidget(this);
+    m_toolboxDock->setTitleBarWidget(createTitleBar("Toolbox"));
     m_toolboxDock->setWidget(m_toolboxPanel);
+    m_toolboxDock->setStyleSheet(dockStyle);
     m_toolboxDock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::LeftDockWidgetArea, m_toolboxDock);
+
+    // Tool Options Panel under Toolbox
+    m_toolOptionsPanel = new ToolOptionsPanel(this);
+    m_toolOptionsDock = new QDockWidget(this);
+    m_toolOptionsTitleLabel = new QLabel("Tool Options");
+    m_toolOptionsTitleLabel->setStyleSheet(Theme::boldLabelStyleSheet());
+    auto* optionsTitleBar = new QWidget();
+    optionsTitleBar->setStyleSheet(Theme::titleBarStyleSheet());
+    auto* optionsLayout = new QHBoxLayout(optionsTitleBar);
+    optionsLayout->setContentsMargins(8, 4, 8, 4);
+    optionsLayout->addWidget(m_toolOptionsTitleLabel);
+    optionsLayout->addStretch();
+    m_toolOptionsDock->setTitleBarWidget(optionsTitleBar);
+    m_toolOptionsDock->setWidget(m_toolOptionsPanel);
+    m_toolOptionsDock->setStyleSheet(dockStyle);
+    m_toolOptionsDock->setFeatures(QDockWidget::DockWidgetMovable |
+                                   QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::LeftDockWidgetArea, m_toolOptionsDock);
 
     m_layersPanel = new LayersPanel(this);
     m_historyPanel = new HistoryPanel(this);
@@ -257,7 +300,10 @@ void MainWindow::createDocument()
     auto& factory = ToolFactory::instance();
     factory.setDocument(m_document);
     factory.setCommandBus(m_commandBus.get());
-    factory.setActiveTool("pencil");
+    factory.setActiveTool("paintbrush");
+
+    // Initialize tool options panel with default tool
+    onToolChanged(factory.activeTool());
 
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);
@@ -333,6 +379,18 @@ void MainWindow::onRedo()
     }
 }
 
+void MainWindow::onToolChanged(const Tool* tool)
+{
+    if (m_toolOptionsPanel && tool) {
+        m_toolOptionsPanel->setTool(const_cast<Tool*>(tool));
+        if (m_toolOptionsTitleLabel) {
+            m_toolOptionsTitleLabel->setText(QString::fromStdString(tool->name()));
+        }
+    } else if (m_toolOptionsTitleLabel) {
+        m_toolOptionsTitleLabel->setText("Tool Options");
+    }
+}
+
 void MainWindow::onToolSwitchRequested(const QString& toolId)
 {
     EventBus::instance().publish(ToolSwitchRequestEvent{toolId.toStdString()});
@@ -381,6 +439,60 @@ void MainWindow::onResetColors()
     if (m_colorChooserPanel != nullptr) {
         m_colorChooserPanel->resetToDefaults();
         statusBar()->showMessage("Colors reset to defaults", 1000);
+    }
+}
+
+void MainWindow::onApplyBlur()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to apply filter", 2000);
+        return;
+    }
+
+    bool ok = false;
+    double radius =
+        QInputDialog::getDouble(this, "Blur", "Radius (1-100):", 5.0, 1.0, 100.0, 1, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    auto layer = m_document->layers()[0];
+    BlurFilter filter;
+    filter.setRadius(static_cast<float>(radius));
+
+    if (filter.apply(layer)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage(QString("Applied blur with radius %1").arg(radius), 2000);
+    } else {
+        statusBar()->showMessage("Failed to apply blur filter", 2000);
+    }
+}
+
+void MainWindow::onApplySharpen()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to apply filter", 2000);
+        return;
+    }
+
+    bool ok = false;
+    double amount =
+        QInputDialog::getDouble(this, "Sharpen", "Amount (0.0-2.0):", 1.0, 0.0, 2.0, 2, &ok);
+
+    if (!ok) {
+        return;
+    }
+
+    auto layer = m_document->layers()[0];
+    SharpenFilter filter;
+    filter.setAmount(static_cast<float>(amount));
+
+    if (filter.apply(layer)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage(QString("Applied sharpen with amount %1").arg(amount), 2000);
+    } else {
+        statusBar()->showMessage("Failed to apply sharpen filter", 2000);
     }
 }
 

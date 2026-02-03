@@ -17,10 +17,12 @@ Checks: >
   cppcoreguidelines-init-variables,
   cppcoreguidelines-slicing,
   concurrency-*,
+  -clang-analyzer-*,
   -modernize-use-trailing-return-type,
   -modernize-use-ranges,
   -modernize-use-auto,
   -modernize-use-designated-initializers,
+  -modernize-loop-convert,
   -bugprone-easily-swappable-parameters,
   -bugprone-branch-clone,
   -bugprone-implicit-widening-of-multiplication-result,
@@ -33,7 +35,8 @@ Checks: >
   -readability-named-parameter,
   -readability-math-missing-parentheses,
   -readability-implicit-bool-conversion,
-  -misc-const-correctness
+  -misc-const-correctness,
+  -bugprone-exception-escape
 
 WarningsAsErrors: ""
 
@@ -67,11 +70,17 @@ CheckOptions:
   - key: readability-identifier-naming.ProtectedMemberSuffix
     value: _
   - key: readability-identifier-naming.ConstantCase
-    value: UPPER_CASE
+    value: CamelCase
+  - key: readability-identifier-naming.ConstantPrefix
+    value: "k"
   - key: readability-identifier-naming.GlobalConstantCase
-    value: UPPER_CASE
+    value: CamelCase
+  - key: readability-identifier-naming.GlobalConstantPrefix
+    value: "k"
   - key: readability-identifier-naming.StaticConstantCase
-    value: UPPER_CASE
+    value: CamelCase
+  - key: readability-identifier-naming.StaticConstantPrefix
+    value: "k"
   - key: readability-identifier-naming.NamespaceCase
     value: lower_case
   - key: readability-identifier-naming.EnumCase

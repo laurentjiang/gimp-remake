@@ -222,4 +222,39 @@ void PencilTool::cancelStroke()
     strokePoints_.clear();
 }
 
+std::vector<ToolOption> PencilTool::getOptions() const
+{
+    return {
+        ToolOption{
+                   "brush_size", "Size", ToolOption::Type::Slider, brushSize_, 1.0F, 1000.0F, 1.0F, {}, 0},
+        ToolOption{"opacity",
+                   "Opacity",            ToolOption::Type::Slider,
+                   static_cast<int>(opacity_ * 100.0F),
+                   0.0F,                                                             100.0F,
+                   1.0F,                                                                            {},
+                   0                                                                                     }
+    };
+}
+
+void PencilTool::setOptionValue(const std::string& optionId,
+                                const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "brush_size" && std::holds_alternative<int>(value)) {
+        setBrushSize(std::get<int>(value));
+    } else if (optionId == "opacity" && std::holds_alternative<int>(value)) {
+        opacity_ = static_cast<float>(std::get<int>(value)) / 100.0F;
+    }
+}
+
+std::variant<int, float, bool, std::string> PencilTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "brush_size") {
+        return brushSize_;
+    } else if (optionId == "opacity") {
+        return static_cast<int>(opacity_ * 100.0F);
+    }
+    return 0;
+}
+
 }  // namespace gimp

@@ -13,6 +13,10 @@ if (-not $clangTidy) {
     exit 1
 }
 
+Write-Host "Using clang-tidy: $($clangTidy.Path)"
+$version = & $clangTidy.Path --version 2>&1 | Select-Object -First 2
+Write-Host $version
+
 # Detect VCPKG_ROOT from GitHub Actions environment if not set
 if (-not $env:VCPKG_ROOT -and $env:VCPKG_INSTALLATION_ROOT) {
     $env:VCPKG_ROOT = $env:VCPKG_INSTALLATION_ROOT
@@ -20,7 +24,6 @@ if (-not $env:VCPKG_ROOT -and $env:VCPKG_INSTALLATION_ROOT) {
 }
 
 # Requires compile_commands.json from a Ninja build
-# Run build.ps1 first if it doesn't exist
 if (-not (Test-Path (Join-Path $buildDir "compile_commands.json"))) {
     Write-Error "compile_commands.json not found. Run .\scripts\build.ps1 first."
     exit 1
@@ -37,21 +40,48 @@ $sources = Get-ChildItem -Path $rootDir -Recurse -Include *.cpp |
 if ($sources) {
     Write-Host "Running clang-tidy on $($sources.Count) files..."
     
-    # Use parallel execution for faster linting (PowerShell 7+)
     $clangTidyPath = $clangTidy.Path
-    $results = $sources | ForEach-Object -Parallel {
-        $output = & $using:clangTidyPath -p $using:buildDir --quiet $_.FullName 2>&1
-        $output | ForEach-Object {
-            $line = $_.ToString()
-            if ($line -notmatch "warnings generated\.$" -and $line.Trim() -ne "") {
-                $line
-            }
-        }
-    } -ThrottleLimit ([Environment]::ProcessorCount)
+    $failures = @()
+    $index = 0
     
-    $results | ForEach-Object { Write-Output $_ }
+    foreach ($file in $sources) {
+        $index++
+        Write-Host "[$index/$($sources.Count)] $($file.Name)" -NoNewline
+        
+        $output = & $clangTidyPath -p $buildDir --quiet $file.FullName 2>&1
+        
+        # Filter warning count noise but keep everything else
+        $filtered = $output | Where-Object { $_ -notmatch "^\d+ warnings? generated\.$" }
+        $outputStr = ($filtered | Out-String).Trim()
+        
+        if ($outputStr -match "warning:|error:") {
+            Write-Host " - ISSUES FOUND" -ForegroundColor Red
+            $failures += [PSCustomObject]@{
+                File = $file.Name
+                FullName = $file.FullName
+                Output = $outputStr
+            }
+        } else {
+            Write-Host " - OK" -ForegroundColor Green
+        }
+    }
+    
+    # Display all failures at the end
+    if ($failures.Count -gt 0) {
+        Write-Host "`n" + ("=" * 60) -ForegroundColor Red
+        Write-Host "CLANG-TIDY ISSUES FOUND" -ForegroundColor Red
+        Write-Host ("=" * 60) -ForegroundColor Red
+        
+        foreach ($result in $failures) {
+            Write-Host "`n=== $($result.FullName) ===" -ForegroundColor Yellow
+            Write-Host $result.Output
+        }
+        
+        Write-Host "`nclang-tidy found issues in $($failures.Count) file(s)." -ForegroundColor Red
+        exit 1
+    }
 } else {
     Write-Host "No source files found."
 }
 
-Write-Host "clang-tidy completed." -ForegroundColor Green
+Write-Host "`nclang-tidy completed successfully." -ForegroundColor Green

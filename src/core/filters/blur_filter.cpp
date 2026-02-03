@@ -47,21 +47,24 @@ void BlurFilter::applyHorizontalBlur(std::vector<std::uint8_t>& data,
                                      const std::vector<float>& kernel)
 {
     std::vector<std::uint8_t> temp = data;
-    int kernelRadius = kernel.size() / 2;
+    auto kernelRadius = static_cast<int>(kernel.size() / 2);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            float r = 0.0F, g = 0.0F, b = 0.0F, a = 0.0F;
+            float r = 0.0F;
+            float g = 0.0F;
+            float b = 0.0F;
+            float a = 0.0F;
 
-            for (int i = 0; i < static_cast<int>(kernel.size()); ++i) {
-                int px = x + (i - kernelRadius);
+            for (std::size_t i = 0; i < kernel.size(); ++i) {
+                int px = x + (static_cast<int>(i) - kernelRadius);
                 px = std::clamp(px, 0, width - 1);
 
                 int idx = (y * width + px) * 4;
-                r += temp[idx] * kernel[i];
-                g += temp[idx + 1] * kernel[i];
-                b += temp[idx + 2] * kernel[i];
-                a += temp[idx + 3] * kernel[i];
+                r += static_cast<float>(temp[idx]) * kernel[i];
+                g += static_cast<float>(temp[idx + 1]) * kernel[i];
+                b += static_cast<float>(temp[idx + 2]) * kernel[i];
+                a += static_cast<float>(temp[idx + 3]) * kernel[i];
             }
 
             int idx = (y * width + x) * 4;
@@ -79,21 +82,24 @@ void BlurFilter::applyVerticalBlur(std::vector<std::uint8_t>& data,
                                    const std::vector<float>& kernel)
 {
     std::vector<std::uint8_t> temp = data;
-    int kernelRadius = kernel.size() / 2;
+    auto kernelRadius = static_cast<int>(kernel.size() / 2);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            float r = 0.0F, g = 0.0F, b = 0.0F, a = 0.0F;
+            float r = 0.0F;
+            float g = 0.0F;
+            float b = 0.0F;
+            float a = 0.0F;
 
-            for (int i = 0; i < static_cast<int>(kernel.size()); ++i) {
-                int py = y + (i - kernelRadius);
+            for (std::size_t i = 0; i < kernel.size(); ++i) {
+                int py = y + (static_cast<int>(i) - kernelRadius);
                 py = std::clamp(py, 0, height - 1);
 
                 int idx = (py * width + x) * 4;
-                r += temp[idx] * kernel[i];
-                g += temp[idx + 1] * kernel[i];
-                b += temp[idx + 2] * kernel[i];
-                a += temp[idx + 3] * kernel[i];
+                r += static_cast<float>(temp[idx]) * kernel[i];
+                g += static_cast<float>(temp[idx + 1]) * kernel[i];
+                b += static_cast<float>(temp[idx + 2]) * kernel[i];
+                a += static_cast<float>(temp[idx + 3]) * kernel[i];
             }
 
             int idx = (y * width + x) * 4;

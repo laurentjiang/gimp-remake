@@ -7,6 +7,7 @@
 
 #include "core/command_bus.h"
 #include "core/layer.h"
+#include "core/tool_options.h"
 #include "core/tools/brush_tool.h"
 #include "io/project_file.h"
 
@@ -361,4 +362,93 @@ TEST_CASE("BrushTool handles document with no layers", "[brush_tool][unit]")
     pressEvent.pressure = 1.0F;
 
     REQUIRE_NOTHROW(tool.onMousePress(pressEvent));
+}
+
+// ============================================================================
+// ToolOptions Interface Tests
+// ============================================================================
+
+TEST_CASE("BrushTool getOptions returns size, opacity, hardness, velocity_dynamics",
+          "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    auto options = toolOptions->getOptions();
+
+    REQUIRE(options.size() == 4);
+    REQUIRE(options[0].id == "brush_size");
+    REQUIRE(options[1].id == "opacity");
+    REQUIRE(options[2].id == "hardness");
+    REQUIRE(options[3].id == "velocity_dynamics");
+}
+
+TEST_CASE("BrushTool setOptionValue updates brush_size", "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    toolOptions->setOptionValue("brush_size", 100);
+    REQUIRE(tool.brushSize() == 100);
+
+    auto value = toolOptions->getOptionValue("brush_size");
+    REQUIRE(std::holds_alternative<int>(value));
+    REQUIRE(std::get<int>(value) == 100);
+}
+
+TEST_CASE("BrushTool setOptionValue updates opacity", "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    toolOptions->setOptionValue("opacity", 75);  // Stored as percentage
+    REQUIRE(tool.opacity() == 0.75F);
+
+    auto value = toolOptions->getOptionValue("opacity");
+    REQUIRE(std::holds_alternative<int>(value));
+    REQUIRE(std::get<int>(value) == 75);
+}
+
+TEST_CASE("BrushTool setOptionValue updates hardness", "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    toolOptions->setOptionValue("hardness", 25);  // Stored as percentage
+    REQUIRE(tool.hardness() == 0.25F);
+
+    auto value = toolOptions->getOptionValue("hardness");
+    REQUIRE(std::holds_alternative<int>(value));
+    REQUIRE(std::get<int>(value) == 25);
+}
+
+TEST_CASE("BrushTool setOptionValue updates velocity_dynamics", "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    REQUIRE(tool.velocityDynamics() == false);
+
+    toolOptions->setOptionValue("velocity_dynamics", true);
+    REQUIRE(tool.velocityDynamics() == true);
+
+    auto value = toolOptions->getOptionValue("velocity_dynamics");
+    REQUIRE(std::holds_alternative<bool>(value));
+    REQUIRE(std::get<bool>(value) == true);
+}
+
+TEST_CASE("BrushTool getOptionValue returns 0 for unknown option", "[brush_tool][unit]")
+{
+    gimp::BrushTool tool;
+    auto* toolOptions = dynamic_cast<gimp::ToolOptions*>(&tool);
+    REQUIRE(toolOptions != nullptr);
+
+    auto value = toolOptions->getOptionValue("unknown_option");
+    REQUIRE(std::holds_alternative<int>(value));
+    REQUIRE(std::get<int>(value) == 0);
 }

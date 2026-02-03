@@ -13,8 +13,8 @@
 #include "core/layer.h"
 #include "core/tool_factory.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 namespace gimp {
 
@@ -38,12 +38,12 @@ void GradientTool::setGradientShape(int startX, int startY, int endX, int endY)
 
 QPoint GradientTool::gradientStart() const
 {
-    return QPoint(startX_, startY_);
+    return {startX_, startY_};
 }
 
 QPoint GradientTool::gradientEnd() const
 {
-    return QPoint(endX_, endY_);
+    return {endX_, endY_};
 }
 
 void GradientTool::beginStroke(const ToolInputEvent& event)
@@ -127,9 +127,9 @@ void GradientTool::cancelStroke()
     command_ = nullptr;
 }
 
-void GradientTool::applyLinearGradient(std::shared_ptr<Layer> layer,
+void GradientTool::applyLinearGradient(const std::shared_ptr<Layer>& layer,
                                        std::uint32_t startColor,
-                                       std::uint32_t endColor)
+                                       std::uint32_t endColor) const
 {
     if (!layer) {
         return;
@@ -191,9 +191,9 @@ void GradientTool::applyLinearGradient(std::shared_ptr<Layer> layer,
     }
 }
 
-void GradientTool::applyRadialGradient(std::shared_ptr<Layer> layer,
+void GradientTool::applyRadialGradient(const std::shared_ptr<Layer>& layer,
                                        std::uint32_t startColor,
-                                       std::uint32_t endColor)
+                                       std::uint32_t endColor) const
 {
     if (!layer) {
         return;
@@ -259,23 +259,75 @@ void GradientTool::applyRadialGradient(std::shared_ptr<Layer> layer,
 
 std::uint32_t GradientTool::lerpColor(std::uint32_t color1, std::uint32_t color2, float t)
 {
-    std::uint8_t r1 = (color1 >> 24) & 0xFF;
-    std::uint8_t g1 = (color1 >> 16) & 0xFF;
-    std::uint8_t b1 = (color1 >> 8) & 0xFF;
-    std::uint8_t a1 = color1 & 0xFF;
+    auto r1 = static_cast<float>((color1 >> 24) & 0xFF);
+    auto g1 = static_cast<float>((color1 >> 16) & 0xFF);
+    auto b1 = static_cast<float>((color1 >> 8) & 0xFF);
+    auto a1 = static_cast<float>(color1 & 0xFF);
 
-    std::uint8_t r2 = (color2 >> 24) & 0xFF;
-    std::uint8_t g2 = (color2 >> 16) & 0xFF;
-    std::uint8_t b2 = (color2 >> 8) & 0xFF;
-    std::uint8_t a2 = color2 & 0xFF;
+    auto r2 = static_cast<float>((color2 >> 24) & 0xFF);
+    auto g2 = static_cast<float>((color2 >> 16) & 0xFF);
+    auto b2 = static_cast<float>((color2 >> 8) & 0xFF);
+    auto a2 = static_cast<float>(color2 & 0xFF);
 
-    std::uint8_t r = static_cast<std::uint8_t>(r1 * (1.0F - t) + r2 * t);
-    std::uint8_t g = static_cast<std::uint8_t>(g1 * (1.0F - t) + g2 * t);
-    std::uint8_t b = static_cast<std::uint8_t>(b1 * (1.0F - t) + b2 * t);
-    std::uint8_t a = static_cast<std::uint8_t>(a1 * (1.0F - t) + a2 * t);
+    auto r = static_cast<std::uint8_t>(r1 * (1.0F - t) + r2 * t);
+    auto g = static_cast<std::uint8_t>(g1 * (1.0F - t) + g2 * t);
+    auto b = static_cast<std::uint8_t>(b1 * (1.0F - t) + b2 * t);
+    auto a = static_cast<std::uint8_t>(a1 * (1.0F - t) + a2 * t);
 
     return (static_cast<std::uint32_t>(r) << 24) | (static_cast<std::uint32_t>(g) << 16) |
            (static_cast<std::uint32_t>(b) << 8) | static_cast<std::uint32_t>(a);
+}
+
+std::vector<ToolOption> GradientTool::getOptions() const
+{
+    std::vector<ToolOption> options;
+
+    ToolOption shapeOption;
+    shapeOption.id = "gradient_shape";
+    shapeOption.label = "Shape";
+    shapeOption.type = ToolOption::Type::Dropdown;
+    shapeOption.choices = {"Linear", "Radial"};
+    shapeOption.selectedIndex = (mode_ == GradientMode::Linear) ? 0 : 1;
+    shapeOption.value = shapeOption.selectedIndex;
+    options.push_back(shapeOption);
+
+    ToolOption fillOption;
+    fillOption.id = "gradient_fill";
+    fillOption.label = "Fill";
+    fillOption.type = ToolOption::Type::Dropdown;
+    fillOption.choices = {"FG to BG", "FG to Transparent"};
+    fillOption.selectedIndex = (fill_ == GradientFill::ForegroundToBackground) ? 0 : 1;
+    fillOption.value = fillOption.selectedIndex;
+    options.push_back(fillOption);
+
+    return options;
+}
+
+void GradientTool::setOptionValue(const std::string& optionId,
+                                  const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "gradient_shape") {
+        if (const auto* intVal = std::get_if<int>(&value)) {
+            mode_ = (*intVal == 0) ? GradientMode::Linear : GradientMode::Radial;
+        }
+    } else if (optionId == "gradient_fill") {
+        if (const auto* intVal = std::get_if<int>(&value)) {
+            fill_ = (*intVal == 0) ? GradientFill::ForegroundToBackground
+                                   : GradientFill::ForegroundToTransparent;
+        }
+    }
+}
+
+std::variant<int, float, bool, std::string> GradientTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "gradient_shape") {
+        return (mode_ == GradientMode::Linear) ? 0 : 1;
+    }
+    if (optionId == "gradient_fill") {
+        return (fill_ == GradientFill::ForegroundToBackground) ? 0 : 1;
+    }
+    return 0;
 }
 
 }  // namespace gimp

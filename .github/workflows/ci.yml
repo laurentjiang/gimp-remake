@@ -20,7 +20,7 @@ permissions:
 
 env:
   VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite"
-  VCPKG_COMMIT: '594ad8871e1e8e45f8e626c015fd611163430207'
+  VCPKG_COMMIT: 'cc73782a88db48af17f8bfb8328d4cab3d4c246f'
 
 # ─────────────────────────────────────────────────────────────────────────────
 # JOBS

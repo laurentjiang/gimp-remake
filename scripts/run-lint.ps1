@@ -36,20 +36,14 @@ $sources = Get-ChildItem -Path $rootDir -Recurse -Include *.cpp |
 
 if ($sources) {
     Write-Host "Running clang-tidy on $($sources.Count) files..."
-    
-    # Use parallel execution for faster linting (PowerShell 7+)
-    $clangTidyPath = $clangTidy.Path
-    $results = $sources | ForEach-Object -Parallel {
-        $output = & $using:clangTidyPath -p $using:buildDir --quiet $_.FullName 2>&1
-        $output | ForEach-Object {
-            $line = $_.ToString()
-            if ($line -notmatch "warnings generated\.$" -and $line.Trim() -ne "") {
-                $line
-            }
+    # -p points to the build directory containing compile_commands.json
+    # We filter out "warnings generated" messages which count suppressed warnings from system headers
+    & $clangTidy.Path -p $buildDir --quiet $sources.FullName 2>&1 | ForEach-Object {
+        $line = $_.ToString()
+        if ($line -notmatch "warnings generated\.$") {
+            Write-Output $line
         }
-    } -ThrottleLimit ([Environment]::ProcessorCount)
-    
-    $results | ForEach-Object { Write-Output $_ }
+    }
 } else {
     Write-Host "No source files found."
 }

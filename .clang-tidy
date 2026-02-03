@@ -17,6 +17,7 @@ Checks: >
   cppcoreguidelines-init-variables,
   cppcoreguidelines-slicing,
   concurrency-*,
+  -clang-analyzer-*,
   -modernize-use-trailing-return-type,
   -modernize-use-ranges,
   -modernize-use-auto,

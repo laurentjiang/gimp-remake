@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "gimp-remake",
   "version-string": "0.1.0",
-  "builtin-baseline": "f06267da58f3c06b3a1aff9cbf5c2906e595ebc9",
+  "builtin-baseline": "cc73782a88db48af17f8bfb8328d4cab3d4c246f",
   "supports": "windows & !uwp",
   "dependencies": [
     {

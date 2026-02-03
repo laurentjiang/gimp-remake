@@ -10,6 +10,15 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = Resolve-Path (Join-Path $scriptDir "..")
 $buildDir = Join-Path $rootDir "build"
 
+# Help vcpkg find VS Build Tools (vswhere needs -products * flag for Build Tools)
+if (-not $env:VCPKG_VISUAL_STUDIO_PATH) {
+    $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -latest -property installationPath 2>$null
+    if ($vsPath) {
+        $env:VCPKG_VISUAL_STUDIO_PATH = $vsPath
+        Write-Host "Using Visual Studio: $vsPath"
+    }
+}
+
 if ($Clean -and (Test-Path $buildDir)) {
     Write-Host "Cleaning build directory (preserving vcpkg)..."
     Get-ChildItem -Path $buildDir | Where-Object { $_.Name -ne "vcpkg_installed" } | Remove-Item -Recurse -Force

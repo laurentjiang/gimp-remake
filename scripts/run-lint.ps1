@@ -35,13 +35,28 @@ $sources = Get-ChildItem -Path $rootDir -Recurse -Include *.cpp |
            }
 
 if ($sources) {
-    Write-Host "Running clang-tidy on $($sources.Count) files..."
-    # -p points to the build directory containing compile_commands.json
-    # We filter out "warnings generated" messages which count suppressed warnings from system headers
-    & $clangTidy.Path -p $buildDir --quiet $sources.FullName 2>&1 | ForEach-Object {
-        $line = $_.ToString()
-        if ($line -notmatch "warnings generated\.$") {
-            Write-Output $line
+    $jobs = [Math]::Min([Environment]::ProcessorCount, 8)
+    Write-Host "Running clang-tidy on $($sources.Count) files using $jobs parallel jobs..."
+    
+    # Use PowerShell 7 parallel execution
+    $clangTidyPath = $clangTidy.Path
+    $results = $sources | ForEach-Object -ThrottleLimit $jobs -Parallel {
+        $file = $_
+        $output = & $using:clangTidyPath -p $using:buildDir --quiet $file.FullName 2>&1
+        $outputStr = $output | Where-Object { $_ -notmatch "warnings generated\.$" } | Out-String
+        if ($outputStr.Trim()) {
+            [PSCustomObject]@{
+                File = $file.Name
+                Output = $outputStr.Trim()
+            }
+        }
+    }
+    
+    # Display results
+    foreach ($result in $results) {
+        if ($result) {
+            Write-Host "`n=== $($result.File) ===" -ForegroundColor Yellow
+            Write-Host $result.Output
         }
     }
 } else {

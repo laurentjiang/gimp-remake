@@ -59,6 +59,9 @@ jobs:
       - name: Install OpenCppCoverage
         run: choco install opencppcoverage -y
 
+      - name: Install LLVM
+        run: choco install llvm --version=20.1.0 -y
+
       - name: Configure NuGet for GitHub Packages
         shell: pwsh
         run: |
@@ -69,6 +72,7 @@ jobs:
       - name: Check formatting
         shell: pwsh
         run: |
+          $env:PATH = "C:\Program Files\LLVM\bin;$env:PATH"
           Write-Host "Using clang-format: $(clang-format --version)"
           $sources = git ls-files '*.cpp' '*.h' '*.hpp'
           $failed = $false
@@ -101,6 +105,7 @@ jobs:
       - name: Run clang-tidy
         shell: pwsh
         run: |
+          $env:PATH = "C:\Program Files\LLVM\bin;$env:PATH"
           Write-Host "Using clang-tidy: $(clang-tidy --version | Select-Object -First 1)"
           $sources = Get-ChildItem -Path src, include -Recurse -Include *.cpp | 
                      Where-Object { $_.FullName -notmatch "\\build" }

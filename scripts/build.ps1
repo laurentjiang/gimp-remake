@@ -11,13 +11,34 @@ $rootDir = Resolve-Path (Join-Path $scriptDir "..")
 $buildDir = Join-Path $rootDir "build"
 
 # Help vcpkg find VS Build Tools (vswhere needs -products * flag for Build Tools)
-if (-not $env:VCPKG_VISUAL_STUDIO_PATH) {
+$vsPath = $env:VCPKG_VISUAL_STUDIO_PATH
+if (-not $vsPath) {
     $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * -latest -property installationPath 2>$null
     if ($vsPath) {
         $env:VCPKG_VISUAL_STUDIO_PATH = $vsPath
-        Write-Host "Using Visual Studio: $vsPath"
     }
 }
+
+# Setup MSVC environment if cl.exe not in PATH
+if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
+    if ($vsPath) {
+        $vcvarsall = Join-Path $vsPath "VC\Auxiliary\Build\vcvarsall.bat"
+        if (Test-Path $vcvarsall) {
+            Write-Host "Setting up MSVC environment..."
+            # Run vcvarsall and capture environment variables
+            $envVars = cmd /c "`"$vcvarsall`" x64 >nul 2>&1 && set" | ForEach-Object {
+                if ($_ -match "^(.+?)=(.*)$") {
+                    [PSCustomObject]@{ Name = $matches[1]; Value = $matches[2] }
+                }
+            }
+            foreach ($var in $envVars) {
+                Set-Item -Path "env:$($var.Name)" -Value $var.Value
+            }
+        }
+    }
+}
+
+Write-Host "Using Visual Studio: $vsPath"
 
 if ($Clean -and (Test-Path $buildDir)) {
     Write-Host "Cleaning build directory (preserving vcpkg)..."
@@ -29,7 +50,9 @@ $cmakeArgs = @(
     "-B", $buildDir, 
     "-G", "Ninja",
     "-DCMAKE_BUILD_TYPE=$Config",
-    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+    "-DCMAKE_CXX_COMPILER=cl.exe",
+    "-DCMAKE_C_COMPILER=cl.exe"
 )
 
 if ($env:VCPKG_ROOT) {

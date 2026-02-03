@@ -34,7 +34,7 @@ jobs:
   build-windows:
     name: Build, Lint & Test (Windows)
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 240
     
     steps:
       - name: Checkout

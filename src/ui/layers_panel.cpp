@@ -15,6 +15,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 
+#include <ranges>
+
 namespace gimp {
 
 LayersPanel::LayersPanel(QWidget* parent) : QWidget(parent)
@@ -97,10 +99,10 @@ void LayersPanel::refreshLayerList()
     }
 
     const auto& layers = document_->layers();
-    for (auto it = layers.rbegin(); it != layers.rend(); ++it) {
+    for (const auto& layer : std::views::reverse(layers)) {
         auto* item = new QListWidgetItem(layerList_);
-        updateLayerItem(item, *it);
-        item->setData(Qt::UserRole, QVariant::fromValue(reinterpret_cast<quintptr>(it->get())));
+        updateLayerItem(item, layer);
+        item->setData(Qt::UserRole, QVariant::fromValue(reinterpret_cast<quintptr>(layer.get())));
     }
 }
 

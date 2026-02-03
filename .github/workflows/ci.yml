@@ -100,38 +100,7 @@ jobs:
 
       - name: Run clang-tidy
         shell: pwsh
-        run: |
-          Write-Host "Using clang-tidy: $(clang-tidy --version | Select-Object -First 1)"
-          $sources = Get-ChildItem -Path src, include -Recurse -Include *.cpp | 
-                     Where-Object { $_.FullName -notmatch "\\build" }
-          
-          Write-Host "Checking $($sources.Count) files in parallel..."
-          
-          # Run clang-tidy in parallel using PowerShell 7 ForEach-Object -Parallel
-          $results = $sources | ForEach-Object -ThrottleLimit 4 -Parallel {
-            $file = $_
-            $output = & clang-tidy -p build --quiet $file.FullName 2>&1
-            if ($output -match "warning:|error:") {
-              [PSCustomObject]@{
-                File = $file.Name
-                FullName = $file.FullName
-                Output = $output -join "`n"
-              }
-            }
-          }
-          
-          # Filter out nulls (files that passed)
-          $failures = @($results | Where-Object { $_ -ne $null })
-          
-          if ($failures.Count -gt 0) {
-            foreach ($result in $failures) {
-              Write-Host "::error file=$($result.FullName)::Clang-tidy issues found"
-              Write-Host $result.Output
-            }
-            Write-Host "::error::Clang-tidy check failed. Run './scripts/run-lint.ps1' locally."
-            exit 1
-          }
-          Write-Host "✓ Clang-tidy passed" -ForegroundColor Green
+        run: .\scripts\run-lint.ps1
 
       - name: Build
         run: cmake --build build --config RelWithDebInfo --parallel

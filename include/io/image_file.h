@@ -77,6 +77,6 @@ class ImageFile {
   private:
     cv::Mat m_mat;       ///< Image pixel data.
     std::string m_path;  ///< Source file path.
-};                       // class ImageFile
+};  // class ImageFile
 
 }  // namespace gimp

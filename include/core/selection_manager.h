@@ -1,8 +1,8 @@
 /**
  * @file selection_manager.h
  * @brief Singleton manager for document selection paths.
- * @author Laurent Jiang
- * @date 2026-02-04
+ * @author Aless Tosi
+ * @date 2026-02-03
  */
 
 #pragma once

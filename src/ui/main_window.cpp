@@ -18,6 +18,7 @@
 #include "core/tool_factory.h"
 #include "core/tools/brush_tool.h"
 #include "core/tools/color_picker_tool.h"
+#include "core/tools/ellipse_selection_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/fill_tool.h"
 #include "core/tools/gradient_tool.h"
@@ -101,6 +102,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });
     factory.registerTool("bucket_fill", []() { return std::make_unique<FillTool>(); });
     factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
+    factory.registerTool("select_ellipse",
+                         []() { return std::make_unique<EllipseSelectTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =

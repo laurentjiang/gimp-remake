@@ -49,6 +49,7 @@ add_executable(gimp-remake
     "src/core/tools/pencil_tool.cpp"
     "src/core/tools/eraser_tool.cpp"
     "src/core/tools/move_tool.cpp"
+    "src/core/tools/ellipse_selection_tool.cpp"
     "src/core/tools/color_picker_tool.cpp"
     "src/core/tools/fill_tool.cpp"
     "src/core/tools/gradient_tool.cpp"

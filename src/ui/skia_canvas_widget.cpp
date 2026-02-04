@@ -11,6 +11,7 @@
 #include "core/event_bus.h"
 #include "core/events.h"
 #include "core/layer.h"
+#include "core/selection_manager.h"
 #include "core/tool.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
@@ -44,6 +45,11 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
     invalidateCache();
+
+    m_selectionTimer.setInterval(80);
+    connect(
+        &m_selectionTimer, &QTimer::timeout, this, &SkiaCanvasWidget::advanceSelectionAnimation);
+    m_selectionTimer.start();
 }
 
 SkiaCanvasWidget::~SkiaCanvasWidget() = default;
@@ -262,10 +268,13 @@ void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)
         return;
     }
 
-    // Alt+click to pick color from any tool
+    // Alt+click to pick color from any tool (except selection tools that use Alt for center-out)
     if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::AltModifier) != 0) {
-        sampleColorAtPosition(event->pos());
-        return;
+        const std::string& activeToolId = ToolRegistry::instance().getActiveTool();
+        if (activeToolId.find("select") == std::string::npos) {
+            sampleColorAtPosition(event->pos());
+            return;
+        }
     }
 
     dispatchToolEvent(event, true, false);

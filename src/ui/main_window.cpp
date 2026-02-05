@@ -29,9 +29,12 @@
 #include "ui/debug_hud.h"
 #include "ui/history_panel.h"
 #include "ui/layers_panel.h"
+#include "ui/log_bridge.h"
+#include "ui/log_panel.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
 #include "ui/theme.h"
+#include "ui/toast_manager.h"
 #include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
@@ -43,6 +46,8 @@
 #include <QLabel>
 #include <QStatusBar>
 #include <QToolBar>
+
+#include <spdlog/spdlog.h>
 
 namespace {
 
@@ -126,6 +131,25 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
+    // Create log bridge and panel
+    m_logBridge = new LogBridge(this);
+    m_logPanel = new LogPanel(this);
+    m_logPanel->connectToBridge(m_logBridge);
+    m_logBridge->start();  // start timer to drain messages
+
+    // Create toast manager
+    m_toastManager = new ToastManager(this, this);
+    m_toastManager->connectToBridge(m_logBridge);
+
+    // Register the sink with spdlog's default logger
+    auto* sink = m_logBridge->sink();
+    if (sink) {
+        spdlog::default_logger()->sinks().push_back(
+            std::shared_ptr<spdlog::sinks::sink>(sink, [](auto*) {
+                // Custom deleter: sink is owned by LogBridge, do not delete here
+            }));
+    }
+
     setupMenuBar();
     setupDockWidgets();
     setupShortcuts();
@@ -168,6 +192,13 @@ void MainWindow::setupMenuBar()
     m_toggleDebugAction = viewMenu->addAction(
         "Toggle &Debug HUD", QKeySequence(Qt::Key_F12), this, &MainWindow::onToggleDebugHud);
     m_toggleDebugAction->setCheckable(true);
+
+    viewMenu->addAction(
+        "Show &Log Panel", QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_L), this, [this]() {
+            if (m_rightTabWidget && m_logPanel) {
+                m_rightTabWidget->setCurrentWidget(m_logPanel);
+            }
+        });
 
     auto* layerMenu = menuBar()->addMenu("&Layer");
     layerMenu->addAction("&New Layer", QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_N), []() {});
@@ -243,6 +274,7 @@ void MainWindow::setupDockWidgets()
     m_rightTabWidget->addTab(m_colorChooserPanel, "Colors");
     m_rightTabWidget->addTab(m_layersPanel, "Layers");
     m_rightTabWidget->addTab(m_historyPanel, "History");
+    m_rightTabWidget->addTab(m_logPanel, "Log");
 
     m_rightDock = new QDockWidget("Panels", this);
     m_rightDock->setWidget(m_rightTabWidget);
@@ -338,6 +370,9 @@ void MainWindow::resizeEvent(QResizeEvent* event)
 {
     QMainWindow::resizeEvent(event);
     positionDebugHud();
+    if (m_toastManager) {
+        m_toastManager->repositionToasts();
+    }
 }
 
 void MainWindow::onToggleDebugHud()

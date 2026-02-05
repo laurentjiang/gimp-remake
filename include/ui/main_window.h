@@ -28,7 +28,10 @@ class DebugHud;
 class Document;
 class HistoryPanel;
 class LayersPanel;
+class LogBridge;
+class LogPanel;
 class ShortcutManager;
+class ToastManager;
 class SimpleHistoryManager;
 class SkiaCanvasWidget;
 class SkiaRenderer;
@@ -108,7 +111,10 @@ class MainWindow : public QMainWindow {
     ColorChooserPanel* m_colorChooserPanel = nullptr;
     CommandPalette* m_commandPalette = nullptr;
     DebugHud* m_debugHud = nullptr;
+    LogPanel* m_logPanel = nullptr;
+    LogBridge* m_logBridge = nullptr;
     ShortcutManager* m_shortcutManager = nullptr;
+    ToastManager* m_toastManager = nullptr;
 
     QDockWidget* m_toolboxDock = nullptr;
     QDockWidget* m_toolOptionsDock = nullptr;

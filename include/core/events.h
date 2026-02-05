@@ -127,4 +127,26 @@ struct ToolSwitchRequestEvent {
     std::string targetToolId;  ///< ID of the tool to switch to.
 };
 
+/**
+ * @brief Event carrying a log message for UI display.
+ *
+ * Published by components that want to show a message in the log panel
+ * or as a toast notification. Can be used as an alternative to direct
+ * spdlog calls when the source is already on the main thread.
+ */
+struct LogMessageEvent {
+    /*! @brief Log severity levels matching spdlog::level. */
+    enum class Severity {
+        Trace,    ///< Detailed tracing information.
+        Debug,    ///< Debug-level information for developers.
+        Info,     ///< General informational messages.
+        Warning,  ///< Warning conditions that may need attention.
+        Error,    ///< Error conditions that should be addressed.
+        Critical  ///< Critical errors that may cause application failure.
+    };
+    Severity severity = Severity::Info;  ///< Severity of the log message.
+    std::string message;                 ///< The log message text.
+    std::string source;                  ///< Component that generated the message.
+};
+
 }  // namespace gimp

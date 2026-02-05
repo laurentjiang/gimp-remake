@@ -34,6 +34,12 @@ add_executable(gimp-remake
     "src/ui/command_palette.cpp"
     "src/ui/debug_hud.cpp"
     "src/ui/shortcut_manager.cpp"
+    "src/ui/log_message.cpp"
+    "src/ui/log_sink.cpp"
+    "src/ui/log_bridge.cpp"
+    "src/ui/log_panel.cpp"
+    "src/ui/toast_notification.cpp"
+    "src/ui/toast_manager.cpp"
     "src/history/history_stack.cpp"
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
@@ -72,6 +78,10 @@ add_executable(gimp-remake
     "include/ui/command_palette.h"
     "include/ui/debug_hud.h"
     "include/ui/shortcut_manager.h"
+    "include/ui/log_bridge.h"
+    "include/ui/log_panel.h"
+    "include/ui/toast_notification.h"
+    "include/ui/toast_manager.h"
 )
 
 target_include_directories(gimp-remake PRIVATE

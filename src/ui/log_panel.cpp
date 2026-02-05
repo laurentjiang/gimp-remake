@@ -6,6 +6,7 @@
  */
 
 #include "ui/log_panel.h"
+
 #include "ui/log_bridge.h"
 
 #include <QApplication>
@@ -15,8 +16,7 @@
 
 namespace gimp {
 
-LogPanel::LogPanel(QWidget* parent)
-    : QWidget(parent)
+LogPanel::LogPanel(QWidget* parent) : QWidget(parent)
 {
     setupUi();
 }
@@ -31,11 +31,17 @@ LogPanel::~LogPanel()
 
 void LogPanel::connectToBridge(LogBridge* bridge)
 {
+    // Disconnect from previous bridge if any
+    if (m_connectedBridge) {
+        disconnect(m_connectedBridge, nullptr, this, nullptr);
+        m_connectedBridge = nullptr;
+    }
+
     if (bridge) {
         connect(bridge, &LogBridge::logMessageReady, this, &LogPanel::onLogMessageReady);
         connect(bridge, &LogBridge::logMessagesReady, this, &LogPanel::onLogMessagesReady);
+        m_connectedBridge = bridge;
     }
-    // TODO: handle disconnection if bridge is nullptr
 }
 
 void LogPanel::addLogMessage(const LogMessage& message)
@@ -65,7 +71,8 @@ void LogPanel::addLogMessages(const std::vector<LogMessage>& messages)
 
     // Trim if needed
     if (maxEntries_ > 0 && allMessages_.size() > maxEntries_) {
-        allMessages_.erase(allMessages_.begin(), allMessages_.begin() + (allMessages_.size() - maxEntries_));
+        allMessages_.erase(allMessages_.begin(),
+                           allMessages_.begin() + (allMessages_.size() - maxEntries_));
     }
 
     // Refresh entire visible list
@@ -82,7 +89,8 @@ void LogPanel::setMaxEntries(std::size_t max)
 {
     maxEntries_ = max;
     if (maxEntries_ > 0 && allMessages_.size() > maxEntries_) {
-        allMessages_.erase(allMessages_.begin(), allMessages_.begin() + (allMessages_.size() - maxEntries_));
+        allMessages_.erase(allMessages_.begin(),
+                           allMessages_.begin() + (allMessages_.size() - maxEntries_));
         refreshVisibleItems();
     }
 }
@@ -149,8 +157,10 @@ void LogPanel::setupUi()
     filterCombo_->addItem("All");
     filterCombo_->addItem("Warnings+");
     filterCombo_->addItem("Errors only");
-    connect(filterCombo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &LogPanel::onFilterChanged);
+    connect(filterCombo_,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            &LogPanel::onFilterChanged);
 
     clearButton_ = new QPushButton("Clear");
     connect(clearButton_, &QPushButton::clicked, this, &LogPanel::onClearClicked);

@@ -7,6 +7,8 @@
 
 #include "ui/toast_notification.h"
 
+#include "ui/toast_constants.h"
+
 #include <QApplication>
 #include <QEnterEvent>
 #include <QGraphicsDropShadowEffect>
@@ -23,15 +25,15 @@
 namespace gimp {
 
 ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
-    : QWidget(parent)
-    , message_(message)
+    : QWidget(parent),
+      message_(message)
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
 
     // Fixed width, height determined by content
-    setFixedWidth(280);
+    setFixedWidth(toast::kToastWidth);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     // Drop shadow - more subtle
@@ -53,10 +55,11 @@ ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
 
     // Fade animation
     fadeAnimation_ = new QPropertyAnimation(this, "windowOpacity");
-    fadeAnimation_->setDuration(300); // 300 ms fade
+    fadeAnimation_->setDuration(300);  // 300 ms fade
     fadeAnimation_->setStartValue(1.0);
     fadeAnimation_->setEndValue(0.0);
-    connect(fadeAnimation_, &QPropertyAnimation::finished, this, &ToastNotification::onFadeFinished);
+    connect(
+        fadeAnimation_, &QPropertyAnimation::finished, this, &ToastNotification::onFadeFinished);
 }
 
 ToastNotification::~ToastNotification() = default;
@@ -95,17 +98,17 @@ void ToastNotification::showToast()
     int timeoutMs = 0;
     switch (message_.severity) {
         case LogSeverity::Info:
-            timeoutMs = 3000; // 3 seconds
+            timeoutMs = toast::kInfoTimeoutMs;  // 3 seconds
             break;
         case LogSeverity::Warning:
-            timeoutMs = 5000; // 5 seconds
+            timeoutMs = toast::kWarningTimeoutMs;  // 5 seconds
             break;
         case LogSeverity::Error:
         case LogSeverity::Critical:
             // Persistent - no auto-dismiss
             return;
         default:
-            timeoutMs = 3000;
+            timeoutMs = toast::kInfoTimeoutMs;
     }
 
     if (timeoutMs > 0) {
@@ -135,13 +138,13 @@ void ToastNotification::leaveEvent(QEvent* event)
         int remaining = 0;
         switch (message_.severity) {
             case LogSeverity::Info:
-                remaining = 3000;
+                remaining = toast::kInfoTimeoutMs;
                 break;
             case LogSeverity::Warning:
-                remaining = 5000;
+                remaining = toast::kWarningTimeoutMs;
                 break;
             default:
-                remaining = 3000;
+                remaining = toast::kInfoTimeoutMs;
         }
         if (remaining > 0) {
             autoDismissTimer_->start(remaining);
@@ -166,11 +169,11 @@ void ToastNotification::paintEvent(QPaintEvent* event)
 
     // Rounded rectangle
     QPainterPath path;
-    path.addRoundedRect(rect(), 6, 6); // slightly smaller radius
+    path.addRoundedRect(rect(), 6, 6);  // slightly smaller radius
 
     // Solid background with alpha
     QColor baseColor(severityColor());
-    baseColor.setAlpha(230); // 90% opacity
+    baseColor.setAlpha(230);  // 90% opacity
     painter.fillPath(path, baseColor);
 
     // Border - subtle
@@ -188,7 +191,7 @@ void ToastNotification::onTimeout()
 void ToastNotification::onFadeFinished()
 {
     emit dismissed(this);
-    close(); // Will delete because of WA_DeleteOnClose
+    close();  // Will delete because of WA_DeleteOnClose
 }
 
 void ToastNotification::startFadeOut()

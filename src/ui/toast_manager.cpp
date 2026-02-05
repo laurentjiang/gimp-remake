@@ -6,7 +6,9 @@
  */
 
 #include "ui/toast_manager.h"
+
 #include "ui/log_bridge.h"
+#include "ui/toast_constants.h"
 
 #include <QApplication>
 #include <QScreen>
@@ -15,8 +17,8 @@
 namespace gimp {
 
 ToastManager::ToastManager(QWidget* parentWidget, QObject* parent)
-    : QObject(parent)
-    , parentWidget_(parentWidget)
+    : QObject(parent),
+      parentWidget_(parentWidget)
 {
     // Ensure we have a valid parent widget
     if (!parentWidget_) {
@@ -31,12 +33,20 @@ ToastManager::~ToastManager()
 
 void ToastManager::connectToBridge(LogBridge* bridge)
 {
-    if (bridge) {
-        connect(bridge, &LogBridge::logMessageReady,
-                this, &ToastManager::onLogMessageReady,
-                Qt::QueuedConnection);
+    // Disconnect from previous bridge if any
+    if (m_connectedBridge) {
+        disconnect(m_connectedBridge, nullptr, this, nullptr);
+        m_connectedBridge = nullptr;
     }
-    // TODO: handle disconnection if bridge is nullptr
+
+    if (bridge) {
+        connect(bridge,
+                &LogBridge::logMessageReady,
+                this,
+                &ToastManager::onLogMessageReady,
+                Qt::QueuedConnection);
+        m_connectedBridge = bridge;
+    }
 }
 
 void ToastManager::showToast(const LogMessage& message)
@@ -47,10 +57,8 @@ void ToastManager::showToast(const LogMessage& message)
 
     // Create toast widget
     auto* toast = new ToastNotification(message, parentWidget_);
-    connect(toast, &ToastNotification::dismissed,
-            this, &ToastManager::onToastDismissed);
-    connect(toast, &ToastNotification::clicked,
-            [toast]() { toast->dismiss(); });
+    connect(toast, &ToastNotification::dismissed, this, &ToastManager::onToastDismissed);
+    connect(toast, &ToastNotification::clicked, [toast]() { toast->dismiss(); });
 
     addToast(toast);
     toast->showToast();
@@ -62,7 +70,7 @@ void ToastManager::clearAll()
 {
     for (auto* toast : toasts_) {
         toast->disconnect();
-        toast->close(); // will delete because of WA_DeleteOnClose
+        toast->close();  // will delete because of WA_DeleteOnClose
     }
     toasts_.clear();
 }
@@ -83,16 +91,37 @@ void ToastManager::onLogMessageReady(const LogMessage& message)
         case LogSeverity::Warning:
         case LogSeverity::Error:
         case LogSeverity::Critical:
-            showToast(message);
+            // These severities are shown as toasts
             break;
         default:
             // Trace, Debug, Off are not shown as toasts
-            break;
+            return;
     }
+
+    // Apply rate limiting (max 3 toasts per second)
+    const auto now = std::chrono::steady_clock::now();
+    const auto elapsed =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - lastToastTime_).count();
+
+    if (elapsed >= 1000) {
+        // New second, reset counter
+        toastsThisSecond_ = 0;
+        lastToastTime_ = now;
+    }
+
+    if (toastsThisSecond_ >= toast::kMaxToastsPerSecond) {
+        // Limit reached, skip this toast
+        return;
+    }
+
+    ++toastsThisSecond_;
+    showToast(message);
 }
 
 void ToastManager::onToastDismissed(ToastNotification* toast)
 {
+    // Disconnect all signals from this toast to avoid QObject warnings
+    toast->disconnect();
     removeToast(toast);
     emit toastDismissed(toast->message());
 }
@@ -132,7 +161,7 @@ QPoint ToastManager::calculateToastPosition(int index) const
     }
 
     const QRect parentRect = parentWidget_->rect();
-    const int toastWidth = 280; // matches ToastNotification::fixedWidth
+    const int toastWidth = toast::kToastWidth;  // matches ToastNotification::fixedWidth
 
     // Calculate cumulative height of all toasts before this one
     int cumulativeHeight = 0;
@@ -166,10 +195,14 @@ QPoint ToastManager::calculateToastPosition(int index) const
 
     // Toasts are now child widgets (no Qt::ToolTip), so coordinates are parent-relative.
     // Ensure position is within parent's visible area.
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
-    if (x + toastWidth > parentRect.width()) x = parentRect.width() - toastWidth;
-    if (y + toastHeight > parentRect.height()) y = parentRect.height() - toastHeight;
+    if (x < 0)
+        x = 0;
+    if (y < 0)
+        y = 0;
+    if (x + toastWidth > parentRect.width())
+        x = parentRect.width() - toastWidth;
+    if (y + toastHeight > parentRect.height())
+        y = parentRect.height() - toastHeight;
 
     return QPoint(x, y);
 }

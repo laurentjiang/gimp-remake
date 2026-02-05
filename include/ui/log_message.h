@@ -33,10 +33,10 @@ enum class LogSeverity {
  * Contains all metadata needed to display a log entry in the UI.
  */
 struct LogMessage {
-    LogSeverity severity = LogSeverity::Info;            ///< Severity level of the log message.
-    std::chrono::system_clock::time_point timestamp;     ///< When the message was created.
-    std::string message;                                 ///< The log message text.
-    std::string source;                                  ///< Component that generated the message (e.g., "render", "io", "tool")
+    LogSeverity severity = LogSeverity::Info;         ///< Severity level of the log message.
+    std::chrono::system_clock::time_point timestamp;  ///< When the message was created.
+    std::string message;                              ///< The log message text.
+    std::string source;  ///< Component that generated the message (e.g., "render", "io", "tool")
 
     /**
      * @brief Convert severity to human-readable string

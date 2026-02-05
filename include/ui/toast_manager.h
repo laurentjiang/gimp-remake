@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ui/log_message.h"
+#include "ui/toast_constants.h"
 #include "ui/toast_notification.h"
 
 #include <QObject>
@@ -15,6 +16,7 @@
 #include <QTimer>
 #include <QWidget>
 
+#include <chrono>
 #include <vector>
 
 namespace gimp {
@@ -129,12 +131,17 @@ class ToastManager : public QObject {
     void enforceLimit();
 
     QPointer<QWidget> parentWidget_;
+    LogBridge* m_connectedBridge = nullptr;  ///< Currently connected bridge (if any)
     std::vector<ToastNotification*> toasts_;
-    int maxToasts_ = 5;
+    int maxToasts_ = toast::kMaxToasts;
     bool enabled_ = true;
     Qt::Corner corner_ = Qt::BottomRightCorner;
-    int margin_ = 10;
-    int spacing_ = 6;
+    int margin_ = toast::kToastMargin;
+    int spacing_ = toast::kToastSpacing;
+
+    // Rate‑limiting state
+    std::chrono::steady_clock::time_point lastToastTime_;
+    int toastsThisSecond_ = 0;
 };
 
 }  // namespace gimp

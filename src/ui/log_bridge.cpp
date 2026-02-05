@@ -11,9 +11,7 @@
 
 namespace gimp {
 
-LogBridge::LogBridge(QObject* parent)
-    : QObject(parent)
-    , sink_(std::make_unique<QtForwardingSink>())
+LogBridge::LogBridge(QObject* parent) : QObject(parent), sink_(std::make_unique<QtForwardingSink>())
 {
     connect(&timer_, &QTimer::timeout, this, &LogBridge::onTimer);
 }

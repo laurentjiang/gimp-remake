@@ -117,6 +117,8 @@ class LogPanel : public QWidget {
     QPushButton* copyButton_ = nullptr;
     QListWidget* logList_ = nullptr;
 
+    LogBridge* m_connectedBridge = nullptr;  ///< Currently connected bridge (if any)
+
     std::vector<LogMessage> allMessages_;  ///< All messages (including filtered‑out)
     std::size_t maxEntries_ = 1000;        ///< Maximum entries to keep
 

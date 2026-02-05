@@ -45,8 +45,8 @@ std::string LogMessage::timeString() const
 #endif
 
     std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(2) << localTime.tm_hour << ':'
-        << std::setw(2) << localTime.tm_min << ':' << std::setw(2) << localTime.tm_sec;
+    oss << std::setfill('0') << std::setw(2) << localTime.tm_hour << ':' << std::setw(2)
+        << localTime.tm_min << ':' << std::setw(2) << localTime.tm_sec;
     return oss.str();
 }
 

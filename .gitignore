@@ -132,3 +132,6 @@ tests/img/generated/
 
 # Generated Doxygen documentation (deployed via CI to GitHub Pages)
 docs/api/
+
+ARCHITECTURE.md
+plans/

@@ -204,6 +204,8 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 {
     (void)event;
 
+    const auto startTime = std::chrono::high_resolution_clock::now();
+
     QPainter painter(this);
     painter.fillRect(rect(), QColor(64, 64, 64));
 
@@ -242,6 +244,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
             }
         }
     }
+
+    const auto endTime = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
+    emit framePainted(frameDuration.count());
 }
 
 void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)

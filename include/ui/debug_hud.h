@@ -25,7 +25,7 @@ class Document;
 /**
  * @brief Semi-transparent overlay displaying debug information.
  *
- * Shows FPS, memory usage, layer count, canvas size, and mouse position.
+ * Shows FPS, frame time, memory usage, layer count, canvas size, and mouse position.
  * Can be toggled on/off via View menu or F12.
  */
 class DebugHud : public QWidget {
@@ -55,6 +55,10 @@ class DebugHud : public QWidget {
     void updateMousePosition(int canvasX, int canvasY);
     /*! @brief Called when a frame is rendered to update FPS. */
     void frameRendered();
+    /*! @brief Called when a paint event completes, providing frame time.
+     *  @param frameTimeMs The duration of the paint event in milliseconds.
+     */
+    void onFramePainted(double frameTimeMs);
 
   private slots:
     void updateStats();
@@ -71,6 +75,7 @@ class DebugHud : public QWidget {
     QLabel* canvasSizeLabel_ = nullptr;
     QLabel* mousePositionLabel_ = nullptr;
     QLabel* zoomLabel_ = nullptr;
+    QLabel* frameTimeLabel_ = nullptr;
 
     std::shared_ptr<Document> document_;
     QTimer* updateTimer_ = nullptr;

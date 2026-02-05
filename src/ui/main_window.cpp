@@ -308,6 +308,9 @@ void MainWindow::createDocument()
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);
 
+    // Connect performance counter signal
+    connect(m_canvasWidget, &SkiaCanvasWidget::framePainted, m_debugHud, &DebugHud::onFramePainted);
+
     m_layersPanel->setDocument(m_document);
     m_debugHud->setDocument(m_document);
 }

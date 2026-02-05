@@ -1,6 +1,7 @@
 /**
  * @file skia_canvas_widget.h
- * @brief Interactive canvas widget with pan, zoom, and tool input handling.
+ * @brief Interactive canvas widget with pan, zoom, tool input handling, and performance
+ * measurement.
  * @author Laurent Jiang
  * @date 2025-12-16
  */
@@ -119,6 +120,11 @@ class SkiaCanvasWidget : public QWidget {
 
     /*! @brief Emitted when the canvas needs to be repainted. */
     void canvasModified();
+
+    /*! @brief Emitted after a paint event completes, providing performance metrics.
+     *  @param frameTimeMs The duration of the paint event in milliseconds.
+     */
+    void framePainted(double frameTimeMs);
 
   protected:
     /*! @brief Paints the rendered document with viewport transformations.

@@ -11,6 +11,7 @@
 #include <QEnterEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
@@ -29,9 +30,9 @@ ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
     setWindowFlags(Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
 
-    // Fixed width, auto height - smaller width
-    setFixedWidth(240);
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    // Fixed width, height determined by content
+    setFixedWidth(280);
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     // Drop shadow - more subtle
     auto* shadow = new QGraphicsDropShadowEffect(this);
@@ -41,6 +42,9 @@ ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
     setGraphicsEffect(shadow);
 
     setupUi();
+
+    // Force layout calculation
+    adjustSize();
 
     // Timer for auto-dismiss
     autoDismissTimer_ = new QTimer(this);
@@ -59,23 +63,27 @@ ToastNotification::~ToastNotification() = default;
 
 void ToastNotification::setupUi()
 {
-    // Main layout - tighter padding
+    // Main horizontal layout with proper margins
     auto* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(8, 8, 8, 8);
-    layout->setSpacing(8);
+    layout->setContentsMargins(12, 12, 12, 12);
+    layout->setSpacing(10);
 
-    // Icon label - smaller
+    // Icon label - use QIcon for proper SVG rendering
     iconLabel_ = new QLabel(this);
-    iconLabel_->setFixedSize(20, 20);
-    iconLabel_->setPixmap(QPixmap(severityIcon()).scaled(20, 20, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    iconLabel_->setFixedSize(24, 24);
+    QIcon icon(severityIcon());
+    iconLabel_->setPixmap(icon.pixmap(24, 24));
     layout->addWidget(iconLabel_);
 
-    // Text label - smaller font
+    // Text label with word wrap
     textLabel_ = new QLabel(QString::fromStdString(message_.message), this);
     textLabel_->setWordWrap(true);
-    textLabel_->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    textLabel_->setStyleSheet("color: white; font-size: 11px;");
-    layout->addWidget(textLabel_, 1);
+    textLabel_->setStyleSheet("color: white; font-size: 12px;");
+    textLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    layout->addWidget(textLabel_);
+
+    // Set minimum height to ensure icon is never clipped
+    setMinimumHeight(48);
 }
 
 void ToastNotification::showToast()

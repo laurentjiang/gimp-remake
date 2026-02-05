@@ -132,7 +132,14 @@ QPoint ToastManager::calculateToastPosition(int index) const
     }
 
     const QRect parentRect = parentWidget_->rect();
-    const int toastWidth = 240; // matches ToastNotification::fixedWidth (updated)
+    const int toastWidth = 280; // matches ToastNotification::fixedWidth
+
+    // Calculate cumulative height of all toasts before this one
+    int cumulativeHeight = 0;
+    for (int i = 0; i < index; ++i) {
+        cumulativeHeight += toasts_[i]->totalHeight() + spacing_;
+    }
+
     const int toastHeight = toasts_[index]->totalHeight();
 
     int x = 0;
@@ -141,19 +148,19 @@ QPoint ToastManager::calculateToastPosition(int index) const
     switch (corner_) {
         case Qt::TopLeftCorner:
             x = margin_;
-            y = margin_ + index * (toastHeight + spacing_);
+            y = margin_ + cumulativeHeight;
             break;
         case Qt::TopRightCorner:
             x = parentRect.width() - toastWidth - margin_;
-            y = margin_ + index * (toastHeight + spacing_);
+            y = margin_ + cumulativeHeight;
             break;
         case Qt::BottomLeftCorner:
             x = margin_;
-            y = parentRect.height() - margin_ - (index + 1) * (toastHeight + spacing_);
+            y = parentRect.height() - margin_ - cumulativeHeight - toastHeight;
             break;
         case Qt::BottomRightCorner:
             x = parentRect.width() - toastWidth - margin_;
-            y = parentRect.height() - margin_ - (index + 1) * (toastHeight + spacing_);
+            y = parentRect.height() - margin_ - cumulativeHeight - toastHeight;
             break;
     }
 

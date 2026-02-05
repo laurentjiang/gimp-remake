@@ -10,19 +10,37 @@ A modern C++20/Qt6/Skia reimplementation of GIMP (GNU Image Manipulation Program
 
 - **[API Reference](https://laurentjiang.github.io/gimp-remake/)** - Auto-generated Doxygen documentation
 - **[Error Handling Guide](docs/ERROR_HANDLING_GUIDE.md)** - How to use the error handling system
-- **[Error Handling Architecture](docs/ERROR_HANDLING_ARCHITECTURE.md)** - Design decisions
-- **[Quick Reference](docs/ERROR_HANDLING_QUICK_REFERENCE.md)** - Error codes cheat sheet
+
+## Prerequisites
+
+### Required Tools
+
+| Tool | Version | Installation |
+|------|---------|--------------|
+| **Visual Studio 2026 Build Tools** | 14.50+ | [Download](https://visualstudio.microsoft.com/downloads/) |
+| **CMake** | 3.26+ | Included with VS or `winget install Kitware.CMake` |
+| **Ninja** | 1.11+ | Included with VS or `winget install Ninja-build.Ninja` |
+| **vcpkg** | Latest | See [vcpkg setup](#vcpkg-setup) below |
+| **clang-format / clang-tidy** | 18+ | Included with VS 2026 Build Tools |
+
+### vcpkg Setup
+
+```powershell
+# Clone vcpkg (one-time setup)
+git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+cd C:\vcpkg
+.\bootstrap-vcpkg.bat
+
+# Set environment variable (add to your profile)
+[Environment]::SetEnvironmentVariable("VCPKG_ROOT", "C:\vcpkg", "User")
+$env:VCPKG_ROOT = "C:\vcpkg"
+```
+
+Dependencies (Qt6, Skia, OpenCV, spdlog, nlohmann-json) are installed automatically during the first build via vcpkg manifest mode.
 
 ## Building
 
-### Prerequisites
-
-- **CMake** 3.21+
-- **Ninja** build system
-- **C++20 compiler**: MSVC 2022, GCC 12+, or Clang 15+
-- **vcpkg** (dependencies installed automatically on first build)
-
-### Windows
+### Quick Start
 
 ```powershell
 # Clone the repository
@@ -32,34 +50,65 @@ cd gimp-remake
 # Build (Debug by default)
 .\scripts\build.ps1
 
-# Build Release
-.\scripts\build.ps1 -Config Release
-
-# Clean build (preserves vcpkg cache)
-.\scripts\build.ps1 -Clean
-
 # Run the application
 .\scripts\run.ps1
-# or
-.\build\gimp-remake.exe
-
-# Run Release version
-.\scripts\run.ps1 -Config Release
 ```
 
-### Running Tests
+### Build Options
 
 ```powershell
+# Debug build (default)
+.\scripts\build.ps1
+
+# Release build
+.\scripts\build.ps1 -Config Release
+
+# Clean build (preserves vcpkg cache for faster rebuilds)
+.\scripts\build.ps1 -Clean
+
+# Build with coverage instrumentation
+.\scripts\build.ps1 -Coverage
+```
+
+### Running
+
+```powershell
+# Run Debug build
+.\scripts\run.ps1
+
+# Run Release build
+.\scripts\run.ps1 -Config Release
+
+# Or run directly
+.\build\gimp-remake.exe
+```
+
+## Testing
+
+```powershell
+# Run all tests with coverage report
+.\scripts\run-tests.ps1
+
+# Run tests without coverage
+.\scripts\run-tests.ps1 -NoCoverage
+
+# Run with verbose output
+.\scripts\run-tests.ps1 -Verbose
+
+# Filter specific tests
+.\scripts\run-tests.ps1 -Filter "[brush]"
+
+# Or use ctest directly
 ctest --test-dir build --output-on-failure
 ```
 
-### Code Quality
+## Code Quality
 
 ```powershell
-# Format code (requires clang-format / LLVM 18+)
+# Format all code (clang-format)
 .\scripts\run-format.ps1
 
-# Run static analysis (requires clang-tidy / LLVM 18+)
+# Run static analysis (clang-tidy)
 .\scripts\run-lint.ps1
 ```
 
@@ -67,23 +116,54 @@ ctest --test-dir build --output-on-failure
 
 ```
 gimp-remake/
-├── include/           # Header files
-│   ├── core/          # Core data structures (Layer, Document, Command)
-│   ├── error_handling/# Error codes, Result<T>, exceptions
-│   ├── io/            # File I/O (images, project files)
-│   ├── render/        # Skia-based rendering
-│   └── ui/            # Qt6 widgets and panels
-├── src/               # Implementation files
-│   ├── error_handling/
-│   ├── io/
-│   └── ui/
-├── scripts/           # Build and development scripts
-│   ├── build.ps1      # Build the project
-│   ├── run.ps1        # Run the application
-│   ├── run-format.ps1 # Format code with clang-format
-│   └── run-lint.ps1   # Static analysis with clang-tidy
-├── tests/             # Unit tests (Catch2)
-├── docs/              # Documentation
-├── resources/         # Icons, stylesheets
-└── Doxyfile           # Doxygen configuration
+├── include/               # Header files (mirrors src/ structure)
+│   ├── core/              # Domain: Document, Layer, Tool, Command, Filter
+│   │   ├── commands/      # DrawCommand, AddLayerCommand
+│   │   ├── filters/       # BlurFilter, SharpenFilter
+│   │   └── tools/         # PencilTool, BrushTool, FillTool, etc.
+│   ├── error_handling/    # Error codes, Result<T>
+│   ├── history/           # HistoryStack, HistoryManager
+│   ├── io/                # IOManager (image loading/saving)
+│   ├── render/            # SkiaRenderer, SkiaCompositor
+│   └── ui/                # Qt widgets: MainWindow, panels, theme
+├── src/                   # Implementation files
+├── tests/
+│   ├── unit/              # Pure logic tests
+│   ├── integration/       # File I/O and rendering tests
+│   └── img/               # Test image fixtures
+├── scripts/               # Build and development scripts
+│   ├── build.ps1          # CMake configure + build
+│   ├── run.ps1            # Launch application
+│   ├── run-tests.ps1      # Run tests with optional coverage
+│   ├── run-format.ps1     # Format code with clang-format
+│   └── run-lint.ps1       # Static analysis with clang-tidy
+├── resources/             # Qt resources (icons, qrc)
+├── docs/                  # Additional documentation
+├── .github/workflows/     # CI pipeline
+├── ARCHITECTURE.md        # Detailed architecture documentation
+├── CMakeLists.txt         # Build configuration
+├── vcpkg.json             # Dependency manifest
+├── .clang-format          # Code formatting rules
+└── .clang-tidy            # Static analysis configuration
 ```
+
+## Current Status
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for complete feature status and roadmap.
+
+### v0.2.0 Highlights
+
+- ✅ Drawing tools: Pencil, Brush (with hardness/opacity), Eraser, Fill, Gradient
+- ✅ Color Picker with Alt+click shortcut
+- ✅ Color Chooser Panel (HSV, RGB sliders, hex input, recent colors)
+- ✅ Tool Options Panel (dynamic UI based on active tool)
+- ✅ Keyboard shortcuts for tools
+- ✅ Blur and Sharpen filters
+- ✅ Undo/Redo system
+
+### Coming in v0.3.0
+
+- 📋 Selection tools (Rectangle, Ellipse)
+- 📋 Selection operations (Move, Transform, Copy/Paste)
+- 📋 Canvas resize and crop
+- 📋 Multi-layer project files

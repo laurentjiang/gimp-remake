@@ -81,6 +81,9 @@ void DebugHud::setupUi()
     zoomLabel_ = new QLabel("Zoom: 100%", this);
     mainLayout_->addWidget(zoomLabel_);
 
+    frameTimeLabel_ = new QLabel("Frame: -- ms", this);
+    mainLayout_->addWidget(frameTimeLabel_);
+
     setFixedWidth(180);
     adjustSize();
 }
@@ -115,6 +118,15 @@ void DebugHud::frameRendered()
     while (frameTimes_.size() > 60) {
         frameTimes_.pop_front();
     }
+}
+
+void DebugHud::onFramePainted(double frameTimeMs)
+{
+    // Record frame time for FPS calculation
+    frameRendered();
+
+    // Update frame time label
+    frameTimeLabel_->setText(QString("Frame: %1 ms").arg(frameTimeMs, 0, 'f', 1));
 }
 
 void DebugHud::updateStats()

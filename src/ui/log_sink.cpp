@@ -9,39 +9,43 @@
 
 #include <spdlog/details/log_msg.h>
 
+#include <cstddef>
+
 namespace gimp {
 
 QtForwardingSink::QtForwardingSink()
 {
     // Reserve some initial capacity
-    buffer_.reserve(100);
+    m_buffer.reserve(100);
 }
 
 std::vector<LogMessage> QtForwardingSink::drain()
 {
     std::vector<LogMessage> messages;
     {
-        std::lock_guard<std::mutex> lock(bufferMutex_);
-        messages.swap(buffer_);
-        buffer_.clear();
-        buffer_.reserve(100);  // Keep some capacity for future messages
+        std::lock_guard<std::mutex> lock(m_bufferMutex);
+        messages.swap(m_buffer);
+        m_buffer.clear();
+        m_buffer.reserve(100);  // Keep some capacity for future messages
     }
     return messages;
 }
 
 std::size_t QtForwardingSink::queuedCount() const
 {
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-    return buffer_.size();
+    std::lock_guard<std::mutex> lock(m_bufferMutex);
+    return m_buffer.size();
 }
 
 void QtForwardingSink::setMaxBufferSize(std::size_t max)
 {
-    std::lock_guard<std::mutex> lock(bufferMutex_);
-    maxBufferSize_ = max;
+    std::lock_guard<std::mutex> lock(m_bufferMutex);
+    m_maxBufferSize = max;
     // If buffer exceeds new max, trim from front (oldest)
-    if (buffer_.size() > maxBufferSize_) {
-        buffer_.erase(buffer_.begin(), buffer_.begin() + (buffer_.size() - maxBufferSize_));
+    if (m_buffer.size() > m_maxBufferSize) {
+        m_buffer.erase(
+            m_buffer.begin(),
+            m_buffer.begin() + static_cast<std::ptrdiff_t>(m_buffer.size() - m_maxBufferSize));
     }
 }
 
@@ -91,12 +95,12 @@ void QtForwardingSink::sink_it_(const spdlog::details::log_msg& msg)
 
     // Add to buffer with thread safety
     {
-        std::lock_guard<std::mutex> lock(bufferMutex_);
-        buffer_.push_back(std::move(logMsg));
+        std::lock_guard<std::mutex> lock(m_bufferMutex);
+        m_buffer.push_back(std::move(logMsg));
 
         // Enforce maximum buffer size
-        if (buffer_.size() > maxBufferSize_) {
-            buffer_.erase(buffer_.begin());
+        if (m_buffer.size() > m_maxBufferSize) {
+            m_buffer.erase(m_buffer.begin());
         }
     }
 }

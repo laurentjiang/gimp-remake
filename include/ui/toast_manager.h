@@ -72,23 +72,23 @@ class ToastManager : public QObject {
      * @brief Set the maximum number of toasts visible at once
      * @param max Maximum toasts (0 = unlimited)
      */
-    void setMaxToasts(int max) { maxToasts_ = max; }
+    void setMaxToasts(int max) { m_maxToasts = max; }
 
     /**
      * @brief Get the current maximum toast limit
      */
-    int maxToasts() const { return maxToasts_; }
+    int maxToasts() const { return m_maxToasts; }
 
     /**
      * @brief Enable or disable toast display globally
      * @param enabled True to enable, false to suppress all toasts
      */
-    void setEnabled(bool enabled) { enabled_ = enabled; }
+    void setEnabled(bool enabled) { m_enabled = enabled; }
 
     /**
      * @brief Check if toast display is enabled
      */
-    bool isEnabled() const { return enabled_; }
+    bool isEnabled() const { return m_enabled; }
 
     /**
      * @brief Set the corner where toasts will appear
@@ -99,7 +99,7 @@ class ToastManager : public QObject {
     /**
      * @brief Get the current corner
      */
-    Qt::Corner corner() const { return corner_; }
+    Qt::Corner corner() const { return m_corner; }
 
   signals:
     /**
@@ -130,18 +130,18 @@ class ToastManager : public QObject {
     QPoint calculateToastPosition(int index) const;
     void enforceLimit();
 
-    QPointer<QWidget> parentWidget_;
+    QPointer<QWidget> m_parentWidget;
     LogBridge* m_connectedBridge = nullptr;  ///< Currently connected bridge (if any)
-    std::vector<ToastNotification*> toasts_;
-    int maxToasts_ = toast::kMaxToasts;
-    bool enabled_ = true;
-    Qt::Corner corner_ = Qt::BottomRightCorner;
-    int margin_ = toast::kToastMargin;
-    int spacing_ = toast::kToastSpacing;
+    std::vector<ToastNotification*> m_toasts;
+    int m_maxToasts = toast::kMaxToasts;
+    bool m_enabled = true;
+    Qt::Corner m_corner = Qt::BottomRightCorner;
+    int m_margin = toast::kToastMargin;
+    int m_spacing = toast::kToastSpacing;
 
     // Rate‑limiting state
-    std::chrono::steady_clock::time_point lastToastTime_;
-    int toastsThisSecond_ = 0;
+    std::chrono::steady_clock::time_point m_lastToastTime;
+    int m_toastsThisSecond = 0;
 };
 
 }  // namespace gimp

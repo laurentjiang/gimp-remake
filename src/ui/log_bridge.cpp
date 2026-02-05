@@ -11,9 +11,11 @@
 
 namespace gimp {
 
-LogBridge::LogBridge(QObject* parent) : QObject(parent), sink_(std::make_unique<QtForwardingSink>())
+LogBridge::LogBridge(QObject* parent)
+    : QObject(parent),
+      m_sink(std::make_unique<QtForwardingSink>())
 {
-    connect(&timer_, &QTimer::timeout, this, &LogBridge::onTimer);
+    connect(&m_timer, &QTimer::timeout, this, &LogBridge::onTimer);
 }
 
 LogBridge::~LogBridge()
@@ -23,15 +25,15 @@ LogBridge::~LogBridge()
 
 void LogBridge::start(int intervalMs)
 {
-    if (!timer_.isActive()) {
-        timer_.start(intervalMs);
+    if (!m_timer.isActive()) {
+        m_timer.start(intervalMs);
     }
 }
 
 void LogBridge::stop()
 {
-    if (timer_.isActive()) {
-        timer_.stop();
+    if (m_timer.isActive()) {
+        m_timer.stop();
     }
 }
 
@@ -42,7 +44,7 @@ void LogBridge::drainNow()
 
 void LogBridge::onTimer()
 {
-    auto messages = sink_->drain();
+    auto messages = m_sink->drain();
     if (messages.empty()) {
         return;
     }

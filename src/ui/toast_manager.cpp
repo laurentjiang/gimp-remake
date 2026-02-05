@@ -14,15 +14,18 @@
 #include <QScreen>
 #include <QTimer>
 
+#include <algorithm>
+#include <utility>
+
 namespace gimp {
 
 ToastManager::ToastManager(QWidget* parentWidget, QObject* parent)
     : QObject(parent),
-      parentWidget_(parentWidget)
+      m_parentWidget(parentWidget)
 {
     // Ensure we have a valid parent widget
-    if (!parentWidget_) {
-        parentWidget_ = QApplication::activeWindow();
+    if (!m_parentWidget) {
+        m_parentWidget = QApplication::activeWindow();
     }
 }
 
@@ -51,12 +54,12 @@ void ToastManager::connectToBridge(LogBridge* bridge)
 
 void ToastManager::showToast(const LogMessage& message)
 {
-    if (!enabled_ || !parentWidget_) {
+    if (!m_enabled || !m_parentWidget) {
         return;
     }
 
     // Create toast widget
-    auto* toast = new ToastNotification(message, parentWidget_);
+    auto* toast = new ToastNotification(message, m_parentWidget);
     connect(toast, &ToastNotification::dismissed, this, &ToastManager::onToastDismissed);
     connect(toast, &ToastNotification::clicked, [toast]() { toast->dismiss(); });
 
@@ -68,17 +71,17 @@ void ToastManager::showToast(const LogMessage& message)
 
 void ToastManager::clearAll()
 {
-    for (auto* toast : toasts_) {
+    for (auto* toast : m_toasts) {
         toast->disconnect();
         toast->close();  // will delete because of WA_DeleteOnClose
     }
-    toasts_.clear();
+    m_toasts.clear();
 }
 
 void ToastManager::setCorner(Qt::Corner corner)
 {
-    if (corner_ != corner) {
-        corner_ = corner;
+    if (m_corner != corner) {
+        m_corner = corner;
         repositionToasts();
     }
 }
@@ -101,20 +104,20 @@ void ToastManager::onLogMessageReady(const LogMessage& message)
     // Apply rate limiting (max 3 toasts per second)
     const auto now = std::chrono::steady_clock::now();
     const auto elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(now - lastToastTime_).count();
+        std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastToastTime).count();
 
     if (elapsed >= 1000) {
         // New second, reset counter
-        toastsThisSecond_ = 0;
-        lastToastTime_ = now;
+        m_toastsThisSecond = 0;
+        m_lastToastTime = now;
     }
 
-    if (toastsThisSecond_ >= toast::kMaxToastsPerSecond) {
+    if (m_toastsThisSecond >= toast::kMaxToastsPerSecond) {
         // Limit reached, skip this toast
         return;
     }
 
-    ++toastsThisSecond_;
+    ++m_toastsThisSecond;
     showToast(message);
 }
 
@@ -128,94 +131,92 @@ void ToastManager::onToastDismissed(ToastNotification* toast)
 
 void ToastManager::repositionToasts()
 {
-    if (toasts_.empty()) {
+    if (m_toasts.empty()) {
         return;
     }
 
     // Update positions of all toasts
-    for (std::size_t i = 0; i < toasts_.size(); ++i) {
-        toasts_[i]->move(calculateToastPosition(static_cast<int>(i)));
+    for (std::size_t i = 0; i < m_toasts.size(); ++i) {
+        m_toasts[i]->move(calculateToastPosition(static_cast<int>(i)));
     }
 }
 
 void ToastManager::addToast(ToastNotification* toast)
 {
-    toasts_.push_back(toast);
+    m_toasts.push_back(toast);
     enforceLimit();
     repositionToasts();
 }
 
 void ToastManager::removeToast(ToastNotification* toast)
 {
-    auto it = std::find(toasts_.begin(), toasts_.end(), toast);
-    if (it != toasts_.end()) {
-        toasts_.erase(it);
+    auto it = std::find(m_toasts.begin(), m_toasts.end(), toast);
+    if (it != m_toasts.end()) {
+        m_toasts.erase(it);
         repositionToasts();
     }
 }
 
 QPoint ToastManager::calculateToastPosition(int index) const
 {
-    if (!parentWidget_) {
-        return QPoint(0, 0);
+    if (!m_parentWidget) {
+        return {0, 0};
     }
 
-    const QRect parentRect = parentWidget_->rect();
+    const QRect parentRect = m_parentWidget->rect();
     const int toastWidth = toast::kToastWidth;  // matches ToastNotification::fixedWidth
 
     // Calculate cumulative height of all toasts before this one
     int cumulativeHeight = 0;
     for (int i = 0; i < index; ++i) {
-        cumulativeHeight += toasts_[i]->totalHeight() + spacing_;
+        cumulativeHeight += m_toasts[i]->totalHeight() + m_spacing;
     }
 
-    const int toastHeight = toasts_[index]->totalHeight();
+    const int toastHeight = m_toasts[index]->totalHeight();
 
     int x = 0;
     int y = 0;
 
-    switch (corner_) {
+    switch (m_corner) {
         case Qt::TopLeftCorner:
-            x = margin_;
-            y = margin_ + cumulativeHeight;
+            x = m_margin;
+            y = m_margin + cumulativeHeight;
             break;
         case Qt::TopRightCorner:
-            x = parentRect.width() - toastWidth - margin_;
-            y = margin_ + cumulativeHeight;
+            x = parentRect.width() - toastWidth - m_margin;
+            y = m_margin + cumulativeHeight;
             break;
         case Qt::BottomLeftCorner:
-            x = margin_;
-            y = parentRect.height() - margin_ - cumulativeHeight - toastHeight;
+            x = m_margin;
+            y = parentRect.height() - m_margin - cumulativeHeight - toastHeight;
             break;
         case Qt::BottomRightCorner:
-            x = parentRect.width() - toastWidth - margin_;
-            y = parentRect.height() - margin_ - cumulativeHeight - toastHeight;
+            x = parentRect.width() - toastWidth - m_margin;
+            y = parentRect.height() - m_margin - cumulativeHeight - toastHeight;
             break;
     }
 
     // Toasts are now child widgets (no Qt::ToolTip), so coordinates are parent-relative.
     // Ensure position is within parent's visible area.
-    if (x < 0)
-        x = 0;
-    if (y < 0)
-        y = 0;
+    x = std::max(x, 0);
+    y = std::max(y, 0);
     if (x + toastWidth > parentRect.width())
         x = parentRect.width() - toastWidth;
     if (y + toastHeight > parentRect.height())
         y = parentRect.height() - toastHeight;
 
-    return QPoint(x, y);
+    return {x, y};
 }
 
 void ToastManager::enforceLimit()
 {
-    if (maxToasts_ <= 0) {
+    if (m_maxToasts <= 0) {
         return;
     }
 
-    while (static_cast<int>(toasts_.size()) > maxToasts_) {
+    while (m_toasts.size() > static_cast<std::size_t>(m_maxToasts)) {
         // Remove the oldest toast (first in vector)
-        auto* oldest = toasts_.front();
+        auto* oldest = m_toasts.front();
         removeToast(oldest);
         oldest->dismiss();
     }

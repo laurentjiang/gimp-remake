@@ -14,6 +14,8 @@
 #include <QHBoxLayout>
 #include <QListWidgetItem>
 
+#include <cstddef>
+
 namespace gimp {
 
 LogPanel::LogPanel(QWidget* parent) : QWidget(parent)
@@ -23,9 +25,9 @@ LogPanel::LogPanel(QWidget* parent) : QWidget(parent)
 
 LogPanel::~LogPanel()
 {
-    if (logEventSub_ != 0) {
-        EventBus::instance().unsubscribe(logEventSub_);
-        logEventSub_ = 0;
+    if (m_logEventSub != 0) {
+        EventBus::instance().unsubscribe(m_logEventSub);
+        m_logEventSub = 0;
     }
 }
 
@@ -47,18 +49,18 @@ void LogPanel::connectToBridge(LogBridge* bridge)
 void LogPanel::addLogMessage(const LogMessage& message)
 {
     // Add to storage
-    allMessages_.push_back(message);
+    m_allMessages.push_back(message);
 
     // Enforce maximum entries
-    if (maxEntries_ > 0 && allMessages_.size() > maxEntries_) {
-        allMessages_.erase(allMessages_.begin());
+    if (m_maxEntries > 0 && m_allMessages.size() > m_maxEntries) {
+        m_allMessages.erase(m_allMessages.begin());
     }
 
     // Update UI if message passes current filter
     if (shouldShowMessage(message)) {
-        logList_->addItem(createItemForMessage(message));
+        m_logList->addItem(createItemForMessage(message));
         // Scroll to bottom
-        logList_->scrollToBottom();
+        m_logList->scrollToBottom();
     }
 }
 
@@ -66,13 +68,14 @@ void LogPanel::addLogMessages(const std::vector<LogMessage>& messages)
 {
     // Batch addition for efficiency
     for (const auto& msg : messages) {
-        allMessages_.push_back(msg);
+        m_allMessages.push_back(msg);
     }
 
     // Trim if needed
-    if (maxEntries_ > 0 && allMessages_.size() > maxEntries_) {
-        allMessages_.erase(allMessages_.begin(),
-                           allMessages_.begin() + (allMessages_.size() - maxEntries_));
+    if (m_maxEntries > 0 && m_allMessages.size() > m_maxEntries) {
+        m_allMessages.erase(m_allMessages.begin(),
+                            m_allMessages.begin() +
+                                static_cast<std::ptrdiff_t>(m_allMessages.size() - m_maxEntries));
     }
 
     // Refresh entire visible list
@@ -81,28 +84,29 @@ void LogPanel::addLogMessages(const std::vector<LogMessage>& messages)
 
 void LogPanel::clear()
 {
-    allMessages_.clear();
-    logList_->clear();
+    m_allMessages.clear();
+    m_logList->clear();
 }
 
 void LogPanel::setMaxEntries(std::size_t max)
 {
-    maxEntries_ = max;
-    if (maxEntries_ > 0 && allMessages_.size() > maxEntries_) {
-        allMessages_.erase(allMessages_.begin(),
-                           allMessages_.begin() + (allMessages_.size() - maxEntries_));
+    m_maxEntries = max;
+    if (m_maxEntries > 0 && m_allMessages.size() > m_maxEntries) {
+        m_allMessages.erase(m_allMessages.begin(),
+                            m_allMessages.begin() +
+                                static_cast<std::ptrdiff_t>(m_allMessages.size() - m_maxEntries));
         refreshVisibleItems();
     }
 }
 
 std::size_t LogPanel::entryCount() const
 {
-    return allMessages_.size();
+    return m_allMessages.size();
 }
 
 void LogPanel::onFilterChanged(int index)
 {
-    currentFilter_ = static_cast<FilterLevel>(index);
+    m_currentFilter = static_cast<FilterLevel>(index);
     refreshVisibleItems();
 }
 
@@ -114,11 +118,11 @@ void LogPanel::onClearClicked()
 void LogPanel::onCopyClicked()
 {
     QString text;
-    const auto selectedItems = logList_->selectedItems();
+    const auto selectedItems = m_logList->selectedItems();
     if (selectedItems.isEmpty()) {
         // Copy all visible items
-        for (int i = 0; i < logList_->count(); ++i) {
-            text += logList_->item(i)->text() + '\n';
+        for (int i = 0; i < m_logList->count(); ++i) {
+            text += m_logList->item(i)->text() + '\n';
         }
     } else {
         // Copy selected items
@@ -145,57 +149,57 @@ void LogPanel::onLogMessagesReady(const std::vector<LogMessage>& messages)
 
 void LogPanel::setupUi()
 {
-    mainLayout_ = new QVBoxLayout(this);
-    mainLayout_->setContentsMargins(4, 4, 4, 4);
-    mainLayout_->setSpacing(4);
+    m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setContentsMargins(4, 4, 4, 4);
+    m_mainLayout->setSpacing(4);
 
     // Button row
-    buttonLayout_ = new QHBoxLayout();
-    buttonLayout_->setSpacing(4);
+    m_buttonLayout = new QHBoxLayout();
+    m_buttonLayout->setSpacing(4);
 
-    filterCombo_ = new QComboBox();
-    filterCombo_->addItem("All");
-    filterCombo_->addItem("Warnings+");
-    filterCombo_->addItem("Errors only");
-    connect(filterCombo_,
+    m_filterCombo = new QComboBox();
+    m_filterCombo->addItem("All");
+    m_filterCombo->addItem("Warnings+");
+    m_filterCombo->addItem("Errors only");
+    connect(m_filterCombo,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,
             &LogPanel::onFilterChanged);
 
-    clearButton_ = new QPushButton("Clear");
-    connect(clearButton_, &QPushButton::clicked, this, &LogPanel::onClearClicked);
+    m_clearButton = new QPushButton("Clear");
+    connect(m_clearButton, &QPushButton::clicked, this, &LogPanel::onClearClicked);
 
-    copyButton_ = new QPushButton("Copy");
-    connect(copyButton_, &QPushButton::clicked, this, &LogPanel::onCopyClicked);
+    m_copyButton = new QPushButton("Copy");
+    connect(m_copyButton, &QPushButton::clicked, this, &LogPanel::onCopyClicked);
 
-    buttonLayout_->addWidget(filterCombo_);
-    buttonLayout_->addStretch();
-    buttonLayout_->addWidget(clearButton_);
-    buttonLayout_->addWidget(copyButton_);
+    m_buttonLayout->addWidget(m_filterCombo);
+    m_buttonLayout->addStretch();
+    m_buttonLayout->addWidget(m_clearButton);
+    m_buttonLayout->addWidget(m_copyButton);
 
-    mainLayout_->addLayout(buttonLayout_);
+    m_mainLayout->addLayout(m_buttonLayout);
 
     // Log list
-    logList_ = new QListWidget();
-    logList_->setAlternatingRowColors(true);
-    logList_->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    mainLayout_->addWidget(logList_);
+    m_logList = new QListWidget();
+    m_logList->setAlternatingRowColors(true);
+    m_logList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_mainLayout->addWidget(m_logList);
 }
 
 void LogPanel::refreshVisibleItems()
 {
-    logList_->clear();
-    for (const auto& msg : allMessages_) {
+    m_logList->clear();
+    for (const auto& msg : m_allMessages) {
         if (shouldShowMessage(msg)) {
-            logList_->addItem(createItemForMessage(msg));
+            m_logList->addItem(createItemForMessage(msg));
         }
     }
-    logList_->scrollToBottom();
+    m_logList->scrollToBottom();
 }
 
 bool LogPanel::shouldShowMessage(const LogMessage& msg) const
 {
-    switch (currentFilter_) {
+    switch (m_currentFilter) {
         case FilterAll:
             return true;
         case FilterWarningsAndAbove:

@@ -32,7 +32,7 @@ class ToastNotification : public QWidget {
      * @param message The log message to display
      * @param parent Optional parent widget
      */
-    explicit ToastNotification(const LogMessage& message, QWidget* parent = nullptr);
+    explicit ToastNotification(LogMessage message, QWidget* parent = nullptr);
     ~ToastNotification() override;
 
     /**
@@ -48,7 +48,7 @@ class ToastNotification : public QWidget {
     /**
      * @brief Get the toast's message
      */
-    const LogMessage& message() const { return message_; }
+    const LogMessage& message() const { return m_message; }
 
     /**
      * @brief Programmatically dismiss the toast (start fade-out)
@@ -87,12 +87,12 @@ class ToastNotification : public QWidget {
     QString severityColor() const;
     QString severityIcon() const;
 
-    LogMessage message_;
-    QTimer* autoDismissTimer_ = nullptr;
-    QPropertyAnimation* fadeAnimation_ = nullptr;
-    QLabel* iconLabel_ = nullptr;
-    QLabel* textLabel_ = nullptr;
-    bool isHovered_ = false;
+    LogMessage m_message;
+    QTimer* m_autoDismissTimer = nullptr;
+    QPropertyAnimation* m_fadeAnimation = nullptr;
+    QLabel* m_iconLabel = nullptr;
+    QLabel* m_textLabel = nullptr;
+    bool m_isHovered = false;
 };
 
 }  // namespace gimp

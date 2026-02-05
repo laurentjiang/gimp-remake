@@ -22,11 +22,13 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include <utility>
+
 namespace gimp {
 
-ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
+ToastNotification::ToastNotification(LogMessage message, QWidget* parent)
     : QWidget(parent),
-      message_(message)
+      m_message(std::move(message))
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlags(Qt::FramelessWindowHint);
@@ -49,17 +51,17 @@ ToastNotification::ToastNotification(const LogMessage& message, QWidget* parent)
     adjustSize();
 
     // Timer for auto-dismiss
-    autoDismissTimer_ = new QTimer(this);
-    autoDismissTimer_->setSingleShot(true);
-    connect(autoDismissTimer_, &QTimer::timeout, this, &ToastNotification::onTimeout);
+    m_autoDismissTimer = new QTimer(this);
+    m_autoDismissTimer->setSingleShot(true);
+    connect(m_autoDismissTimer, &QTimer::timeout, this, &ToastNotification::onTimeout);
 
     // Fade animation
-    fadeAnimation_ = new QPropertyAnimation(this, "windowOpacity");
-    fadeAnimation_->setDuration(300);  // 300 ms fade
-    fadeAnimation_->setStartValue(1.0);
-    fadeAnimation_->setEndValue(0.0);
+    m_fadeAnimation = new QPropertyAnimation(this, "windowOpacity");
+    m_fadeAnimation->setDuration(300);  // 300 ms fade
+    m_fadeAnimation->setStartValue(1.0);
+    m_fadeAnimation->setEndValue(0.0);
     connect(
-        fadeAnimation_, &QPropertyAnimation::finished, this, &ToastNotification::onFadeFinished);
+        m_fadeAnimation, &QPropertyAnimation::finished, this, &ToastNotification::onFadeFinished);
 }
 
 ToastNotification::~ToastNotification() = default;
@@ -72,18 +74,18 @@ void ToastNotification::setupUi()
     layout->setSpacing(10);
 
     // Icon label - use QIcon for proper SVG rendering
-    iconLabel_ = new QLabel(this);
-    iconLabel_->setFixedSize(24, 24);
+    m_iconLabel = new QLabel(this);
+    m_iconLabel->setFixedSize(24, 24);
     QIcon icon(severityIcon());
-    iconLabel_->setPixmap(icon.pixmap(24, 24));
-    layout->addWidget(iconLabel_);
+    m_iconLabel->setPixmap(icon.pixmap(24, 24));
+    layout->addWidget(m_iconLabel);
 
     // Text label with word wrap
-    textLabel_ = new QLabel(QString::fromStdString(message_.message), this);
-    textLabel_->setWordWrap(true);
-    textLabel_->setStyleSheet("color: white; font-size: 12px;");
-    textLabel_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    layout->addWidget(textLabel_);
+    m_textLabel = new QLabel(QString::fromStdString(m_message.message), this);
+    m_textLabel->setWordWrap(true);
+    m_textLabel->setStyleSheet("color: white; font-size: 12px;");
+    m_textLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    layout->addWidget(m_textLabel);
 
     // Set minimum height to ensure icon is never clipped
     setMinimumHeight(48);
@@ -96,7 +98,7 @@ void ToastNotification::showToast()
 
     // Start auto-dismiss timer based on severity
     int timeoutMs = 0;
-    switch (message_.severity) {
+    switch (m_message.severity) {
         case LogSeverity::Info:
             timeoutMs = toast::kInfoTimeoutMs;  // 3 seconds
             break;
@@ -112,7 +114,7 @@ void ToastNotification::showToast()
     }
 
     if (timeoutMs > 0) {
-        autoDismissTimer_->start(timeoutMs);
+        m_autoDismissTimer->start(timeoutMs);
     }
 }
 
@@ -123,20 +125,20 @@ int ToastNotification::totalHeight() const
 
 void ToastNotification::enterEvent(QEnterEvent* event)
 {
-    isHovered_ = true;
-    if (autoDismissTimer_->isActive()) {
-        autoDismissTimer_->stop();
+    m_isHovered = true;
+    if (m_autoDismissTimer->isActive()) {
+        m_autoDismissTimer->stop();
     }
     QWidget::enterEvent(event);
 }
 
 void ToastNotification::leaveEvent(QEvent* event)
 {
-    isHovered_ = false;
+    m_isHovered = false;
     // Restart timer only if severity is not persistent
-    if (message_.severity != LogSeverity::Error && message_.severity != LogSeverity::Critical) {
+    if (m_message.severity != LogSeverity::Error && m_message.severity != LogSeverity::Critical) {
         int remaining = 0;
-        switch (message_.severity) {
+        switch (m_message.severity) {
             case LogSeverity::Info:
                 remaining = toast::kInfoTimeoutMs;
                 break;
@@ -147,7 +149,7 @@ void ToastNotification::leaveEvent(QEvent* event)
                 remaining = toast::kInfoTimeoutMs;
         }
         if (remaining > 0) {
-            autoDismissTimer_->start(remaining);
+            m_autoDismissTimer->start(remaining);
         }
     }
     QWidget::leaveEvent(event);
@@ -196,16 +198,16 @@ void ToastNotification::onFadeFinished()
 
 void ToastNotification::startFadeOut()
 {
-    if (fadeAnimation_->state() == QPropertyAnimation::Running) {
+    if (m_fadeAnimation->state() == QPropertyAnimation::Running) {
         return;
     }
-    fadeAnimation_->start();
+    m_fadeAnimation->start();
 }
 
 QString ToastNotification::severityColor() const
 {
     // Muted colors aligned with dark theme
-    switch (message_.severity) {
+    switch (m_message.severity) {
         case LogSeverity::Critical:
             return "#8B0000";  // dark red
         case LogSeverity::Error:
@@ -226,7 +228,7 @@ QString ToastNotification::severityColor() const
 QString ToastNotification::severityIcon() const
 {
     // Return SVG icon path from resources
-    switch (message_.severity) {
+    switch (m_message.severity) {
         case LogSeverity::Error:
         case LogSeverity::Critical:
             return ":/icons/error.svg";

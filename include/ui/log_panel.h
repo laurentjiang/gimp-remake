@@ -110,26 +110,26 @@ class LogPanel : public QWidget {
     QString severityIconName(LogSeverity severity) const;
     QString severityColor(LogSeverity severity) const;
 
-    QVBoxLayout* mainLayout_ = nullptr;
-    QHBoxLayout* buttonLayout_ = nullptr;
-    QComboBox* filterCombo_ = nullptr;
-    QPushButton* clearButton_ = nullptr;
-    QPushButton* copyButton_ = nullptr;
-    QListWidget* logList_ = nullptr;
+    QVBoxLayout* m_mainLayout = nullptr;
+    QHBoxLayout* m_buttonLayout = nullptr;
+    QComboBox* m_filterCombo = nullptr;
+    QPushButton* m_clearButton = nullptr;
+    QPushButton* m_copyButton = nullptr;
+    QListWidget* m_logList = nullptr;
 
     LogBridge* m_connectedBridge = nullptr;  ///< Currently connected bridge (if any)
 
-    std::vector<LogMessage> allMessages_;  ///< All messages (including filtered‑out)
-    std::size_t maxEntries_ = 1000;        ///< Maximum entries to keep
+    std::vector<LogMessage> m_allMessages;  ///< All messages (including filtered‑out)
+    std::size_t m_maxEntries = 1000;        ///< Maximum entries to keep
 
     enum FilterLevel {
         FilterAll,
         FilterWarningsAndAbove,
         FilterErrorsOnly
     };
-    FilterLevel currentFilter_ = FilterAll;
+    FilterLevel m_currentFilter = FilterAll;
 
-    EventBus::SubscriptionId logEventSub_ = 0;
+    EventBus::SubscriptionId m_logEventSub = 0;
 };
 
 }  // namespace gimp

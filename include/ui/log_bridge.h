@@ -45,7 +45,7 @@ class LogBridge : public QObject {
      *
      * The sink can be registered with spdlog as a global sink.
      */
-    QtForwardingSink* sink() { return sink_.get(); }
+    QtForwardingSink* sink() { return m_sink.get(); }
 
     /**
      * @brief Start the timer that drains messages
@@ -83,8 +83,8 @@ class LogBridge : public QObject {
     void onTimer();
 
   private:
-    std::unique_ptr<QtForwardingSink> sink_;
-    QTimer timer_;
+    std::unique_ptr<QtForwardingSink> m_sink;
+    QTimer m_timer;
 };
 
 }  // namespace gimp

@@ -65,9 +65,9 @@ class QtForwardingSink : public spdlog::sinks::base_sink<std::mutex> {
     void flush_() override {}
 
   private:
-    std::vector<LogMessage> buffer_;
-    mutable std::mutex bufferMutex_;
-    std::size_t maxBufferSize_ = 1000;  ///< Maximum messages to keep before dropping oldest
+    std::vector<LogMessage> m_buffer;
+    mutable std::mutex m_bufferMutex;
+    std::size_t m_maxBufferSize = 1000;  ///< Maximum messages to keep before dropping oldest
 };
 
 }  // namespace gimp

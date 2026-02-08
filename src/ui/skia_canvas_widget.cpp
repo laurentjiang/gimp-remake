@@ -249,55 +249,9 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         }
     }
 
-    const QPainterPath selectionPath = SelectionManager::instance().displayPath();
-    if (!selectionPath.isEmpty()) {
-        painter.save();
-
-        QTransform transform;
-        transform.translate(m_viewport.panX, m_viewport.panY);
-        transform.scale(m_viewport.zoomLevel, m_viewport.zoomLevel);
-        painter.setTransform(transform, true);
-        painter.setRenderHint(QPainter::Antialiasing, true);
-
-        constexpr qreal dashLength = 4.0;
-        const QVector<qreal> dashPattern = {dashLength, dashLength};
-
-        QPen whitePen(QColor(240, 240, 240));
-        whitePen.setCosmetic(true);
-        whitePen.setWidth(1);
-        whitePen.setDashPattern(dashPattern);
-        whitePen.setDashOffset(m_marchingOffset);
-        whitePen.setCapStyle(Qt::FlatCap);
-
-        QPen blackPen(QColor(16, 16, 16));
-        blackPen.setCosmetic(true);
-        blackPen.setWidth(1);
-        blackPen.setDashPattern(dashPattern);
-        blackPen.setDashOffset(m_marchingOffset + dashLength);
-        blackPen.setCapStyle(Qt::FlatCap);
-
-        painter.setPen(whitePen);
-        painter.drawPath(selectionPath);
-
-        painter.setPen(blackPen);
-        painter.drawPath(selectionPath);
-
-        painter.restore();
-    }
-}
-
-void SkiaCanvasWidget::advanceSelectionAnimation()
-{
-    if (!SelectionManager::instance().hasSelection() &&
-        !SelectionManager::instance().hasPreview()) {
-        return;
-    }
-
-    m_marchingOffset += 1.0F;
-    if (m_marchingOffset >= 8.0F) {
-        m_marchingOffset = 0.0F;
-    }
-    update();
+    const auto endTime = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
+    emit framePainted(frameDuration.count());
 }
 
 void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)

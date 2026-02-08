@@ -1,6 +1,6 @@
 /**
  * @file draw_command.cpp
- * @brief Implementation of DrawCommand.
+ * @brief Command stub to draw on a layer.
  * @author Aless Tosi
  * @date 2026-01-25
  */

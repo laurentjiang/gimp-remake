@@ -102,8 +102,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });
     factory.registerTool("bucket_fill", []() { return std::make_unique<FillTool>(); });
     factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
-    factory.registerTool("select_ellipse",
-                         []() { return std::make_unique<EllipseSelectTool>(); });
+    factory.registerTool("select_ellipse", []() { return std::make_unique<EllipseSelectTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =

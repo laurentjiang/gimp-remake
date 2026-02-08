@@ -29,6 +29,9 @@ enum class SelectionMode {
  */
 class SelectionManager {
   public:
+    /**
+     * @brief Returns the singleton instance of the SelectionManager.
+     */
     static SelectionManager& instance()
     {
         static SelectionManager manager;

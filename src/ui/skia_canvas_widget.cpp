@@ -210,8 +210,6 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 {
     (void)event;
 
-    const auto startTime = std::chrono::high_resolution_clock::now();
-
     QPainter painter(this);
     painter.fillRect(rect(), QColor(64, 64, 64));
 

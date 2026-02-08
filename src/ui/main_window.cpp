@@ -7,6 +7,7 @@
 
 #include "ui/main_window.h"
 
+#include "core/clipboard_manager.h"
 #include "core/command_bus.h"
 #include "core/document.h"
 #include "core/events.h"
@@ -169,6 +170,7 @@ MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
+    EventBus::instance().unsubscribe(m_mousePosSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -186,9 +188,9 @@ void MainWindow::setupMenuBar()
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
     editMenu->addSeparator();
-    editMenu->addAction("Cu&t", QKeySequence::Cut, []() {});
-    editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
-    editMenu->addAction("&Paste", QKeySequence::Paste, []() {});
+    editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
+    editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
+    editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
 
     auto* viewMenu = menuBar()->addMenu("&View");
     viewMenu->addAction("Zoom &In", QKeySequence::ZoomIn, []() {});
@@ -541,6 +543,55 @@ void MainWindow::onApplySharpen()
         statusBar()->showMessage(QString("Applied sharpen with amount %1").arg(amount), 2000);
     } else {
         statusBar()->showMessage("Failed to apply sharpen filter", 2000);
+    }
+}
+
+void MainWindow::onCut()
+{
+    if (!m_document) {
+        return;
+    }
+
+    if (ClipboardManager::instance().cutSelection(m_document, m_commandBus.get())) {
+        if (m_canvasWidget) {
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Cut selection", 1500);
+    } else {
+        statusBar()->showMessage("Nothing to cut", 1500);
+    }
+}
+
+void MainWindow::onCopy()
+{
+    if (!m_document) {
+        return;
+    }
+
+    if (ClipboardManager::instance().copySelection(m_document)) {
+        statusBar()->showMessage("Copied selection", 1500);
+    } else {
+        statusBar()->showMessage("Nothing to copy", 1500);
+    }
+}
+
+void MainWindow::onPaste()
+{
+    if (!m_document) {
+        return;
+    }
+
+    const QPoint pastePos =
+        m_hasMousePos ? m_lastCanvasPos : QPoint(m_document->width() / 2, m_document->height() / 2);
+
+    if (ClipboardManager::instance().pasteToDocument(
+            m_document, m_commandBus.get(), pastePos, m_hasMousePos)) {
+        if (m_canvasWidget) {
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Pasted", 1500);
+    } else {
+        statusBar()->showMessage("Nothing to paste", 1500);
     }
 }
 

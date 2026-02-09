@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/tool.h"
+#include "core/tool_options.h"
 
 #include <QPainterPath>
 #include <QPoint>
@@ -22,6 +23,14 @@ namespace gimp {
 class Layer;
 
 /**
+ * @brief Move operation mode.
+ */
+enum class MoveMode {
+    Cut,  ///< Cut pixels from source (source becomes transparent)
+    Copy  ///< Copy pixels (source remains intact)
+};
+
+/**
  * @brief Tool for moving layers or selections.
  *
  * When a selection exists and the user clicks inside it, the selected pixels
@@ -29,7 +38,7 @@ class Layer;
  * and the buffer is rendered at the cursor offset during drag. On release or
  * Enter, the floating buffer is committed. Escape cancels the move.
  */
-class MoveTool : public Tool {
+class MoveTool : public Tool, public ToolOptions {
   public:
     MoveTool() = default;
 
@@ -73,15 +82,26 @@ class MoveTool : public Tool {
     bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers) override;
 
     /**
-     * @brief Sets copy mode for the next stroke.
+     * @brief Sets copy mode for the next stroke (modifier override).
      *
      * When copy mode is enabled, the source pixels are NOT cleared,
      * resulting in a copy-move operation (like Shift+Alt in GIMP).
-     * Mode is reset to false after the stroke ends.
+     * This temporarily overrides the UI setting for the current stroke.
      *
      * @param copyMode True to copy pixels, false to cut them.
      */
-    void setCopyMode(bool copyMode) { copyMode_ = copyMode; }
+    void setCopyMode(bool copyMode)
+    {
+        modifierOverride_ = true;
+        modifierCopyMode_ = copyMode;
+    }
+
+    // ToolOptions interface
+    [[nodiscard]] std::vector<ToolOption> getOptions() const override;
+    void setOptionValue(const std::string& optionId,
+                        const std::variant<int, float, bool, std::string>& value) override;
+    [[nodiscard]] std::variant<int, float, bool, std::string> getOptionValue(
+        const std::string& optionId) const override;
 
   protected:
     void beginStroke(const ToolInputEvent& event) override;
@@ -90,10 +110,12 @@ class MoveTool : public Tool {
     void cancelStroke() override;
 
   private:
-    QPoint startPos_;        ///< Initial mouse position.
-    QPoint currentPos_;      ///< Current mouse position.
-    QPoint lastDelta_;       ///< Recorded movement from last completed stroke.
-    bool copyMode_ = false;  ///< If true, source pixels are not cleared (copy-move).
+    QPoint startPos_;                    ///< Initial mouse position.
+    QPoint currentPos_;                  ///< Current mouse position.
+    QPoint lastDelta_;                   ///< Recorded movement from last completed stroke.
+    MoveMode moveMode_ = MoveMode::Cut;  ///< Default move mode from tool options.
+    bool modifierOverride_ = false;      ///< True if modifier key overrode the UI setting.
+    bool modifierCopyMode_ = false;      ///< Copy mode from modifier override.
 
     // Floating buffer for selection move
     std::vector<std::uint8_t> floatingBuffer_;  ///< Extracted pixels (RGBA).

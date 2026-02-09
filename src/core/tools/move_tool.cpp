@@ -48,8 +48,11 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     targetLayer_ = layer;
     extractSelectionPixels(layer);
 
+    // Determine effective copy mode: modifier override takes precedence over UI setting
+    bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
+
     // Only clear source if not in copy mode (Shift+Alt = copy, Ctrl+Alt = cut)
-    if (!copyMode_) {
+    if (!effectiveCopyMode) {
         clearSourcePixels(layer);
     }
 }
@@ -227,9 +230,12 @@ void MoveTool::commitMove()
 {
     if (!targetLayer_ || floatingBuffer_.empty()) {
         clearFloatingState();
-        copyMode_ = false;
+        modifierOverride_ = false;
         return;
     }
+
+    // Determine effective copy mode: modifier override takes precedence over UI setting
+    bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
 
     QPoint offset = currentPos_ - startPos_;
 
@@ -243,14 +249,14 @@ void MoveTool::commitMove()
 
     if (unionRect.isEmpty()) {
         clearFloatingState();
-        copyMode_ = false;
+        modifierOverride_ = false;
         return;
     }
 
     // Create command and capture before state
     auto cmd = std::make_shared<MoveCommand>(targetLayer_, unionRect);
 
-    if (copyMode_) {
+    if (effectiveCopyMode) {
         // Copy mode: source was never cleared, just paste at new location
         cmd->captureBeforeState();
         pasteFloatingBuffer(targetLayer_, offset);
@@ -273,24 +279,27 @@ void MoveTool::commitMove()
     }
 
     clearFloatingState();
-    copyMode_ = false;
+    modifierOverride_ = false;
 }
 
 void MoveTool::cancelMove()
 {
     if (!targetLayer_ || floatingBuffer_.empty()) {
         clearFloatingState();
-        copyMode_ = false;
+        modifierOverride_ = false;
         return;
     }
 
+    // Determine effective copy mode: modifier override takes precedence over UI setting
+    bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
+
     // Only restore if we were in cut mode (source was cleared)
-    if (!copyMode_) {
+    if (!effectiveCopyMode) {
         pasteFloatingBuffer(targetLayer_, QPoint(0, 0));
     }
 
     clearFloatingState();
-    copyMode_ = false;
+    modifierOverride_ = false;
 }
 
 void MoveTool::clearFloatingState()
@@ -385,6 +394,43 @@ bool MoveTool::isPixelSelected(int col, int row) const
         return false;
     }
     return selectionMask_[static_cast<std::size_t>(row) * width + col];
+}
+
+std::vector<ToolOption> MoveTool::getOptions() const
+{
+    std::vector<ToolOption> options;
+
+    ToolOption modeOption;
+    modeOption.id = "move_mode";
+    modeOption.label = "Mode";
+    modeOption.type = ToolOption::Type::Dropdown;
+    modeOption.choices = {"Cut", "Copy"};
+    modeOption.selectedIndex = (moveMode_ == MoveMode::Cut) ? 0 : 1;
+    modeOption.value = modeOption.selectedIndex;
+    options.push_back(modeOption);
+
+    return options;
+}
+
+void MoveTool::setOptionValue(const std::string& optionId,
+                              const std::variant<int, float, bool, std::string>& value)
+{
+    if (optionId == "move_mode") {
+        if (const auto* strVal = std::get_if<std::string>(&value)) {
+            moveMode_ = (*strVal == "Copy") ? MoveMode::Copy : MoveMode::Cut;
+        } else if (const auto* intVal = std::get_if<int>(&value)) {
+            moveMode_ = (*intVal == 1) ? MoveMode::Copy : MoveMode::Cut;
+        }
+    }
+}
+
+std::variant<int, float, bool, std::string> MoveTool::getOptionValue(
+    const std::string& optionId) const
+{
+    if (optionId == "move_mode") {
+        return (moveMode_ == MoveMode::Cut) ? 0 : 1;
+    }
+    return 0;
 }
 
 }  // namespace gimp

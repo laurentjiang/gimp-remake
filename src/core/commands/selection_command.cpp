@@ -22,11 +22,13 @@ SelectionCommand::SelectionCommand(std::string description) : description_(std::
 void SelectionCommand::captureBeforeState()
 {
     beforePath_ = SelectionManager::instance().selectionPath();
+    beforeType_ = SelectionManager::instance().selectionType();
 }
 
 void SelectionCommand::captureAfterState()
 {
     afterPath_ = SelectionManager::instance().selectionPath();
+    afterType_ = SelectionManager::instance().selectionType();
 }
 
 void SelectionCommand::apply()
@@ -34,7 +36,7 @@ void SelectionCommand::apply()
     // Set the selection to the after state
     SelectionManager::instance().clear();
     if (!afterPath_.isEmpty()) {
-        SelectionManager::instance().applySelection(afterPath_, SelectionMode::Replace);
+        SelectionManager::instance().applySelection(afterPath_, SelectionMode::Replace, afterType_);
     }
 
     // Publish selection changed event
@@ -47,7 +49,8 @@ void SelectionCommand::undo()
     // Set the selection to the before state
     SelectionManager::instance().clear();
     if (!beforePath_.isEmpty()) {
-        SelectionManager::instance().applySelection(beforePath_, SelectionMode::Replace);
+        SelectionManager::instance().applySelection(
+            beforePath_, SelectionMode::Replace, beforeType_);
     }
 
     // Publish selection changed event

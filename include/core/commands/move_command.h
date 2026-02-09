@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/command.h"
+#include "core/selection_manager.h"
 
 #include <QPainterPath>
 #include <QRect>
@@ -67,11 +68,24 @@ class MoveCommand : public Command {
     std::vector<std::uint8_t> beforeState_;  ///< Pixel data before move.
     std::vector<std::uint8_t> afterState_;   ///< Pixel data after move.
 
+    // Selection state tracking for complete undo/redo
+    QPainterPath beforeSelectionPath_;                            ///< Selection path before move.
+    QPainterPath afterSelectionPath_;                             ///< Selection path after move.
+    SelectionType beforeSelectionType_ = SelectionType::Unknown;  ///< Selection type before.
+    SelectionType afterSelectionType_ = SelectionType::Unknown;   ///< Selection type after.
+
     /**
      * @brief Updates pixel data from a saved state.
      * @param state The state buffer to restore from.
      */
     void updateState(const std::vector<std::uint8_t>& state);
+
+    /**
+     * @brief Restores selection from saved state.
+     * @param path The selection path to restore.
+     * @param type The selection type to restore.
+     */
+    void restoreSelection(const QPainterPath& path, SelectionType type);
 };
 
 }  // namespace gimp

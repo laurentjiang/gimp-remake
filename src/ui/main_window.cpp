@@ -421,13 +421,17 @@ void MainWindow::positionDebugHud()
 
 void MainWindow::onUndo()
 {
-    // Cancel any pending floating buffer before undo to prevent stale pixels
+    // If there's an active floating buffer (mid-move), cancel it as the undo action
+    // Don't also undo the previous command - the cancel IS the undo
     auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
     if (moveTool && moveTool->isMovingSelection()) {
         moveTool->cancelFloatingBuffer();
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->clearMoveOverride();
+            m_canvasWidget->invalidateCache();
         }
+        statusBar()->showMessage("Move cancelled", 2000);
+        return;  // Cancel was the undo, don't undo again
     }
 
     if (m_historyManager && m_historyManager->undo()) {
@@ -440,10 +444,11 @@ void MainWindow::onUndo()
 
 void MainWindow::onRedo()
 {
-    // Cancel any pending floating buffer before redo to prevent stale pixels
+    // If there's an active floating buffer, commit it before redo
+    // (redo should apply a committed command, not interfere with active move)
     auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
     if (moveTool && moveTool->isMovingSelection()) {
-        moveTool->cancelFloatingBuffer();
+        moveTool->commitFloatingBuffer();
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->clearMoveOverride();
         }

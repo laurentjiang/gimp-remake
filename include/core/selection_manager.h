@@ -11,6 +11,8 @@
 
 #include <QPainterPath>
 #include <QPoint>
+#include <QSizeF>
+#include <QTransform>
 
 #include <memory>
 
@@ -175,6 +177,37 @@ class SelectionManager {
         }
 
         selection_.translate(offset.x(), offset.y());
+        syncSelectionToDocument();
+    }
+
+    /**
+     * @brief Scales and translates the current selection.
+     *
+     * Used after scaling selection contents to update the selection outline
+     * to match the transformed pixels.
+     *
+     * @param scale The scale factors (width, height).
+     * @param offset The translation offset in canvas coordinates.
+     */
+    void scaleSelection(const QSizeF& scale, const QPoint& offset)
+    {
+        if (selection_.isEmpty()) {
+            return;
+        }
+
+        // Get the bounding rect center for scaling around the origin
+        QRectF bounds = selection_.boundingRect();
+        qreal cx = bounds.left();
+        qreal cy = bounds.top();
+
+        // Create transform: translate to origin, scale, translate back + offset
+        QTransform transform;
+        transform.translate(cx + offset.x(), cy + offset.y());
+        transform.scale(scale.width(), scale.height());
+        transform.translate(-cx, -cy);
+
+        selection_ = transform.map(selection_);
+        selectionType_ = SelectionType::Unknown;  // Shape may have changed
         syncSelectionToDocument();
     }
 

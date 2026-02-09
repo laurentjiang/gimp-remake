@@ -276,28 +276,51 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         moveTool = dynamic_cast<MoveTool*>(currentTool);
     }
     if (moveTool && moveTool->isMovingSelection()) {
-        const auto* floatBuf = moveTool->floatingBuffer();
         QRect floatBounds = moveTool->floatingRect();
         QPoint floatOffset = moveTool->floatingOffset();
+        QSizeF floatScale = moveTool->floatingScale();
 
-        if (floatBuf && !floatBuf->empty() && !floatBounds.isEmpty()) {
-            int bufWidth = floatBounds.width();
-            int bufHeight = floatBounds.height();
+        if (!floatBounds.isEmpty()) {
+            // Get scaled buffer if scaling, otherwise use original
+            std::vector<std::uint8_t> scaledBuf;
+            const std::uint8_t* bufData = nullptr;
+            int bufWidth = 0;
+            int bufHeight = 0;
 
-            // Create QImage from floating buffer (RGBA format)
-            QImage floatingImage(
-                floatBuf->data(), bufWidth, bufHeight, bufWidth * 4, QImage::Format_RGBA8888);
+            if (moveTool->isScaling() || std::abs(floatScale.width() - 1.0) > 0.001 ||
+                std::abs(floatScale.height() - 1.0) > 0.001) {
+                scaledBuf = moveTool->getScaledBuffer();
+                QSize scaledSize = moveTool->getScaledSize();
+                bufData = scaledBuf.data();
+                bufWidth = scaledSize.width();
+                bufHeight = scaledSize.height();
+            } else {
+                const auto* floatBuf = moveTool->floatingBuffer();
+                if (floatBuf && !floatBuf->empty()) {
+                    bufData = floatBuf->data();
+                    bufWidth = floatBounds.width();
+                    bufHeight = floatBounds.height();
+                }
+            }
 
-            // Calculate destination rect with offset applied
-            float destX = m_viewport.panX + static_cast<float>(floatBounds.x() + floatOffset.x()) *
-                                                m_viewport.zoomLevel;
-            float destY = m_viewport.panY + static_cast<float>(floatBounds.y() + floatOffset.y()) *
-                                                m_viewport.zoomLevel;
-            float destW = static_cast<float>(bufWidth) * m_viewport.zoomLevel;
-            float destH = static_cast<float>(bufHeight) * m_viewport.zoomLevel;
+            if (bufData && bufWidth > 0 && bufHeight > 0) {
+                // Create QImage from buffer (RGBA format)
+                QImage floatingImage(
+                    bufData, bufWidth, bufHeight, bufWidth * 4, QImage::Format_RGBA8888);
 
-            QRectF floatingRect(destX, destY, destW, destH);
-            painter.drawImage(floatingRect, floatingImage);
+                // Calculate destination rect with offset applied
+                float destX =
+                    m_viewport.panX +
+                    static_cast<float>(floatBounds.x() + floatOffset.x()) * m_viewport.zoomLevel;
+                float destY =
+                    m_viewport.panY +
+                    static_cast<float>(floatBounds.y() + floatOffset.y()) * m_viewport.zoomLevel;
+                float destW = static_cast<float>(bufWidth) * m_viewport.zoomLevel;
+                float destH = static_cast<float>(bufHeight) * m_viewport.zoomLevel;
+
+                QRectF floatingRect(destX, destY, destW, destH);
+                painter.drawImage(floatingRect, floatingImage);
+            }
         }
     }
 
@@ -309,10 +332,16 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         transform.translate(m_viewport.panX, m_viewport.panY);
         transform.scale(m_viewport.zoomLevel, m_viewport.zoomLevel);
 
-        // If moving selection contents, also translate by the move offset
+        // If moving/scaling selection contents, apply the transform
         if (moveTool && moveTool->isMovingSelection()) {
             QPoint moveOffset = moveTool->floatingOffset();
-            transform.translate(moveOffset.x(), moveOffset.y());
+            QSizeF scale = moveTool->floatingScale();
+            QRect bounds = moveTool->floatingRect();
+
+            // Transform: translate to position, scale from top-left
+            transform.translate(bounds.x() + moveOffset.x(), bounds.y() + moveOffset.y());
+            transform.scale(scale.width(), scale.height());
+            transform.translate(-bounds.x(), -bounds.y());
         }
 
         painter.setTransform(transform, true);
@@ -342,6 +371,38 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         painter.drawPath(selectionPath);
 
         painter.restore();
+    }
+
+    // Draw transform handles when floating selection is active
+    if (moveTool && moveTool->isMovingSelection()) {
+        auto handleRects = moveTool->getHandleRects();
+        if (!handleRects.empty()) {
+            painter.save();
+            painter.setRenderHint(QPainter::Antialiasing, false);
+
+            // Transform handle rects to screen coordinates
+            for (const auto& handleRect : handleRects) {
+                float screenX =
+                    m_viewport.panX + static_cast<float>(handleRect.x()) * m_viewport.zoomLevel;
+                float screenY =
+                    m_viewport.panY + static_cast<float>(handleRect.y()) * m_viewport.zoomLevel;
+                float screenW = static_cast<float>(handleRect.width()) * m_viewport.zoomLevel;
+                float screenH = static_cast<float>(handleRect.height()) * m_viewport.zoomLevel;
+
+                // Ensure minimum visible size
+                screenW = std::max(6.0F, screenW);
+                screenH = std::max(6.0F, screenH);
+
+                QRectF screenRect(screenX, screenY, screenW, screenH);
+
+                // Draw handle: white fill with black border
+                painter.setPen(QPen(Qt::black, 1));
+                painter.setBrush(Qt::white);
+                painter.drawRect(screenRect);
+            }
+
+            painter.restore();
+        }
     }
 }
 

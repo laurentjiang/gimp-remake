@@ -16,16 +16,32 @@
 #include <QPainter>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace gimp {
 
+// Handle size in screen pixels
+constexpr int kHandleSize = 8;
+constexpr int kHandleHalfSize = kHandleSize / 2;
+
 void MoveTool::beginStroke(const ToolInputEvent& event)
 {
-    // If we already have an active floating buffer (from previous incomplete move),
-    // continue using it instead of re-extracting from layer
+    proportionalScale_ = (event.modifiers & Qt::ShiftModifier) != 0;
+
+    // If we already have an active floating buffer, check for handle hits first
     if (isMovingSelection()) {
-        // Update start position relative to current offset for continued dragging
+        activeHandle_ = hitTestHandle(event.canvasPos);
+        if (activeHandle_ != TransformHandle::None) {
+            // Starting a scale operation
+            startPos_ = event.canvasPos;
+            currentPos_ = event.canvasPos;
+            originalSize_ = QSizeF(floatingRect_.width() * currentScale_.width(),
+                                   floatingRect_.height() * currentScale_.height());
+            return;
+        }
+
+        // Not on a handle - continue move
         QPoint currentOffset = floatingOffset();
         startPos_ = event.canvasPos - currentOffset;
         currentPos_ = event.canvasPos;
@@ -69,7 +85,72 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
 
 void MoveTool::continueStroke(const ToolInputEvent& event)
 {
+    proportionalScale_ = (event.modifiers & Qt::ShiftModifier) != 0;
     currentPos_ = event.canvasPos;
+
+    // If scaling, update scale factors based on handle drag
+    if (activeHandle_ != TransformHandle::None && !floatingRect_.isEmpty()) {
+        QPoint delta = currentPos_ - startPos_;
+        double origW = static_cast<double>(floatingRect_.width());
+        double origH = static_cast<double>(floatingRect_.height());
+
+        // Calculate new scale based on which handle is being dragged
+        double newScaleX = currentScale_.width();
+        double newScaleY = currentScale_.height();
+
+        switch (activeHandle_) {
+            case TransformHandle::TopLeft:
+                newScaleX = (originalSize_.width() - delta.x()) / origW;
+                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                break;
+            case TransformHandle::TopRight:
+                newScaleX = (originalSize_.width() + delta.x()) / origW;
+                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                break;
+            case TransformHandle::BottomLeft:
+                newScaleX = (originalSize_.width() - delta.x()) / origW;
+                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                break;
+            case TransformHandle::BottomRight:
+                newScaleX = (originalSize_.width() + delta.x()) / origW;
+                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                break;
+            case TransformHandle::Top:
+                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                break;
+            case TransformHandle::Bottom:
+                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                break;
+            case TransformHandle::Left:
+                newScaleX = (originalSize_.width() - delta.x()) / origW;
+                break;
+            case TransformHandle::Right:
+                newScaleX = (originalSize_.width() + delta.x()) / origW;
+                break;
+            case TransformHandle::None:
+                break;
+        }
+
+        // Clamp to minimum size (10% of original)
+        newScaleX = std::max(0.1, newScaleX);
+        newScaleY = std::max(0.1, newScaleY);
+
+        // Apply proportional constraint if Shift is held
+        if (proportionalScale_) {
+            double avgScale = (newScaleX + newScaleY) / 2.0;
+            // For corner handles, use the larger scale
+            if (activeHandle_ == TransformHandle::TopLeft ||
+                activeHandle_ == TransformHandle::TopRight ||
+                activeHandle_ == TransformHandle::BottomLeft ||
+                activeHandle_ == TransformHandle::BottomRight) {
+                avgScale = std::max(newScaleX, newScaleY);
+            }
+            newScaleX = avgScale;
+            newScaleY = avgScale;
+        }
+
+        currentScale_ = QSizeF(newScaleX, newScaleY);
+    }
 }
 
 bool MoveTool::isDestinationInsideBounds() const
@@ -87,6 +168,13 @@ void MoveTool::endStroke(const ToolInputEvent& event)
 {
     currentPos_ = event.canvasPos;
     lastDelta_ = currentPos_ - startPos_;
+
+    // If we were scaling, just end the scale operation but keep floating buffer
+    if (activeHandle_ != TransformHandle::None) {
+        activeHandle_ = TransformHandle::None;
+        // Keep floating buffer active for further transforms or move
+        return;
+    }
 
     if (isMovingSelection()) {
         // Only auto-commit if destination is fully inside canvas bounds.
@@ -264,13 +352,17 @@ void MoveTool::commitMove()
     // Determine effective copy mode: modifier override takes precedence over UI setting
     bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
 
-    QPoint offset = currentPos_ - startPos_;
+    QPoint offset = floatingOffset();
+    bool hasScale = std::abs(currentScale_.width() - 1.0) > 0.001 ||
+                    std::abs(currentScale_.height() - 1.0) > 0.001;
 
     // Calculate the bounding rect that covers both source and destination
-    // Note: We allow movement outside canvas bounds (like GIMP). Pixels outside
-    // the layer bounds will be clipped when pasted, matching GIMP's anchor behavior.
     QRect srcRect = floatingRect_;
-    QRect dstRect = floatingRect_.translated(offset);
+    QSize scaledSize = getScaledSize();
+    QRect dstRect(floatingRect_.x() + offset.x(),
+                  floatingRect_.y() + offset.y(),
+                  scaledSize.width(),
+                  scaledSize.height());
     QRect unionRect = srcRect.united(dstRect);
 
     // Clip to layer bounds
@@ -285,10 +377,51 @@ void MoveTool::commitMove()
     // Create command and capture before state
     auto cmd = std::make_shared<MoveCommand>(targetLayer_, unionRect);
 
+    // Get scaled buffer if needed
+    std::vector<std::uint8_t> scaledBuf;
+    if (hasScale) {
+        scaledBuf = getScaledBuffer();
+    }
+
+    auto pasteBuffer = [&](QPoint pasteOffset, bool scaled) {
+        auto& layerData = targetLayer_->data();
+        int layerWidth = targetLayer_->width();
+        int layerHeight = targetLayer_->height();
+        constexpr int kPixelSize = 4;
+
+        const std::vector<std::uint8_t>& srcBuf = scaled ? scaledBuf : floatingBuffer_;
+        int srcW = scaled ? scaledSize.width() : floatingRect_.width();
+        int srcH = scaled ? scaledSize.height() : floatingRect_.height();
+
+        int dstX = floatingRect_.x() + pasteOffset.x();
+        int dstY = floatingRect_.y() + pasteOffset.y();
+
+        for (int row = 0; row < srcH; ++row) {
+            for (int col = 0; col < srcW; ++col) {
+                int destPx = dstX + col;
+                int destPy = dstY + row;
+
+                if (destPx < 0 || destPx >= layerWidth || destPy < 0 || destPy >= layerHeight) {
+                    continue;
+                }
+
+                std::size_t srcOffset = (static_cast<std::size_t>(row) * srcW + col) * kPixelSize;
+                std::size_t dstOffset =
+                    (static_cast<std::size_t>(destPy) * layerWidth + destPx) * kPixelSize;
+
+                // Only paste non-transparent pixels (check alpha)
+                if (srcBuf[srcOffset + 3] > 0) {
+                    std::memcpy(
+                        layerData.data() + dstOffset, srcBuf.data() + srcOffset, kPixelSize);
+                }
+            }
+        }
+    };
+
     if (effectiveCopyMode) {
         // Copy mode: source was never cleared, just paste at new location
         cmd->captureBeforeState();
-        pasteFloatingBuffer(targetLayer_, offset);
+        pasteBuffer(offset, hasScale);
         cmd->captureAfterState();
     } else {
         // Cut mode: source was cleared, need to restore for before state
@@ -298,7 +431,7 @@ void MoveTool::commitMove()
 
         // Clear again and paste at new location
         clearSourcePixels(targetLayer_);
-        pasteFloatingBuffer(targetLayer_, offset);
+        pasteBuffer(offset, hasScale);
         cmd->captureAfterState();
     }
 
@@ -307,8 +440,14 @@ void MoveTool::commitMove()
         commandBus_->dispatch(cmd);
     }
 
-    // Update selection outline to follow the moved pixels
-    SelectionManager::instance().translateSelection(offset);
+    // Update selection outline to follow the moved/scaled pixels
+    // For scaling, we should scale the selection path too
+    if (hasScale) {
+        // Scale and translate selection
+        SelectionManager::instance().scaleSelection(currentScale_, offset);
+    } else {
+        SelectionManager::instance().translateSelection(offset);
+    }
 
     clearFloatingState();
     modifierOverride_ = false;
@@ -340,6 +479,10 @@ void MoveTool::clearFloatingState()
     floatingRect_ = QRect();
     targetLayer_.reset();
     selectionMask_.clear();
+    activeHandle_ = TransformHandle::None;
+    currentScale_ = QSizeF(1.0, 1.0);
+    originalSize_ = QSizeF();
+    proportionalScale_ = false;
 }
 
 void MoveTool::rasterizeSelectionMask(const QPainterPath& selPath, const QRect& bounds)
@@ -463,6 +606,148 @@ std::variant<int, float, bool, std::string> MoveTool::getOptionValue(
         return (moveMode_ == MoveMode::Cut) ? 0 : 1;
     }
     return 0;
+}
+
+std::vector<QRect> MoveTool::getHandleRects() const
+{
+    std::vector<QRect> handles;
+    if (floatingRect_.isEmpty()) {
+        return handles;
+    }
+
+    // Calculate the transformed bounding box
+    QPoint offset = floatingOffset();
+    int scaledW = static_cast<int>(floatingRect_.width() * currentScale_.width());
+    int scaledH = static_cast<int>(floatingRect_.height() * currentScale_.height());
+
+    int left = floatingRect_.x() + offset.x();
+    int top = floatingRect_.y() + offset.y();
+    int right = left + scaledW;
+    int bottom = top + scaledH;
+    int midX = (left + right) / 2;
+    int midY = (top + bottom) / 2;
+
+    // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
+    handles.push_back(
+        QRect(left - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(midX - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(midX - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(left - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(left - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
+
+    return handles;
+}
+
+TransformHandle MoveTool::hitTestHandle(const QPoint& pos) const
+{
+    auto handles = getHandleRects();
+    if (handles.empty()) {
+        return TransformHandle::None;
+    }
+
+    // Check each handle (order matches TransformHandle enum starting from TopLeft)
+    static const TransformHandle handleTypes[] = {TransformHandle::TopLeft,
+                                                  TransformHandle::Top,
+                                                  TransformHandle::TopRight,
+                                                  TransformHandle::Right,
+                                                  TransformHandle::BottomRight,
+                                                  TransformHandle::Bottom,
+                                                  TransformHandle::BottomLeft,
+                                                  TransformHandle::Left};
+
+    for (size_t i = 0; i < handles.size(); ++i) {
+        if (handles[i].contains(pos)) {
+            return handleTypes[i];
+        }
+    }
+
+    return TransformHandle::None;
+}
+
+QSize MoveTool::getScaledSize() const
+{
+    if (floatingRect_.isEmpty()) {
+        return QSize();
+    }
+    int w = static_cast<int>(std::round(floatingRect_.width() * currentScale_.width()));
+    int h = static_cast<int>(std::round(floatingRect_.height() * currentScale_.height()));
+    return QSize(std::max(1, w), std::max(1, h));
+}
+
+std::vector<std::uint8_t> MoveTool::getScaledBuffer() const
+{
+    if (floatingBuffer_.empty() || floatingRect_.isEmpty()) {
+        return {};
+    }
+
+    // If scale is 1:1, return the original buffer
+    if (std::abs(currentScale_.width() - 1.0) < 0.001 &&
+        std::abs(currentScale_.height() - 1.0) < 0.001) {
+        return floatingBuffer_;
+    }
+
+    QSize scaledSize = getScaledSize();
+    int srcW = floatingRect_.width();
+    int srcH = floatingRect_.height();
+    int dstW = scaledSize.width();
+    int dstH = scaledSize.height();
+
+    std::vector<std::uint8_t> scaled(static_cast<size_t>(dstW * dstH) * 4, 0);
+
+    // Bilinear interpolation for scaling
+    for (int dstY = 0; dstY < dstH; ++dstY) {
+        for (int dstX = 0; dstX < dstW; ++dstX) {
+            // Map destination pixel to source coordinates
+            double srcXf = (static_cast<double>(dstX) + 0.5) / currentScale_.width() - 0.5;
+            double srcYf = (static_cast<double>(dstY) + 0.5) / currentScale_.height() - 0.5;
+
+            int srcX0 = static_cast<int>(std::floor(srcXf));
+            int srcY0 = static_cast<int>(std::floor(srcYf));
+            int srcX1 = srcX0 + 1;
+            int srcY1 = srcY0 + 1;
+
+            // Clamp to bounds
+            srcX0 = std::clamp(srcX0, 0, srcW - 1);
+            srcY0 = std::clamp(srcY0, 0, srcH - 1);
+            srcX1 = std::clamp(srcX1, 0, srcW - 1);
+            srcY1 = std::clamp(srcY1, 0, srcH - 1);
+
+            double fx = srcXf - std::floor(srcXf);
+            double fy = srcYf - std::floor(srcYf);
+
+            // Get 4 source pixels
+            auto getPixel = [&](int x, int y, int c) -> int {
+                return floatingBuffer_[(static_cast<size_t>(y) * srcW + x) * 4 + c];
+            };
+
+            // Bilinear interpolation for each channel
+            size_t dstIdx = (static_cast<size_t>(dstY) * dstW + dstX) * 4;
+            for (int c = 0; c < 4; ++c) {
+                double v00 = getPixel(srcX0, srcY0, c);
+                double v10 = getPixel(srcX1, srcY0, c);
+                double v01 = getPixel(srcX0, srcY1, c);
+                double v11 = getPixel(srcX1, srcY1, c);
+
+                double v0 = v00 * (1.0 - fx) + v10 * fx;
+                double v1 = v01 * (1.0 - fx) + v11 * fx;
+                double v = v0 * (1.0 - fy) + v1 * fy;
+
+                scaled[dstIdx + c] = static_cast<std::uint8_t>(std::clamp(v, 0.0, 255.0));
+            }
+        }
+    }
+
+    return scaled;
 }
 
 }  // namespace gimp

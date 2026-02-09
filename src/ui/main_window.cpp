@@ -22,6 +22,7 @@
 #include "core/tools/ellipse_selection_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/fill_tool.h"
+#include "core/tools/free_select_tool.h"
 #include "core/tools/gradient_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
@@ -115,6 +116,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
     factory.registerTool("select_ellipse", []() { return std::make_unique<EllipseSelectTool>(); });
     factory.registerTool("select_rect", []() { return std::make_unique<RectSelectTool>(); });
+    factory.registerTool("select_free", []() { return std::make_unique<FreeSelectTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =

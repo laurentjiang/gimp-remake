@@ -597,6 +597,60 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     toolEvent.modifiers = event->modifiers();
     toolEvent.pressure = 1.0F;
 
+    // Check for Ctrl+Alt move override on press
+    if (isPress) {
+        m_moveOverride = false;  // Reset on new stroke
+
+        const bool ctrlAlt = (event->modifiers() & Qt::ControlModifier) != 0 &&
+                             (event->modifiers() & Qt::AltModifier) != 0;
+        const std::string& activeToolId = ToolRegistry::instance().getActiveTool();
+        const bool isSelectionTool = activeToolId.find("select") != std::string::npos;
+
+        if (ctrlAlt && isSelectionTool && SelectionManager::instance().hasSelection()) {
+            const QPainterPath& selPath = SelectionManager::instance().selectionPath();
+            if (selPath.contains(QPointF(toolEvent.canvasPos))) {
+                // Click inside selection with Ctrl+Alt - delegate to MoveTool
+                auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+                if (moveTool) {
+                    m_moveOverride = true;
+                    m_isStroking = true;
+                    bool handled = moveTool->onMousePress(toolEvent);
+                    if (handled) {
+                        updateCacheFromLayer();
+                        update();
+                        emit canvasModified();
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    // If move override is active, route to MoveTool
+    if (m_moveOverride) {
+        auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+        if (moveTool) {
+            bool handled = false;
+            if (isRelease) {
+                handled = moveTool->onMouseRelease(toolEvent);
+                m_isStroking = false;
+                m_moveOverride = false;
+                if (handled) {
+                    invalidateCache();
+                    emit canvasModified();
+                }
+            } else {
+                handled = moveTool->onMouseMove(toolEvent);
+                if (handled) {
+                    updateCacheFromLayer();
+                    update();
+                    emit canvasModified();
+                }
+            }
+            return;
+        }
+    }
+
     bool handled = false;
     if (isPress) {
         m_isStroking = true;

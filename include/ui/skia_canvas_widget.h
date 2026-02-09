@@ -230,7 +230,8 @@ class SkiaCanvasWidget : public QWidget {
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;
-    bool m_isStroking = false;  ///< True during active brush stroke.
+    bool m_isStroking = false;    ///< True during active brush stroke.
+    bool m_moveOverride = false;  ///< True when temporarily using MoveTool for Ctrl+Alt drag.
     QPoint m_lastMousePos;
     QPoint m_panStartPos;
 

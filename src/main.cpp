@@ -17,7 +17,6 @@
 #include <exception>
 #include <iostream>
 #include <memory>
-#include <thread>
 
 // Error handling system
 #include "error_handling/error_codes.h"
@@ -67,28 +66,10 @@ int runApplication(int argc, char** argv)
 {
     const QApplication app(argc, argv);
 
-    // Test logging to verify log panel functionality
     spdlog::info("Application starting up...");
-    spdlog::debug("Debug message test");
-    spdlog::warn("Warning: This is a test warning");
-    spdlog::error("Error: This is a test error message");
-    spdlog::critical("Critical: This is a test critical message");
 
     gimp::MainWindow window;
-
     window.show();
-
-    // Log after window is shown
-    spdlog::info("Main window displayed successfully");
-
-    // Test thread safety: log from a background thread
-    std::thread backgroundThread([]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        spdlog::info("Background thread: Log message from worker thread");
-        spdlog::warn("Background thread: Warning from worker thread");
-        spdlog::error("Background thread: Error from worker thread");
-    });
-    backgroundThread.detach();  // Detach since we don't need to join
 
     return QApplication::exec();
 }

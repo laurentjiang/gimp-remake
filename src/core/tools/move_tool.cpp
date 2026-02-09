@@ -36,16 +36,18 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     if (isMovingSelection()) {
         activeHandle_ = hitTestHandle(event.canvasPos, event.zoomLevel);
         if (activeHandle_ != TransformHandle::None) {
+            // Capture current offset BEFORE overwriting startPos_
+            QPoint currentOffset = floatingOffset();
+
             // Starting a scale operation - store anchor point (opposite corner)
             startPos_ = event.canvasPos;
             currentPos_ = event.canvasPos;
             originalSize_ = QSizeF(floatingRect_.width() * currentScale_.width(),
                                    floatingRect_.height() * currentScale_.height());
 
-            // Calculate current transformed bounds for anchor
-            QPoint offset = floatingOffset();
-            QRectF currentBounds(floatingRect_.x() + offset.x(),
-                                 floatingRect_.y() + offset.y(),
+            // Calculate current transformed bounds for anchor using captured offset
+            QRectF currentBounds(floatingRect_.x() + currentOffset.x(),
+                                 floatingRect_.y() + currentOffset.y(),
                                  floatingRect_.width() * currentScale_.width(),
                                  floatingRect_.height() * currentScale_.height());
             scaleAnchor_ = getAnchorForHandle(activeHandle_, currentBounds);

@@ -14,6 +14,7 @@
 #include "core/filters/sharpen_filter.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
+#include "core/selection_manager.h"
 #include "core/tile_store.h"
 #include "core/tool_factory.h"
 #include "core/tools/brush_tool.h"
@@ -75,10 +76,14 @@ class SimpleDocument : public gimp::Document {
     [[nodiscard]] int width() const override { return m_width; }
     [[nodiscard]] int height() const override { return m_height; }
 
+    void setSelectionPath(const QPainterPath& path) override { m_selection = path; }
+    [[nodiscard]] QPainterPath selectionPath() const override { return m_selection; }
+
   private:
     int m_width;
     int m_height;
     gimp::LayerStack m_layers;
+    QPainterPath m_selection;
 
     class DummyTileStore : public gimp::TileStore {
         void invalidate(const gimp::Rect&) override {}
@@ -339,6 +344,8 @@ void MainWindow::createDocument()
     // Initialize tool options panel with default tool
     onToolChanged(factory.activeTool());
 
+    SelectionManager::instance().setDocument(m_document);
+
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);
 
@@ -352,6 +359,7 @@ void MainWindow::createDocument()
 void MainWindow::set_document(std::shared_ptr<Document> document)
 {
     m_document = std::move(document);
+    SelectionManager::instance().setDocument(m_document);
     if (m_canvasWidget != nullptr) {
         m_canvasWidget->update();
     }

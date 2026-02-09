@@ -9,6 +9,8 @@
 
 #include "core/document.h"
 
+#include <QPainterPath>
+
 #include <memory>
 #include <string>
 
@@ -71,10 +73,21 @@ class ProjectFile : public Document {
      */
     [[nodiscard]] int height() const override { return m_height; }
 
+    /*! @brief Sets the document selection path.
+     *  @param path The selection path in canvas coordinates.
+     */
+    void setSelectionPath(const QPainterPath& path) override { selection_ = path; }
+
+    /*! @brief Returns the document selection path.
+     *  @return The selection path.
+     */
+    [[nodiscard]] QPainterPath selectionPath() const override { return selection_; }
+
   private:
     int m_width;                ///< Canvas width.
     int m_height;               ///< Canvas height.
     gimp::LayerStack m_layers;  ///< Layer stack.
+    QPainterPath selection_;    ///< Stored selection path.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

@@ -9,6 +9,9 @@
 
 #include "io/utility.h"
 
+#include <QPainterPath>
+#include <QPointF>
+
 #include <nlohmann/json.hpp>
 #include <opencv2/imgproc.hpp>
 
@@ -20,6 +23,73 @@
 using json = nlohmann::json;
 
 namespace gimp {
+
+namespace {
+
+json serializeSelectionPath(const QPainterPath& path)
+{
+    json elements = json::array();
+    const int count = path.elementCount();
+    for (int i = 0; i < count; ++i) {
+        const auto element = path.elementAt(i);
+        elements.push_back({
+            {"type", static_cast<int>(element.type)},
+            {"x",    element.x                     },
+            {"y",    element.y                     }
+        });
+    }
+    return elements;
+}
+
+QPainterPath deserializeSelectionPath(const json& elements)
+{
+    QPainterPath path;
+    if (!elements.is_array()) {
+        return path;
+    }
+
+    std::size_t i = 0;
+    while (i < elements.size()) {
+        const auto& elementJson = elements.at(i);
+        if (!elementJson.contains("type") || !elementJson.contains("x") ||
+            !elementJson.contains("y")) {
+            ++i;
+            continue;
+        }
+
+        const int type = elementJson.at("type").get<int>();
+        const qreal x = elementJson.at("x").get<qreal>();
+        const qreal y = elementJson.at("y").get<qreal>();
+
+        if (type == QPainterPath::MoveToElement) {
+            path.moveTo(x, y);
+            ++i;
+        } else if (type == QPainterPath::LineToElement) {
+            path.lineTo(x, y);
+            ++i;
+        } else if (type == QPainterPath::CurveToElement) {
+            if (i + 2 >= elements.size()) {
+                break;
+            }
+
+            const auto& control2Json = elements.at(i + 1);
+            const auto& endJson = elements.at(i + 2);
+            const qreal c2x = control2Json.at("x").get<qreal>();
+            const qreal c2y = control2Json.at("y").get<qreal>();
+            const qreal ex = endJson.at("x").get<qreal>();
+            const qreal ey = endJson.at("y").get<qreal>();
+
+            path.cubicTo(QPointF(x, y), QPointF(c2x, c2y), QPointF(ex, ey));
+            i += 3;
+        } else {
+            ++i;
+        }
+    }
+
+    return path;
+}
+
+}  // namespace
 
 ProjectFile IOManager::importProject(const std::string& filePath)
 {
@@ -60,6 +130,10 @@ ProjectFile IOManager::importProject(const std::string& filePath)
         }
     }
 
+    if (projectJson.contains("selection")) {
+        project.setSelectionPath(deserializeSelectionPath(projectJson.at("selection")));
+    }
+
     return project;
 }
 
@@ -88,6 +162,10 @@ bool IOManager::exportProject(const ProjectFile& project, const std::string& fil
         }
 
         projectJson["layers"] = layersJson;
+
+        if (!project.selectionPath().isEmpty()) {
+            projectJson["selection"] = serializeSelectionPath(project.selectionPath());
+        }
 
         std::ofstream outputFile(filePath);
         if (!outputFile.is_open()) {

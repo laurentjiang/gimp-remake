@@ -7,7 +7,11 @@
 
 #pragma once
 
+#include "core/document.h"
+
 #include <QPainterPath>
+
+#include <memory>
 
 namespace gimp {
 
@@ -39,6 +43,22 @@ class SelectionManager {
     }
 
     /**
+     * @brief Sets the active document for selection storage.
+     * @param document The active document.
+     */
+    void setDocument(const std::shared_ptr<Document>& document)
+    {
+        document_ = document;
+        if (document) {
+            selection_ = document->selectionPath();
+        } else {
+            selection_ = QPainterPath();
+        }
+        preview_ = QPainterPath();
+        previewMode_ = SelectionMode::Replace;
+    }
+
+    /**
      * @brief Clears the selection and preview.
      */
     void clear()
@@ -46,6 +66,7 @@ class SelectionManager {
         selection_ = QPainterPath();
         preview_ = QPainterPath();
         previewMode_ = SelectionMode::Replace;
+        syncSelectionToDocument();
     }
 
     /**
@@ -111,6 +132,8 @@ class SelectionManager {
                 selection_ = selection_.isEmpty() ? QPainterPath() : selection_.subtracted(path);
                 break;
         }
+
+        syncSelectionToDocument();
     }
 
     /**
@@ -136,9 +159,17 @@ class SelectionManager {
   private:
     SelectionManager() = default;
 
+    void syncSelectionToDocument()
+    {
+        if (auto document = document_.lock()) {
+            document->setSelectionPath(selection_);
+        }
+    }
+
     QPainterPath selection_;
     QPainterPath preview_;
     SelectionMode previewMode_ = SelectionMode::Replace;
+    std::weak_ptr<Document> document_;
 };
 
 }  // namespace gimp

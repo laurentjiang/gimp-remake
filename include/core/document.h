@@ -10,6 +10,8 @@
 #include "layer_stack.h"
 #include "tile_store.h"
 
+#include <QPainterPath>
+
 #include <memory>
 #include <vector>
 
@@ -58,5 +60,15 @@ class Document {
      *  @return Height in pixels.
      */
     [[nodiscard]] virtual int height() const = 0;
+
+    /*! @brief Sets the document selection path.
+     *  @param path The selection path in canvas coordinates.
+     */
+    virtual void setSelectionPath(const QPainterPath& path) = 0;
+
+    /*! @brief Returns the document selection path.
+     *  @return The selection path.
+     */
+    [[nodiscard]] virtual QPainterPath selectionPath() const = 0;
 };  // class Document
 }  // namespace gimp

@@ -697,13 +697,50 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     toolEvent.pressure = 1.0F;
     toolEvent.zoomLevel = m_viewport.zoomLevel;
 
+    // If move override is active, route ALL events to MoveTool (including press for handles)
+    if (m_moveOverride) {
+        auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+        if (moveTool) {
+            bool handled = false;
+            if (isPress) {
+                m_isStroking = true;
+                handled = moveTool->onMousePress(toolEvent);
+                if (handled) {
+                    update();
+                }
+            } else if (isRelease) {
+                handled = moveTool->onMouseRelease(toolEvent);
+                m_isStroking = false;
+                // Only clear move override if the move actually committed
+                if (!moveTool->isMovingSelection()) {
+                    m_moveOverride = false;
+                }
+                if (handled) {
+                    invalidateCache();
+                    emit canvasModified();
+                }
+            } else {
+                handled = moveTool->onMouseMove(toolEvent);
+                if (handled || moveTool->isMovingSelection()) {
+                    update();
+                }
+            }
+            return;
+        }
+    }
+
     // Check for Ctrl+Alt move override on press
     if (isPress) {
-        // Auto-commit any pending move operation before starting new stroke
+        // Auto-commit any pending move operation before starting new stroke,
+        // but only if NOT clicking on a transform handle
         auto* pendingMoveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
         if (pendingMoveTool && pendingMoveTool->isMovingSelection()) {
-            pendingMoveTool->commitFloatingBuffer();
-            invalidateCache();
+            // Check if clicking on a handle - if so, don't commit yet
+            if (pendingMoveTool->hitTestHandle(toolEvent.canvasPos, toolEvent.zoomLevel) ==
+                TransformHandle::None) {
+                pendingMoveTool->commitFloatingBuffer();
+                invalidateCache();
+            }
         }
         m_moveOverride = false;  // Reset on new stroke
 
@@ -744,37 +781,6 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
                     return;
                 }
             }
-        }
-    }
-
-    // If move override is active, route to MoveTool
-    if (m_moveOverride) {
-        auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
-        if (moveTool) {
-            bool handled = false;
-            if (isRelease) {
-                handled = moveTool->onMouseRelease(toolEvent);
-                m_isStroking = false;
-                // Only clear move override if the move actually committed
-                // (floating buffer becomes empty). If floating buffer is still
-                // active (e.g., selection is outside canvas bounds), keep
-                // m_moveOverride true so subsequent drags continue the move.
-                if (!moveTool->isMovingSelection()) {
-                    m_moveOverride = false;
-                }
-                if (handled) {
-                    invalidateCache();
-                    emit canvasModified();
-                }
-            } else {
-                handled = moveTool->onMouseMove(toolEvent);
-                // Always update during active move for real-time feedback
-                // The floating buffer is composited in paintEvent
-                if (handled || moveTool->isMovingSelection()) {
-                    update();
-                }
-            }
-            return;
         }
     }
 

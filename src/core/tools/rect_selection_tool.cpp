@@ -142,12 +142,18 @@ void RectSelectTool::finalizeSelection()
 
 void RectSelectTool::beginStroke(const ToolInputEvent& event)
 {
-    // Default zoom level if not available (canvas will provide actual zoom in future)
-    constexpr float defaultZoom = 1.0F;
+    // Use zoom from event, fallback to 1.0
+    float zoomLevel = event.zoomLevel > 0.0F ? event.zoomLevel : 1.0F;
 
     // If we have an active selection in Adjusting phase, check for handle hit
     if (phase_ == SelectionPhase::Adjusting) {
-        SelectionHandle handle = hitTestHandle(event.canvasPos, defaultZoom);
+        // Sync bounds from SelectionManager in case selection was transformed externally
+        const auto& selPath = SelectionManager::instance().selectionPath();
+        if (!selPath.isEmpty()) {
+            currentBounds_ = selPath.boundingRect();
+        }
+
+        SelectionHandle handle = hitTestHandle(event.canvasPos, zoomLevel);
         if (handle != SelectionHandle::None) {
             // Start resizing via handle
             activeHandle_ = handle;
@@ -287,12 +293,21 @@ void RectSelectTool::endStroke(const ToolInputEvent& event)
 
 void RectSelectTool::cancelStroke()
 {
+    resetToIdle();
+}
+
+void RectSelectTool::resetToIdle()
+{
     SelectionManager::instance().clearPreview();
-    if (phase_ == SelectionPhase::Creating) {
-        phase_ = SelectionPhase::Idle;
-        currentBounds_ = QRectF();
-    }
+    phase_ = SelectionPhase::Idle;
+    currentBounds_ = QRectF();
     activeHandle_ = SelectionHandle::None;
+}
+
+void RectSelectTool::onDeactivate()
+{
+    resetToIdle();
+    Tool::onDeactivate();
 }
 
 bool RectSelectTool::onKeyPress(Qt::Key key, Qt::KeyboardModifiers /*modifiers*/)

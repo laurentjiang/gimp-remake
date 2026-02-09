@@ -15,6 +15,7 @@
 #include "core/tool.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/move_tool.h"
 #include "render/skia_renderer.h"
 
 #include <QApplication>
@@ -248,6 +249,36 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
             if (y >= 0) {
                 painter.drawLine(0, y, width(), y);
             }
+        }
+    }
+
+    // Render floating buffer for selection move preview
+    // Query directly from MoveTool if it's active and has a floating buffer
+    Tool* currentTool = activeTool();
+    auto* moveTool = dynamic_cast<MoveTool*>(currentTool);
+    if (moveTool && moveTool->isMovingSelection()) {
+        const auto* floatBuf = moveTool->floatingBuffer();
+        QRect floatBounds = moveTool->floatingRect();
+        QPoint floatOffset = moveTool->floatingOffset();
+
+        if (floatBuf && !floatBuf->empty() && !floatBounds.isEmpty()) {
+            int bufWidth = floatBounds.width();
+            int bufHeight = floatBounds.height();
+
+            // Create QImage from floating buffer (RGBA format)
+            QImage floatingImage(
+                floatBuf->data(), bufWidth, bufHeight, bufWidth * 4, QImage::Format_RGBA8888);
+
+            // Calculate destination rect with offset applied
+            float destX =
+                m_viewport.panX + (floatBounds.x() + floatOffset.x()) * m_viewport.zoomLevel;
+            float destY =
+                m_viewport.panY + (floatBounds.y() + floatOffset.y()) * m_viewport.zoomLevel;
+            float destW = static_cast<float>(bufWidth) * m_viewport.zoomLevel;
+            float destH = static_cast<float>(bufHeight) * m_viewport.zoomLevel;
+
+            QRectF floatingRect(destX, destY, destW, destH);
+            painter.drawImage(floatingRect, floatingImage);
         }
     }
 

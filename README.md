@@ -20,13 +20,13 @@ A modern C++20/Qt6/Skia reimplementation of GIMP (GNU Image Manipulation Program
 | **Visual Studio 2026 Build Tools** | 14.50+ | [Download](https://visualstudio.microsoft.com/downloads/) |
 | **CMake** | 3.26+ | Included with VS or `winget install Kitware.CMake` |
 | **Ninja** | 1.11+ | Included with VS or `winget install Ninja-build.Ninja` |
-| **vcpkg** | Latest | See [vcpkg setup](#vcpkg-setup) below |
+| **vcpkg** | cc73782a88db48af17f8bfb8328d4cab3d4c246f | See [vcpkg setup](#vcpkg-setup) below |
 | **clang-format / clang-tidy** | 18+ | Included with VS 2026 Build Tools |
 
 ### vcpkg Setup
 
 ```powershell
-# Clone vcpkg (one-time setup)
+# Clone vcpkg using "cc73782a88db48af17f8bfb8328d4cab3d4c246f" baseline (one-time setup)
 git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
 cd C:\vcpkg
 .\bootstrap-vcpkg.bat
@@ -140,30 +140,8 @@ gimp-remake/
 ├── resources/             # Qt resources (icons, qrc)
 ├── docs/                  # Additional documentation
 ├── .github/workflows/     # CI pipeline
-├── ARCHITECTURE.md        # Detailed architecture documentation
 ├── CMakeLists.txt         # Build configuration
 ├── vcpkg.json             # Dependency manifest
 ├── .clang-format          # Code formatting rules
 └── .clang-tidy            # Static analysis configuration
 ```
-
-## Current Status
-
-See [ARCHITECTURE.md](ARCHITECTURE.md) for complete feature status and roadmap.
-
-### v0.2.0 Highlights
-
-- ✅ Drawing tools: Pencil, Brush (with hardness/opacity), Eraser, Fill, Gradient
-- ✅ Color Picker with Alt+click shortcut
-- ✅ Color Chooser Panel (HSV, RGB sliders, hex input, recent colors)
-- ✅ Tool Options Panel (dynamic UI based on active tool)
-- ✅ Keyboard shortcuts for tools
-- ✅ Blur and Sharpen filters
-- ✅ Undo/Redo system
-
-### Coming in v0.3.0
-
-- 📋 Selection tools (Rectangle, Ellipse)
-- 📋 Selection operations (Move, Transform, Copy/Paste)
-- 📋 Canvas resize and crop
-- 📋 Multi-layer project files

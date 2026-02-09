@@ -11,6 +11,7 @@
 #include "core/event_bus.h"
 #include "core/events.h"
 #include "core/layer.h"
+#include "core/selection_manager.h"
 #include "core/tool.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
@@ -44,6 +45,11 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
     invalidateCache();
+
+    m_selectionTimer.setInterval(80);
+    connect(
+        &m_selectionTimer, &QTimer::timeout, this, &SkiaCanvasWidget::advanceSelectionAnimation);
+    m_selectionTimer.start();
 }
 
 SkiaCanvasWidget::~SkiaCanvasWidget() = default;
@@ -245,9 +251,55 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         }
     }
 
-    const auto endTime = std::chrono::high_resolution_clock::now();
-    const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
-    emit framePainted(frameDuration.count());
+    const QPainterPath selectionPath = SelectionManager::instance().displayPath();
+    if (!selectionPath.isEmpty()) {
+        painter.save();
+
+        QTransform transform;
+        transform.translate(m_viewport.panX, m_viewport.panY);
+        transform.scale(m_viewport.zoomLevel, m_viewport.zoomLevel);
+        painter.setTransform(transform, true);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+
+        constexpr qreal dashLength = 4.0;
+        const QVector<qreal> dashPattern = {dashLength, dashLength};
+
+        QPen whitePen(QColor(240, 240, 240));
+        whitePen.setCosmetic(true);
+        whitePen.setWidth(1);
+        whitePen.setDashPattern(dashPattern);
+        whitePen.setDashOffset(m_marchingOffset);
+        whitePen.setCapStyle(Qt::FlatCap);
+
+        QPen blackPen(QColor(16, 16, 16));
+        blackPen.setCosmetic(true);
+        blackPen.setWidth(1);
+        blackPen.setDashPattern(dashPattern);
+        blackPen.setDashOffset(m_marchingOffset + dashLength);
+        blackPen.setCapStyle(Qt::FlatCap);
+
+        painter.setPen(whitePen);
+        painter.drawPath(selectionPath);
+
+        painter.setPen(blackPen);
+        painter.drawPath(selectionPath);
+
+        painter.restore();
+    }
+}
+
+void SkiaCanvasWidget::advanceSelectionAnimation()
+{
+    if (!SelectionManager::instance().hasSelection() &&
+        !SelectionManager::instance().hasPreview()) {
+        return;
+    }
+
+    m_marchingOffset += 1.0F;
+    if (m_marchingOffset >= 8.0F) {
+        m_marchingOffset = 0.0F;
+    }
+    update();
 }
 
 void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)
@@ -262,10 +314,13 @@ void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)
         return;
     }
 
-    // Alt+click to pick color from any tool
+    // Alt+click to pick color from any tool (except selection tools that use Alt for center-out)
     if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::AltModifier) != 0) {
-        sampleColorAtPosition(event->pos());
-        return;
+        const std::string& activeToolId = ToolRegistry::instance().getActiveTool();
+        if (activeToolId.find("select") == std::string::npos) {
+            sampleColorAtPosition(event->pos());
+            return;
+        }
     }
 
     dispatchToolEvent(event, true, false);
@@ -498,15 +553,15 @@ void SkiaCanvasWidget::sampleColorAtPosition(const QPoint& screenPos)
         return;
     }
 
-    const auto& data = layer->data();
+    const auto& layerData = layer->data();
     const std::size_t offset = (static_cast<std::size_t>(y) * static_cast<std::size_t>(width) +
                                 static_cast<std::size_t>(x)) *
                                4;
 
-    const std::uint8_t r = data[offset + 0];
-    const std::uint8_t g = data[offset + 1];
-    const std::uint8_t b = data[offset + 2];
-    const std::uint8_t a = data[offset + 3];
+    const std::uint8_t r = layerData[offset + 0];
+    const std::uint8_t g = layerData[offset + 1];
+    const std::uint8_t b = layerData[offset + 2];
+    const std::uint8_t a = layerData[offset + 3];
 
     const std::uint32_t color =
         (static_cast<std::uint32_t>(r) << 24) | (static_cast<std::uint32_t>(g) << 16) |

@@ -8,21 +8,26 @@
 #include "ui/main_window.h"
 
 #include "core/command_bus.h"
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/events.h"
 #include "core/filters/blur_filter.h"
 #include "core/filters/sharpen_filter.h"
 #include "core/layer.h"
 #include "core/layer_stack.h"
+#include "core/selection_manager.h"
 #include "core/tile_store.h"
 #include "core/tool_factory.h"
 #include "core/tools/brush_tool.h"
 #include "core/tools/color_picker_tool.h"
+#include "core/tools/ellipse_selection_tool.h"
 #include "core/tools/eraser_tool.h"
 #include "core/tools/fill_tool.h"
+#include "core/tools/free_select_tool.h"
 #include "core/tools/gradient_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
+#include "core/tools/rect_selection_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
@@ -74,10 +79,14 @@ class SimpleDocument : public gimp::Document {
     [[nodiscard]] int width() const override { return m_width; }
     [[nodiscard]] int height() const override { return m_height; }
 
+    void setSelectionPath(const QPainterPath& path) override { m_selection = path; }
+    [[nodiscard]] QPainterPath selectionPath() const override { return m_selection; }
+
   private:
     int m_width;
     int m_height;
     gimp::LayerStack m_layers;
+    QPainterPath m_selection;
 
     class DummyTileStore : public gimp::TileStore {
         void invalidate(const gimp::Rect&) override {}
@@ -106,6 +115,9 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("color_picker", []() { return std::make_unique<ColorPickerTool>(); });
     factory.registerTool("bucket_fill", []() { return std::make_unique<FillTool>(); });
     factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
+    factory.registerTool("select_ellipse", []() { return std::make_unique<EllipseSelectTool>(); });
+    factory.registerTool("select_rect", []() { return std::make_unique<RectSelectTool>(); });
+    factory.registerTool("select_free", []() { return std::make_unique<FreeSelectTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =
@@ -182,6 +194,13 @@ void MainWindow::setupMenuBar()
     editMenu->addAction("Cu&t", QKeySequence::Cut, []() {});
     editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
     editMenu->addAction("&Paste", QKeySequence::Paste, []() {});
+
+    auto* selectMenu = menuBar()->addMenu("&Select");
+    selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
+    selectMenu->addAction(
+        "&None", QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A), this, &MainWindow::onSelectNone);
+    selectMenu->addAction(
+        "&Invert", QKeySequence(Qt::CTRL | Qt::Key_I), this, &MainWindow::onSelectInvert);
 
     auto* viewMenu = menuBar()->addMenu("&View");
     viewMenu->addAction("Zoom &In", QKeySequence::ZoomIn, []() {});
@@ -337,6 +356,8 @@ void MainWindow::createDocument()
     // Initialize tool options panel with default tool
     onToolChanged(factory.activeTool());
 
+    SelectionManager::instance().setDocument(m_document);
+
     m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
     setCentralWidget(m_canvasWidget);
 
@@ -350,6 +371,7 @@ void MainWindow::createDocument()
 void MainWindow::set_document(std::shared_ptr<Document> document)
 {
     m_document = std::move(document);
+    SelectionManager::instance().setDocument(m_document);
     if (m_canvasWidget != nullptr) {
         m_canvasWidget->update();
     }
@@ -532,6 +554,84 @@ void MainWindow::onApplySharpen()
     } else {
         statusBar()->showMessage("Failed to apply sharpen filter", 2000);
     }
+}
+
+void MainWindow::onSelectAll()
+{
+    if (!m_document) {
+        return;
+    }
+
+    auto cmd = std::make_shared<SelectionCommand>("Select All");
+    cmd->captureBeforeState();
+
+    // Create a path covering the entire canvas
+    QPainterPath fullCanvasPath;
+    fullCanvasPath.addRect(0, 0, m_document->width(), m_document->height());
+
+    SelectionManager::instance().applySelection(fullCanvasPath, SelectionMode::Replace);
+    cmd->captureAfterState();
+
+    m_commandBus->dispatch(cmd);
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{true, "menu"});
+    m_canvasWidget->update();
+    statusBar()->showMessage("Selected all", 1000);
+}
+
+void MainWindow::onSelectNone()
+{
+    auto cmd = std::make_shared<SelectionCommand>("Deselect");
+    cmd->captureBeforeState();
+
+    SelectionManager::instance().clear();
+    cmd->captureAfterState();
+
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{false, "menu"});
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->update();
+    }
+    statusBar()->showMessage("Selection cleared", 1000);
+}
+
+void MainWindow::onSelectInvert()
+{
+    if (!m_document) {
+        return;
+    }
+
+    auto cmd = std::make_shared<SelectionCommand>("Invert Selection");
+    cmd->captureBeforeState();
+
+    // Create full canvas path
+    QPainterPath fullCanvasPath;
+    fullCanvasPath.addRect(0, 0, m_document->width(), m_document->height());
+
+    // Get current selection and invert it
+    const QPainterPath& currentSelection = SelectionManager::instance().selectionPath();
+    QPainterPath inverted;
+
+    if (currentSelection.isEmpty()) {
+        // No selection = select all
+        inverted = fullCanvasPath;
+    } else {
+        // XOR with full canvas to invert
+        inverted = fullCanvasPath.subtracted(currentSelection);
+    }
+
+    SelectionManager::instance().applySelection(inverted, SelectionMode::Replace);
+    cmd->captureAfterState();
+
+    m_commandBus->dispatch(cmd);
+    bool hasSelection = !inverted.isEmpty();
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
+    m_canvasWidget->update();
+    statusBar()->showMessage("Selection inverted", 1000);
 }
 
 }  // namespace gimp

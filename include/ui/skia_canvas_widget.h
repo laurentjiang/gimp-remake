@@ -10,6 +10,7 @@
 
 #include <QImage>
 #include <QPointF>
+#include <QTimer>
 #include <QWidget>
 
 #include <memory>
@@ -210,6 +211,9 @@ class SkiaCanvasWidget : public QWidget {
      */
     void updateCacheFromLayer();
 
+    /*! @brief Updates marching ants animation for selections. */
+    void advanceSelectionAnimation();
+
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
@@ -222,6 +226,9 @@ class SkiaCanvasWidget : public QWidget {
     bool m_isStroking = false;  ///< True during active brush stroke.
     QPoint m_lastMousePos;
     QPoint m_panStartPos;
+
+    QTimer m_selectionTimer;
+    float m_marchingOffset = 0.0F;
 };
 
 }  // namespace gimp

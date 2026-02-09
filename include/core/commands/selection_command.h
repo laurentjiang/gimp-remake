@@ -1,7 +1,7 @@
 /**
  * @file selection_command.h
  * @brief Command for undoable selection operations.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

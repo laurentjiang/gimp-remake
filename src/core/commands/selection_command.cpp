@@ -1,7 +1,7 @@
 /**
  * @file selection_command.cpp
  * @brief Implementation of SelectionCommand.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

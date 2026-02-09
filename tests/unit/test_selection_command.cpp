@@ -1,7 +1,7 @@
 /**
  * @file test_selection_command.cpp
  * @brief Unit tests for SelectionCommand.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

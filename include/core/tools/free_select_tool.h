@@ -1,7 +1,7 @@
 /**
  * @file free_select_tool.h
  * @brief Free-form (lasso) selection tool.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

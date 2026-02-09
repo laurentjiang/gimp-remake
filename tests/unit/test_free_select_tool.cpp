@@ -1,7 +1,7 @@
 /**
  * @file test_free_select_tool.cpp
  * @brief Unit tests for FreeSelectTool.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

@@ -1,7 +1,7 @@
 /**
  * @file free_select_tool.cpp
  * @brief Implementation of FreeSelectTool.
- * @author GIMP Remake Team
+ * @author Laurent Jiang
  * @date 2026-02-09
  */
 

@@ -78,6 +78,12 @@ class RectSelectTool : public Tool {
      */
     void onDeactivate() override;
 
+    /**
+     * @brief Resets tool to idle state, clearing phase and bounds.
+     * Can be called externally when selection is taken over by another tool.
+     */
+    void resetToIdle();
+
   protected:
     void beginStroke(const ToolInputEvent& event) override;
     void continueStroke(const ToolInputEvent& event) override;
@@ -90,9 +96,6 @@ class RectSelectTool : public Tool {
     SelectionHandle hitTestHandle(const QPoint& pos, float zoomLevel) const;
     QPointF getAnchorForHandle(SelectionHandle handle) const;
     void finalizeSelection();
-
-    /// Resets tool to idle state, clearing phase and bounds
-    void resetToIdle();
 
     SelectionPhase phase_ = SelectionPhase::Idle;
     QRectF currentBounds_;  ///< Current selection bounding rect.

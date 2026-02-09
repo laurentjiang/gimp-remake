@@ -716,6 +716,14 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
                 // Click inside selection with modifier - delegate to MoveTool
                 auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
                 if (moveTool) {
+                    // Reset the current selection tool to Idle so it doesn't have stale state
+                    // when we return to it later. The reset() method calls cancelStroke internally.
+                    if (auto* rectTool = dynamic_cast<RectSelectTool*>(tool)) {
+                        rectTool->resetToIdle();
+                    } else if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(tool)) {
+                        ellipseTool->resetToIdle();
+                    }
+
                     // Reset MoveTool to ensure it's in Idle state before starting
                     moveTool->reset();
                     moveTool->setCopyMode(shiftAlt);  // Shift+Alt = copy mode

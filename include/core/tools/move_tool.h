@@ -107,9 +107,10 @@ class MoveTool : public Tool, public ToolOptions {
 
     /**
      * @brief Returns the 8 handle rectangles in canvas coordinates.
+     * @param zoomLevel Current zoom level for size compensation.
      * @return Vector of handle rects (order matches TransformHandle enum, excluding None).
      */
-    [[nodiscard]] std::vector<QRect> getHandleRects() const;
+    [[nodiscard]] std::vector<QRect> getHandleRects(float zoomLevel = 1.0F) const;
 
     /**
      * @brief Scales the floating buffer to the current scale factors.
@@ -154,6 +155,14 @@ class MoveTool : public Tool, public ToolOptions {
      * current offset and the selection path is updated.
      */
     void commitFloatingBuffer();
+
+    /**
+     * @brief Hit-tests for a transform handle at the given position.
+     * @param pos Canvas position to test.
+     * @param zoomLevel Current zoom level for size compensation.
+     * @return The handle at that position, or None.
+     */
+    [[nodiscard]] TransformHandle hitTestHandle(const QPoint& pos, float zoomLevel = 1.0F) const;
 
     // ToolOptions interface
     [[nodiscard]] std::vector<ToolOption> getOptions() const override;
@@ -243,13 +252,6 @@ class MoveTool : public Tool, public ToolOptions {
      * @return True if the pixel is inside the selection.
      */
     [[nodiscard]] bool isPixelSelected(int col, int row) const;
-
-    /**
-     * @brief Hit-tests for a transform handle at the given position.
-     * @param pos Canvas position to test.
-     * @return The handle at that position, or None.
-     */
-    [[nodiscard]] TransformHandle hitTestHandle(const QPoint& pos) const;
 
     /**
      * @brief Returns the anchor point for the given handle (opposite corner/edge).

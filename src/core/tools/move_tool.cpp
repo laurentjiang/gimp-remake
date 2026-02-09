@@ -34,7 +34,7 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
 
     // If we already have an active floating buffer, check for handle hits first
     if (isMovingSelection()) {
-        activeHandle_ = hitTestHandle(event.canvasPos);
+        activeHandle_ = hitTestHandle(event.canvasPos, event.zoomLevel);
         if (activeHandle_ != TransformHandle::None) {
             // Starting a scale operation - store anchor point (opposite corner)
             startPos_ = event.canvasPos;
@@ -684,12 +684,18 @@ std::variant<int, float, bool, std::string> MoveTool::getOptionValue(
     return 0;
 }
 
-std::vector<QRect> MoveTool::getHandleRects() const
+std::vector<QRect> MoveTool::getHandleRects(float zoomLevel) const
 {
     std::vector<QRect> handles;
+    handles.reserve(8);
     if (floatingRect_.isEmpty()) {
         return handles;
     }
+
+    // Handle size compensated for zoom (8 screen pixels)
+    constexpr float kHandleScreenSize = 8.0F;
+    int handleSize = static_cast<int>(std::ceil(kHandleScreenSize / zoomLevel));
+    int halfSize = handleSize / 2;
 
     // Calculate the transformed bounding box
     QPoint offset = floatingOffset();
@@ -704,29 +710,21 @@ std::vector<QRect> MoveTool::getHandleRects() const
     int midY = (top + bottom) / 2;
 
     // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
-    handles.push_back(
-        QRect(left - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(midX - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(midX - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(left - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(left - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(QRect(left - halfSize, top - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(midX - halfSize, top - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(right - halfSize, top - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(right - halfSize, midY - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(right - halfSize, bottom - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(midX - halfSize, bottom - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(left - halfSize, bottom - halfSize, handleSize, handleSize));
+    handles.push_back(QRect(left - halfSize, midY - halfSize, handleSize, handleSize));
 
     return handles;
 }
 
-TransformHandle MoveTool::hitTestHandle(const QPoint& pos) const
+TransformHandle MoveTool::hitTestHandle(const QPoint& pos, float zoomLevel) const
 {
-    auto handles = getHandleRects();
+    auto handles = getHandleRects(zoomLevel);
     if (handles.empty()) {
         return TransformHandle::None;
     }

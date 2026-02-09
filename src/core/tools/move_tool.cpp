@@ -538,6 +538,13 @@ void MoveTool::cancelMove()
     modifierOverride_ = false;
 }
 
+void MoveTool::commitFloatingBuffer()
+{
+    if (!floatingBuffer_.empty()) {
+        commitMove();
+    }
+}
+
 void MoveTool::clearFloatingState()
 {
     floatingBuffer_.clear();

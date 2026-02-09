@@ -146,6 +146,15 @@ class MoveTool : public Tool, public ToolOptions {
         modifierCopyMode_ = copyMode;
     }
 
+    /**
+     * @brief Commits the current floating buffer (if any) to the layer.
+     *
+     * This is used when an external action (like starting a new tool stroke)
+     * needs to finalize a pending move operation. Pixels are pasted at the
+     * current offset and the selection path is updated.
+     */
+    void commitFloatingBuffer();
+
     // ToolOptions interface
     [[nodiscard]] std::vector<ToolOption> getOptions() const override;
     void setOptionValue(const std::string& optionId,

@@ -8,6 +8,7 @@
 #include "ui/main_window.h"
 
 #include "core/command_bus.h"
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/events.h"
 #include "core/filters/blur_filter.h"
@@ -561,11 +562,17 @@ void MainWindow::onSelectAll()
         return;
     }
 
+    auto cmd = std::make_shared<SelectionCommand>("Select All");
+    cmd->captureBeforeState();
+
     // Create a path covering the entire canvas
     QPainterPath fullCanvasPath;
     fullCanvasPath.addRect(0, 0, m_document->width(), m_document->height());
 
     SelectionManager::instance().applySelection(fullCanvasPath, SelectionMode::Replace);
+    cmd->captureAfterState();
+
+    m_commandBus->dispatch(cmd);
     // NOLINTNEXTLINE(modernize-use-designated-initializers)
     EventBus::instance().publish(SelectionChangedEvent{true, "menu"});
     m_canvasWidget->update();
@@ -574,7 +581,15 @@ void MainWindow::onSelectAll()
 
 void MainWindow::onSelectNone()
 {
+    auto cmd = std::make_shared<SelectionCommand>("Deselect");
+    cmd->captureBeforeState();
+
     SelectionManager::instance().clear();
+    cmd->captureAfterState();
+
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
     // NOLINTNEXTLINE(modernize-use-designated-initializers)
     EventBus::instance().publish(SelectionChangedEvent{false, "menu"});
     if (m_canvasWidget != nullptr) {
@@ -588,6 +603,9 @@ void MainWindow::onSelectInvert()
     if (!m_document) {
         return;
     }
+
+    auto cmd = std::make_shared<SelectionCommand>("Invert Selection");
+    cmd->captureBeforeState();
 
     // Create full canvas path
     QPainterPath fullCanvasPath;
@@ -606,6 +624,9 @@ void MainWindow::onSelectInvert()
     }
 
     SelectionManager::instance().applySelection(inverted, SelectionMode::Replace);
+    cmd->captureAfterState();
+
+    m_commandBus->dispatch(cmd);
     bool hasSelection = !inverted.isEmpty();
     // NOLINTNEXTLINE(modernize-use-designated-initializers)
     EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});

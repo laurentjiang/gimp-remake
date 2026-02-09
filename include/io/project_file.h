@@ -37,9 +37,17 @@ class ProjectFile : public Document {
      * @brief Adds a new layer to the project.
      * @return Shared pointer to the newly created layer.
      */
-    std::shared_ptr<gimp::Layer> addLayer() override
+    std::shared_ptr<gimp::Layer> addLayer() override { return addLayer(m_width, m_height); }
+
+    /*!
+     * @brief Adds a new layer with custom dimensions.
+     * @param width Layer width in pixels.
+     * @param height Layer height in pixels.
+     * @return Shared pointer to the newly created layer.
+     */
+    std::shared_ptr<gimp::Layer> addLayer(int width, int height)
     {
-        auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
+        auto layer = std::make_shared<gimp::Layer>(width, height);
         m_layers.addLayer(layer);
         return layer;
     }

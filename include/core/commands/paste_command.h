@@ -24,31 +24,30 @@ class Layer;
  * @brief Command to paste an image into a layer with undo support.
  */
 class PasteCommand : public Command {
-	public:
-		PasteCommand(std::shared_ptr<Document> document, int x, int y, const QImage& image);
+  public:
+    PasteCommand(std::shared_ptr<Document> document, int x, int y, const QImage& image);
 
-		void apply() override;
-		void undo() override;
+    void apply() override;
+    void undo() override;
 
-	private:
-		void captureBeforeState();
-		void captureAfterState();
-		void updateState(const std::vector<std::uint8_t>& state);
-		void writeImageToLayer();
+  private:
+    void captureBeforeState();
+    void captureAfterState();
+    void updateState(const std::vector<std::uint8_t>& state);
+    void writeImageToLayer();
 
-		std::shared_ptr<Document> document_;
-		std::shared_ptr<Layer> layer_;
-		int regionX_ = 0;
-		int regionY_ = 0;
-		int regionWidth_ = 0;
-		int regionHeight_ = 0;
-		bool captured_ = false;
-		bool createdLayer_ = false;
+    std::shared_ptr<Document> document_;
+    std::shared_ptr<Layer> layer_;
+    int regionX_ = 0;
+    int regionY_ = 0;
+    int regionWidth_ = 0;
+    int regionHeight_ = 0;
+    bool captured_ = false;
+    bool createdLayer_ = false;
 
-		std::vector<std::uint8_t> beforeState_;
-		std::vector<std::uint8_t> afterState_;
-		std::vector<std::uint8_t> imageData_;
+    std::vector<std::uint8_t> beforeState_;
+    std::vector<std::uint8_t> afterState_;
+    std::vector<std::uint8_t> imageData_;
 };
 
 }  // namespace gimp
-

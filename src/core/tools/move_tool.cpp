@@ -21,9 +21,12 @@
 
 namespace gimp {
 
-// Handle size in screen pixels
+namespace {
+/// Handle size in screen pixels for transform handles.
 constexpr int kHandleSize = 8;
+/// Half the handle size, used for centering handles on corners/edges.
 constexpr int kHandleHalfSize = kHandleSize / 2;
+}  // namespace
 
 void MoveTool::beginStroke(const ToolInputEvent& event)
 {

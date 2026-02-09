@@ -25,6 +25,7 @@
 #include "core/tools/gradient_tool.h"
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
+#include "core/tools/rect_selection_tool.h"
 #include "render/skia_renderer.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
@@ -113,6 +114,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     factory.registerTool("bucket_fill", []() { return std::make_unique<FillTool>(); });
     factory.registerTool("gradient", []() { return std::make_unique<GradientTool>(); });
     factory.registerTool("select_ellipse", []() { return std::make_unique<EllipseSelectTool>(); });
+    factory.registerTool("select_rect", []() { return std::make_unique<RectSelectTool>(); });
 
     // Subscribe to tool changes to update ToolFactory
     m_toolChangedSubscription =

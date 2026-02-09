@@ -40,7 +40,7 @@ void LogPanel::connectToBridge(LogBridge* bridge)
     }
 
     if (bridge) {
-        connect(bridge, &LogBridge::logMessageReady, this, &LogPanel::onLogMessageReady);
+        // Only connect to batch signal - individual signal is for other consumers
         connect(bridge, &LogBridge::logMessagesReady, this, &LogPanel::onLogMessagesReady);
         m_connectedBridge = bridge;
     }

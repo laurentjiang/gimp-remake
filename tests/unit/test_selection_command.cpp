@@ -9,9 +9,9 @@
 #include "core/selection_manager.h"
 #include "io/project_file.h"
 
-#include <catch2/catch_test_macros.hpp>
-
 #include <QPainterPath>
+
+#include <catch2/catch_test_macros.hpp>
 
 // ============================================================================
 // Basic Property Tests

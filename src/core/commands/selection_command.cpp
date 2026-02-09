@@ -15,8 +15,7 @@
 
 namespace gimp {
 
-SelectionCommand::SelectionCommand(std::string description)
-    : description_(std::move(description))
+SelectionCommand::SelectionCommand(std::string description) : description_(std::move(description))
 {
 }
 

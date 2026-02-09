@@ -47,6 +47,15 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     updateCursor();
     invalidateCache();
 
+    // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
+    constexpr int kTileSize = 8;
+    m_checkerboardTile = QPixmap(kTileSize * 2, kTileSize * 2);
+    QPainter tilePainter(&m_checkerboardTile);
+    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(204, 204, 204));
+    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(255, 255, 255));
+    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(255, 255, 255));
+    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(204, 204, 204));
+
     m_selectionTimer.setInterval(80);
     connect(
         &m_selectionTimer, &QTimer::timeout, this, &SkiaCanvasWidget::advanceSelectionAnimation);
@@ -232,6 +241,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
                             m_viewport.panY,
                             static_cast<float>(m_cachedImage.width()) * m_viewport.zoomLevel,
                             static_cast<float>(m_cachedImage.height()) * m_viewport.zoomLevel);
+
+    // Draw checkerboard pattern for transparency visualization
+    drawCheckerboard(painter, targetRect);
+
     painter.drawImage(targetRect, m_cachedImage);
 
     if (m_viewport.zoomLevel >= 8.0F) {
@@ -270,10 +283,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
                 floatBuf->data(), bufWidth, bufHeight, bufWidth * 4, QImage::Format_RGBA8888);
 
             // Calculate destination rect with offset applied
-            float destX =
-                m_viewport.panX + (floatBounds.x() + floatOffset.x()) * m_viewport.zoomLevel;
-            float destY =
-                m_viewport.panY + (floatBounds.y() + floatOffset.y()) * m_viewport.zoomLevel;
+            float destX = m_viewport.panX + static_cast<float>(floatBounds.x() + floatOffset.x()) *
+                                                m_viewport.zoomLevel;
+            float destY = m_viewport.panY + static_cast<float>(floatBounds.y() + floatOffset.y()) *
+                                                m_viewport.zoomLevel;
             float destW = static_cast<float>(bufWidth) * m_viewport.zoomLevel;
             float destH = static_cast<float>(bufHeight) * m_viewport.zoomLevel;
 
@@ -317,6 +330,33 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 
         painter.restore();
     }
+}
+
+void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
+{
+    // Clip to the visible intersection of the canvas rect and widget
+    QRectF visibleRect = rect.intersected(QRectF(this->rect()));
+    if (visibleRect.isEmpty()) {
+        return;
+    }
+
+    // Save painter state
+    painter.save();
+    painter.setClipRect(visibleRect);
+
+    // Calculate tile size scaled by zoom
+    constexpr int kBaseTileSize = 8;
+    int scaledTileSize = std::max(
+        4, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 4 for visibility
+
+    // Scale the checkerboard tile to match zoom
+    QPixmap scaledTile =
+        m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
+
+    // Draw tiled checkerboard
+    painter.drawTiledPixmap(visibleRect.toRect(), scaledTile);
+
+    painter.restore();
 }
 
 void SkiaCanvasWidget::advanceSelectionAnimation()

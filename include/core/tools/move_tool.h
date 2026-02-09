@@ -9,6 +9,7 @@
 
 #include "core/tool.h"
 
+#include <QPainterPath>
 #include <QPoint>
 #include <QRect>
 
@@ -86,6 +87,14 @@ class MoveTool : public Tool {
     std::vector<std::uint8_t> floatingBuffer_;  ///< Extracted pixels (RGBA).
     QRect floatingRect_;                        ///< Bounding rect of extracted region.
     std::shared_ptr<Layer> targetLayer_;        ///< Layer being modified.
+    std::vector<bool> selectionMask_;           ///< Pre-rasterized selection mask.
+
+    /**
+     * @brief Pre-rasterizes the selection path into a boolean mask.
+     * @param selPath The selection path to rasterize.
+     * @param bounds The bounding rectangle for the mask.
+     */
+    void rasterizeSelectionMask(const QPainterPath& selPath, const QRect& bounds);
 
     /**
      * @brief Extracts pixels from the selection region into floatingBuffer_.
@@ -120,6 +129,14 @@ class MoveTool : public Tool {
      * @brief Clears floating buffer state.
      */
     void clearFloatingState();
+
+    /**
+     * @brief Checks if a pixel in the mask is selected.
+     * @param col Column in floatingRect_ coordinates.
+     * @param row Row in floatingRect_ coordinates.
+     * @return True if the pixel is inside the selection.
+     */
+    [[nodiscard]] bool isPixelSelected(int col, int row) const;
 };
 
 }  // namespace gimp

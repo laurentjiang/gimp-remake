@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QImage>
+#include <QPixmap>
 #include <QPointF>
 #include <QTimer>
 #include <QWidget>
@@ -214,6 +215,12 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Updates marching ants animation for selections. */
     void advanceSelectionAnimation();
 
+    /*! @brief Helper to draw checkerboard pattern in a given rect.
+     *  @param painter The painter to draw with.
+     *  @param rect The rectangle to fill with checkerboard.
+     */
+    void drawCheckerboard(QPainter& painter, const QRectF& rect);
+
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
@@ -229,6 +236,8 @@ class SkiaCanvasWidget : public QWidget {
 
     QTimer m_selectionTimer;
     float m_marchingOffset = 0.0F;
+
+    QPixmap m_checkerboardTile;  ///< Cached checkerboard tile for transparency display.
 };
 
 }  // namespace gimp

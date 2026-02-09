@@ -113,6 +113,9 @@ void MoveTool::extractSelectionPixels(const std::shared_ptr<Layer>& layer)
     int height = y2 - y1;
     floatingRect_ = QRect(x1, y1, width, height);
 
+    // Pre-rasterize the selection mask for O(1) lookups
+    rasterizeSelectionMask(selPath, floatingRect_);
+
     // Allocate buffer (RGBA, 4 bytes per pixel) - initialize to transparent
     floatingBuffer_.resize(static_cast<std::size_t>(width * height) * 4, 0);
 
@@ -120,13 +123,12 @@ void MoveTool::extractSelectionPixels(const std::shared_ptr<Layer>& layer)
     int layerWidth = layer->width();
     constexpr int kPixelSize = 4;
 
-    // Copy pixels that are inside the selection
+    // Copy pixels that are inside the selection (using pre-rasterized mask)
     for (int row = 0; row < height; ++row) {
         for (int col = 0; col < width; ++col) {
-            int px = x1 + col;
-            int py = y1 + row;
-
-            if (selPath.contains(QPointF(px + 0.5, py + 0.5))) {
+            if (isPixelSelected(col, row)) {
+                int px = x1 + col;
+                int py = y1 + row;
                 std::size_t srcOffset =
                     (static_cast<std::size_t>(py) * layerWidth + px) * kPixelSize;
                 std::size_t dstOffset = (static_cast<std::size_t>(row) * width + col) * kPixelSize;
@@ -144,7 +146,6 @@ void MoveTool::clearSourcePixels(const std::shared_ptr<Layer>& layer)
         return;
     }
 
-    const QPainterPath& selPath = SelectionManager::instance().selectionPath();
     auto& layerData = layer->data();
     int layerWidth = layer->width();
     constexpr int kPixelSize = 4;
@@ -154,13 +155,12 @@ void MoveTool::clearSourcePixels(const std::shared_ptr<Layer>& layer)
     int width = floatingRect_.width();
     int height = floatingRect_.height();
 
-    // Clear pixels inside selection to transparent
+    // Clear pixels inside selection to transparent (using pre-rasterized mask)
     for (int row = 0; row < height; ++row) {
         for (int col = 0; col < width; ++col) {
-            int px = x1 + col;
-            int py = y1 + row;
-
-            if (selPath.contains(QPointF(px + 0.5, py + 0.5))) {
+            if (isPixelSelected(col, row)) {
+                int px = x1 + col;
+                int py = y1 + row;
                 std::size_t offset = (static_cast<std::size_t>(py) * layerWidth + px) * kPixelSize;
                 layerData[offset + 0] = 0;  // R
                 layerData[offset + 1] = 0;  // G
@@ -177,7 +177,6 @@ void MoveTool::pasteFloatingBuffer(const std::shared_ptr<Layer>& layer, QPoint o
         return;
     }
 
-    const QPainterPath& selPath = SelectionManager::instance().selectionPath();
     auto& layerData = layer->data();
     int layerWidth = layer->width();
     int layerHeight = layer->height();
@@ -191,14 +190,11 @@ void MoveTool::pasteFloatingBuffer(const std::shared_ptr<Layer>& layer, QPoint o
     int dstX = srcX + offset.x();
     int dstY = srcY + offset.y();
 
-    // Paste pixels that were inside the selection
+    // Paste pixels that were inside the selection (using pre-rasterized mask)
     for (int row = 0; row < height; ++row) {
         for (int col = 0; col < width; ++col) {
-            int origPx = srcX + col;
-            int origPy = srcY + row;
-
             // Only paste pixels that were inside original selection
-            if (!selPath.contains(QPointF(origPx + 0.5, origPy + 0.5))) {
+            if (!isPixelSelected(col, row)) {
                 continue;
             }
 
@@ -284,6 +280,39 @@ void MoveTool::clearFloatingState()
     floatingBuffer_.clear();
     floatingRect_ = QRect();
     targetLayer_.reset();
+    selectionMask_.clear();
+}
+
+void MoveTool::rasterizeSelectionMask(const QPainterPath& selPath, const QRect& bounds)
+{
+    int width = bounds.width();
+    int height = bounds.height();
+    int x1 = bounds.left();
+    int y1 = bounds.top();
+
+    selectionMask_.resize(static_cast<std::size_t>(width) * height, false);
+
+    // Rasterize the selection path to a boolean mask (one-time O(n) operation)
+    for (int row = 0; row < height; ++row) {
+        for (int col = 0; col < width; ++col) {
+            int px = x1 + col;
+            int py = y1 + row;
+            selectionMask_[static_cast<std::size_t>(row) * width + col] =
+                selPath.contains(QPointF(px + 0.5, py + 0.5));
+        }
+    }
+}
+
+bool MoveTool::isPixelSelected(int col, int row) const
+{
+    if (selectionMask_.empty() || floatingRect_.isEmpty()) {
+        return false;
+    }
+    int width = floatingRect_.width();
+    if (col < 0 || col >= width || row < 0 || row >= floatingRect_.height()) {
+        return false;
+    }
+    return selectionMask_[static_cast<std::size_t>(row) * width + col];
 }
 
 }  // namespace gimp

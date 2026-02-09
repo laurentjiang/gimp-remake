@@ -443,8 +443,8 @@ TEST_CASE("MoveCommand simulates move operation", "[move_command][unit]")
     cmd->captureBeforeState();
 
     // Simulate move: clear source, paint destination
-    setRegionColor(layer, 10, 10, 20, 20, 0, 0, 0, 255);   // Clear source
-    setRegionColor(layer, 40, 40, 20, 20, 255, 0, 0, 255); // Paint destination
+    setRegionColor(layer, 10, 10, 20, 20, 0, 0, 0, 255);    // Clear source
+    setRegionColor(layer, 40, 40, 20, 20, 255, 0, 0, 255);  // Paint destination
     cmd->captureAfterState();
 
     // Verify current state: source is black, destination is red

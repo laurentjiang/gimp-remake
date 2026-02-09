@@ -13,7 +13,12 @@
 #include <QPainterPath>
 #include <QPointF>
 
+#include <memory>
 #include <vector>
+
+namespace gimp {
+class SelectionCommand;
+}  // namespace gimp
 
 namespace gimp {
 
@@ -57,6 +62,9 @@ class FreeSelectTool : public Tool {
 
     /// Minimum distance between points to avoid excessive density.
     static constexpr float kMinPointDistance = 2.0F;
+
+    /// Pending command for current selection operation.
+    std::shared_ptr<SelectionCommand> pendingCommand_;
 };
 
 }  // namespace gimp

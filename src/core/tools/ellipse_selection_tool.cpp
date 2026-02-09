@@ -7,6 +7,8 @@
 
 #include "core/tools/ellipse_selection_tool.h"
 
+#include "core/command_bus.h"
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
 
@@ -30,6 +32,21 @@ QRectF clampRectToDocument(const QRectF& rect, const Document* document)
 }
 
 }  // namespace
+
+void EllipseSelectTool::beginSelectionCommand(const std::string& description)
+{
+    pendingCommand_ = std::make_shared<SelectionCommand>(description);
+    pendingCommand_->captureBeforeState();
+}
+
+void EllipseSelectTool::commitSelectionCommand()
+{
+    if (pendingCommand_ && commandBus_) {
+        pendingCommand_->captureAfterState();
+        commandBus_->dispatch(pendingCommand_);
+    }
+    pendingCommand_.reset();
+}
 
 SelectionMode EllipseSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
 {
@@ -179,7 +196,8 @@ bool EllipseSelectTool::onKeyPress(Qt::Key key, Qt::KeyboardModifiers /*modifier
     }
 
     if (key == Qt::Key_Return || key == Qt::Key_Enter) {
-        // Finalize: apply current bounds as selection
+        // Finalize: apply current bounds as selection (already applied, just commit)
+        commitSelectionCommand();
         QPainterPath path;
         if (currentBounds_.isValid() && currentBounds_.width() > 0 && currentBounds_.height() > 0) {
             path.addEllipse(currentBounds_);
@@ -193,8 +211,10 @@ bool EllipseSelectTool::onKeyPress(Qt::Key key, Qt::KeyboardModifiers /*modifier
     }
 
     if (key == Qt::Key_Escape) {
-        // Cancel: clear selection and return to idle
+        // Cancel: clear selection and return to idle - create command for clear
+        beginSelectionCommand("Deselect");
         SelectionManager::instance().clear();
+        commitSelectionCommand();
         SelectionManager::instance().clearPreview();
         phase_ = EllipseSelectionPhase::Idle;
         currentBounds_ = QRectF();
@@ -219,13 +239,15 @@ void EllipseSelectTool::beginStroke(const ToolInputEvent& event)
 
         activeHandle_ = hitTestHandle(canvasPos, zoomLevel);
         if (activeHandle_ != EllipseSelectionHandle::None) {
-            // Start resize from handle
+            // Start resize from handle - begin command for resize operation
+            beginSelectionCommand("Resize Selection");
             scaleAnchor_ = getAnchorForHandle(activeHandle_);
             originalBounds_ = currentBounds_;
             return;
         }
 
         // Click outside handles - finalize current selection and start new
+        commitSelectionCommand();
         QPainterPath path;
         if (currentBounds_.isValid() && currentBounds_.width() > 0 && currentBounds_.height() > 0) {
             path.addEllipse(currentBounds_);
@@ -237,6 +259,7 @@ void EllipseSelectTool::beginStroke(const ToolInputEvent& event)
     }
 
     // Start new selection (Creating phase)
+    beginSelectionCommand("Ellipse Select");
     phase_ = EllipseSelectionPhase::Creating;
     startPos_ = event.canvasPos;
     currentPos_ = event.canvasPos;
@@ -338,6 +361,15 @@ void EllipseSelectTool::endStroke(const ToolInputEvent& event)
     // End handle resize
     if (phase_ == EllipseSelectionPhase::Adjusting &&
         activeHandle_ != EllipseSelectionHandle::None) {
+        // Apply the final selection state from the resize
+        QPainterPath path;
+        if (currentBounds_.isValid() && currentBounds_.width() > 0 && currentBounds_.height() > 0) {
+            path.addEllipse(currentBounds_);
+        }
+        SelectionManager::instance().applySelection(
+            path, SelectionMode::Replace, SelectionType::Ellipse);
+        SelectionManager::instance().clearPreview();
+        commitSelectionCommand();
         activeHandle_ = EllipseSelectionHandle::None;
         // Stay in Adjusting phase - handles remain visible
         return;
@@ -354,9 +386,11 @@ void EllipseSelectTool::endStroke(const ToolInputEvent& event)
         if (currentBounds_.isValid() && currentBounds_.width() > 0 && currentBounds_.height() > 0) {
             // Apply the selection immediately but keep handles visible
             SelectionManager::instance().applySelection(path, currentMode_, SelectionType::Ellipse);
+            commitSelectionCommand();
             phase_ = EllipseSelectionPhase::Adjusting;
         } else {
             // Invalid selection - back to idle
+            pendingCommand_.reset();
             phase_ = EllipseSelectionPhase::Idle;
         }
 
@@ -372,6 +406,7 @@ void EllipseSelectTool::cancelStroke()
 void EllipseSelectTool::resetToIdle()
 {
     SelectionManager::instance().clearPreview();
+    pendingCommand_.reset();
     phase_ = EllipseSelectionPhase::Idle;
     currentBounds_ = QRectF();
     activeHandle_ = EllipseSelectionHandle::None;

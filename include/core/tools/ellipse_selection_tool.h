@@ -8,6 +8,11 @@
 #include <QRectF>
 
 #include <array>
+#include <memory>
+
+namespace gimp {
+class SelectionCommand;
+}  // namespace gimp
 
 namespace gimp {
 
@@ -94,6 +99,15 @@ class EllipseSelectTool : public Tool {
     EllipseSelectionHandle activeHandle_ = EllipseSelectionHandle::None;
     QPointF scaleAnchor_;    // Fixed anchor point during resize
     QRectF originalBounds_;  // Bounds before resize started
+
+    /// Pending command for current selection operation.
+    std::shared_ptr<SelectionCommand> pendingCommand_;
+
+    /// Creates and initializes a new selection command.
+    void beginSelectionCommand(const std::string& description);
+
+    /// Finalizes and dispatches the pending command.
+    void commitSelectionCommand();
 };
 
 }  // namespace gimp

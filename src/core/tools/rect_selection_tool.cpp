@@ -7,6 +7,8 @@
 
 #include "core/tools/rect_selection_tool.h"
 
+#include "core/command_bus.h"
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
 
@@ -30,6 +32,21 @@ QRectF clampRectToDocument(const QRectF& rect, const Document* document)
 }
 
 }  // namespace
+
+void RectSelectTool::beginSelectionCommand(const std::string& description)
+{
+    pendingCommand_ = std::make_shared<SelectionCommand>(description);
+    pendingCommand_->captureBeforeState();
+}
+
+void RectSelectTool::commitSelectionCommand()
+{
+    if (pendingCommand_ && commandBus_) {
+        pendingCommand_->captureAfterState();
+        commandBus_->dispatch(pendingCommand_);
+    }
+    pendingCommand_.reset();
+}
 
 SelectionMode RectSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
 {
@@ -135,6 +152,7 @@ QPointF RectSelectTool::getAnchorForHandle(SelectionHandle handle) const
 
 void RectSelectTool::finalizeSelection()
 {
+    commitSelectionCommand();
     phase_ = SelectionPhase::Idle;
     activeHandle_ = SelectionHandle::None;
     // Selection is already applied, just clear adjusting state
@@ -155,7 +173,8 @@ void RectSelectTool::beginStroke(const ToolInputEvent& event)
 
         SelectionHandle handle = hitTestHandle(event.canvasPos, zoomLevel);
         if (handle != SelectionHandle::None) {
-            // Start resizing via handle
+            // Start resizing via handle - begin command for resize operation
+            beginSelectionCommand("Resize Selection");
             activeHandle_ = handle;
             startPos_ = event.canvasPos;
             scaleAnchor_ = getAnchorForHandle(handle);
@@ -170,10 +189,12 @@ void RectSelectTool::beginStroke(const ToolInputEvent& event)
         }
 
         // Click outside selection with no handle - start new selection
+        commitSelectionCommand();
         finalizeSelection();
     }
 
     // Start creating a new selection
+    beginSelectionCommand("Rectangle Select");
     phase_ = SelectionPhase::Creating;
     startPos_ = event.canvasPos;
     currentMode_ = resolveSelectionMode(event.modifiers);
@@ -279,6 +300,7 @@ void RectSelectTool::endStroke(const ToolInputEvent& event)
         auto path = buildRectPath(currentBounds_);
         SelectionManager::instance().applySelection(path, currentMode_, SelectionType::Rectangle);
         SelectionManager::instance().clearPreview();
+        commitSelectionCommand();
 
         if (!currentBounds_.isEmpty()) {
             phase_ = SelectionPhase::Adjusting;
@@ -286,7 +308,10 @@ void RectSelectTool::endStroke(const ToolInputEvent& event)
             phase_ = SelectionPhase::Idle;
         }
     } else if (phase_ == SelectionPhase::Adjusting) {
-        // Finish handle drag, stay in Adjusting
+        // Finish handle drag, commit and stay in Adjusting
+        if (activeHandle_ != SelectionHandle::None) {
+            commitSelectionCommand();
+        }
         activeHandle_ = SelectionHandle::None;
     }
 }
@@ -299,6 +324,7 @@ void RectSelectTool::cancelStroke()
 void RectSelectTool::resetToIdle()
 {
     SelectionManager::instance().clearPreview();
+    pendingCommand_.reset();
     phase_ = SelectionPhase::Idle;
     currentBounds_ = QRectF();
     activeHandle_ = SelectionHandle::None;
@@ -319,8 +345,10 @@ bool RectSelectTool::onKeyPress(Qt::Key key, Qt::KeyboardModifiers /*modifiers*/
         }
     } else if (key == Qt::Key_Escape) {
         if (phase_ == SelectionPhase::Adjusting) {
-            // Cancel selection entirely
+            // Cancel selection entirely - create command for the clear
+            beginSelectionCommand("Deselect");
             SelectionManager::instance().clear();
+            commitSelectionCommand();
             phase_ = SelectionPhase::Idle;
             currentBounds_ = QRectF();
             return true;

@@ -14,7 +14,12 @@
 #include <QPoint>
 #include <QRectF>
 
+#include <memory>
 #include <vector>
+
+namespace gimp {
+class SelectionCommand;
+}  // namespace gimp
 
 namespace gimp {
 
@@ -103,6 +108,15 @@ class RectSelectTool : public Tool {
     SelectionMode currentMode_ = SelectionMode::Replace;
     SelectionHandle activeHandle_ = SelectionHandle::None;
     QPointF scaleAnchor_;  ///< Fixed corner during resize.
+
+    /// Pending command for current selection operation.
+    std::shared_ptr<SelectionCommand> pendingCommand_;
+
+    /// Creates and initializes a new selection command.
+    void beginSelectionCommand(const std::string& description);
+
+    /// Finalizes and dispatches the pending command.
+    void commitSelectionCommand();
 };
 
 }  // namespace gimp

@@ -155,6 +155,12 @@ class MoveTool : public Tool, public ToolOptions {
     void commitMove();
 
     /**
+     * @brief Checks if the destination rect is fully inside layer bounds.
+     * @return True if all pixels would fit inside the layer.
+     */
+    [[nodiscard]] bool isDestinationInsideBounds() const;
+
+    /**
      * @brief Restores original pixels and cancels the move.
      */
     void cancelMove();

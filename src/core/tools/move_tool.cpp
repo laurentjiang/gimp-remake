@@ -22,6 +22,16 @@ namespace gimp {
 
 void MoveTool::beginStroke(const ToolInputEvent& event)
 {
+    // If we already have an active floating buffer (from previous incomplete move),
+    // continue using it instead of re-extracting from layer
+    if (isMovingSelection()) {
+        // Update start position relative to current offset for continued dragging
+        QPoint currentOffset = floatingOffset();
+        startPos_ = event.canvasPos - currentOffset;
+        currentPos_ = event.canvasPos;
+        return;
+    }
+
     startPos_ = event.canvasPos;
     currentPos_ = event.canvasPos;
     clearFloatingState();
@@ -62,13 +72,30 @@ void MoveTool::continueStroke(const ToolInputEvent& event)
     currentPos_ = event.canvasPos;
 }
 
+bool MoveTool::isDestinationInsideBounds() const
+{
+    if (!targetLayer_ || floatingRect_.isEmpty()) {
+        return true;
+    }
+    QPoint offset = currentPos_ - startPos_;
+    QRect dstRect = floatingRect_.translated(offset);
+    QRect layerBounds(0, 0, targetLayer_->width(), targetLayer_->height());
+    return layerBounds.contains(dstRect);
+}
+
 void MoveTool::endStroke(const ToolInputEvent& event)
 {
     currentPos_ = event.canvasPos;
     lastDelta_ = currentPos_ - startPos_;
 
     if (isMovingSelection()) {
-        commitMove();
+        // Only auto-commit if destination is fully inside canvas bounds.
+        // If outside, keep floating buffer active - user can press Enter to force anchor
+        // or continue dragging back inside before releasing.
+        if (isDestinationInsideBounds()) {
+            commitMove();
+        }
+        // When outside bounds, floating buffer remains active for continued manipulation
     }
 }
 

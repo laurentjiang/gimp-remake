@@ -463,6 +463,22 @@ void SkiaCanvasWidget::wheelEvent(QWheelEvent* event)
 
 void SkiaCanvasWidget::keyPressEvent(QKeyEvent* event)
 {
+    // Forward to MoveTool if there's an active floating selection (move override or active float)
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        if (moveTool->onKeyPress(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            // If floating buffer was committed, clear move override and refresh
+            if (!moveTool->isMovingSelection()) {
+                m_moveOverride = false;
+                invalidateCache();
+                emit canvasModified();
+            }
+            event->accept();
+            update();
+            return;
+        }
+    }
+
     // Forward to active tool if in Active state
     Tool* tool = activeTool();
     if (tool && tool->state() == ToolState::Active) {
@@ -647,7 +663,13 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
             if (isRelease) {
                 handled = moveTool->onMouseRelease(toolEvent);
                 m_isStroking = false;
-                m_moveOverride = false;
+                // Only clear move override if the move actually committed
+                // (floating buffer becomes empty). If floating buffer is still
+                // active (e.g., selection is outside canvas bounds), keep
+                // m_moveOverride true so subsequent drags continue the move.
+                if (!moveTool->isMovingSelection()) {
+                    m_moveOverride = false;
+                }
                 if (handled) {
                     invalidateCache();
                     emit canvasModified();

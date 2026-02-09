@@ -66,9 +66,11 @@ int runApplication(int argc, char** argv)
 {
     const QApplication app(argc, argv);
 
+    gimp::MainWindow window;
+
+    // Log after MainWindow construction so QtForwardingSink is registered
     spdlog::info("Application starting up...");
 
-    gimp::MainWindow window;
     window.show();
 
     return QApplication::exec();

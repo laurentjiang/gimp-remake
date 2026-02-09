@@ -169,22 +169,15 @@ void MoveTool::endStroke(const ToolInputEvent& event)
     currentPos_ = event.canvasPos;
     lastDelta_ = currentPos_ - startPos_;
 
-    // If we were scaling, just end the scale operation but keep floating buffer
+    // Keep floating buffer active after mouse release so user can:
+    // - See and drag transform handles
+    // - Continue adjusting position
+    // - Press Enter to commit or Escape to cancel
+    // This matches GIMP transform tool behavior.
     if (activeHandle_ != TransformHandle::None) {
         activeHandle_ = TransformHandle::None;
-        // Keep floating buffer active for further transforms or move
-        return;
     }
-
-    if (isMovingSelection()) {
-        // Only auto-commit if destination is fully inside canvas bounds.
-        // If outside, keep floating buffer active - user can press Enter to force anchor
-        // or continue dragging back inside before releasing.
-        if (isDestinationInsideBounds()) {
-            commitMove();
-        }
-        // When outside bounds, floating buffer remains active for continued manipulation
-    }
+    // Don't auto-commit - require explicit Enter key to finalize the transform
 }
 
 void MoveTool::cancelStroke()

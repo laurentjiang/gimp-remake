@@ -266,15 +266,8 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
     }
 
     // Render floating buffer for selection move preview
-    // Query MoveTool for floating buffer - either active tool or via move override
-    MoveTool* moveTool = nullptr;
-    Tool* currentTool = activeTool();
-    if (m_moveOverride) {
-        // During modifier move override, get MoveTool directly
-        moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
-    } else {
-        moveTool = dynamic_cast<MoveTool*>(currentTool);
-    }
+    // Always check MoveTool for active floating selection, regardless of current tool
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
     if (moveTool && moveTool->isMovingSelection()) {
         QRect floatBounds = moveTool->floatingRect();
         QPoint floatOffset = moveTool->floatingOffset();

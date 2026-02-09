@@ -307,13 +307,56 @@ void MoveTool::rasterizeSelectionMask(const QPainterPath& selPath, const QRect& 
 
     selectionMask_.resize(static_cast<std::size_t>(width) * height, false);
 
-    // Rasterize the selection path to a boolean mask (one-time O(n) operation)
-    for (int row = 0; row < height; ++row) {
-        for (int col = 0; col < width; ++col) {
-            int px = x1 + col;
-            int py = y1 + row;
-            selectionMask_[static_cast<std::size_t>(row) * width + col] =
-                selPath.contains(QPointF(px + 0.5, py + 0.5));
+    // Use selection type hint for optimized rasterization
+    SelectionType selType = SelectionManager::instance().selectionType();
+    QRectF pathBounds = selPath.boundingRect();
+
+    if (selType == SelectionType::Rectangle) {
+        // Rectangle: Direct bounds check (O(1) per pixel)
+        int rectX1 = static_cast<int>(std::floor(pathBounds.left()));
+        int rectY1 = static_cast<int>(std::floor(pathBounds.top()));
+        int rectX2 = static_cast<int>(std::ceil(pathBounds.right()));
+        int rectY2 = static_cast<int>(std::ceil(pathBounds.bottom()));
+
+        for (int row = 0; row < height; ++row) {
+            for (int col = 0; col < width; ++col) {
+                int px = x1 + col;
+                int py = y1 + row;
+                selectionMask_[static_cast<std::size_t>(row) * width + col] =
+                    (px >= rectX1 && px < rectX2 && py >= rectY1 && py < rectY2);
+            }
+        }
+    } else if (selType == SelectionType::Ellipse) {
+        // Ellipse: Direct equation check (O(1) per pixel)
+        double cx = pathBounds.center().x();
+        double cy = pathBounds.center().y();
+        double rx = pathBounds.width() / 2.0;
+        double ry = pathBounds.height() / 2.0;
+
+        // Avoid division by zero
+        if (rx < 0.5 || ry < 0.5) {
+            return;
+        }
+
+        for (int row = 0; row < height; ++row) {
+            for (int col = 0; col < width; ++col) {
+                double px = x1 + col + 0.5;
+                double py = y1 + row + 0.5;
+                double dx = (px - cx) / rx;
+                double dy = (py - cy) / ry;
+                selectionMask_[static_cast<std::size_t>(row) * width + col] =
+                    (dx * dx + dy * dy) <= 1.0;
+            }
+        }
+    } else {
+        // Unknown/complex: Fall back to QPainterPath::contains()
+        for (int row = 0; row < height; ++row) {
+            for (int col = 0; col < width; ++col) {
+                int px = x1 + col;
+                int py = y1 + row;
+                selectionMask_[static_cast<std::size_t>(row) * width + col] =
+                    selPath.contains(QPointF(px + 0.5, py + 0.5));
+            }
         }
     }
 }

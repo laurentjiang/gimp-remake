@@ -106,7 +106,7 @@ void EllipseSelectTool::endStroke(const ToolInputEvent& event)
     currentPos_ = event.canvasPos;
     auto path = buildEllipsePath(startPos_, currentPos_, event.modifiers);
 
-    SelectionManager::instance().applySelection(path, currentMode_);
+    SelectionManager::instance().applySelection(path, currentMode_, SelectionType::Ellipse);
     SelectionManager::instance().clearPreview();
 }
 

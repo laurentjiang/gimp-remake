@@ -25,6 +25,15 @@ enum class SelectionMode {
 };
 
 /**
+ * @brief Selection shape type for optimization hints.
+ */
+enum class SelectionType {
+    Unknown,    ///< Complex or combined selection.
+    Rectangle,  ///< Axis-aligned rectangle.
+    Ellipse     ///< Axis-aligned ellipse.
+};
+
+/**
  * @brief Central manager for selection state.
  *
  * Stores the committed selection and a preview path during interactive
@@ -66,6 +75,7 @@ class SelectionManager {
         selection_ = QPainterPath();
         preview_ = QPainterPath();
         previewMode_ = SelectionMode::Replace;
+        selectionType_ = SelectionType::Unknown;
         syncSelectionToDocument();
     }
 
@@ -83,6 +93,11 @@ class SelectionManager {
      * @brief Returns the committed selection path.
      */
     [[nodiscard]] const QPainterPath& selectionPath() const { return selection_; }
+
+    /**
+     * @brief Returns the selection type for optimization hints.
+     */
+    [[nodiscard]] SelectionType selectionType() const { return selectionType_; }
 
     /**
      * @brief Returns the preview selection path.
@@ -114,8 +129,13 @@ class SelectionManager {
 
     /**
      * @brief Applies a path to the committed selection using the given mode.
+     * @param path The selection path to apply.
+     * @param mode How to combine with existing selection.
+     * @param type Optional hint about the selection shape for optimization.
      */
-    void applySelection(const QPainterPath& path, SelectionMode mode)
+    void applySelection(const QPainterPath& path,
+                        SelectionMode mode,
+                        SelectionType type = SelectionType::Unknown)
     {
         if (path.isEmpty()) {
             return;
@@ -124,12 +144,15 @@ class SelectionManager {
         switch (mode) {
             case SelectionMode::Replace:
                 selection_ = path;
+                selectionType_ = type;
                 break;
             case SelectionMode::Add:
                 selection_ = selection_.isEmpty() ? path : selection_.united(path);
+                selectionType_ = SelectionType::Unknown;  // Combined selection
                 break;
             case SelectionMode::Subtract:
                 selection_ = selection_.isEmpty() ? QPainterPath() : selection_.subtracted(path);
+                selectionType_ = SelectionType::Unknown;  // Combined selection
                 break;
         }
 
@@ -169,6 +192,7 @@ class SelectionManager {
     QPainterPath selection_;
     QPainterPath preview_;
     SelectionMode previewMode_ = SelectionMode::Replace;
+    SelectionType selectionType_ = SelectionType::Unknown;
     std::weak_ptr<Document> document_;
 };
 

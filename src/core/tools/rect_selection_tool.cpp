@@ -106,7 +106,7 @@ void RectSelectTool::endStroke(const ToolInputEvent& event)
     currentPos_ = event.canvasPos;
     auto path = buildRectPath(startPos_, currentPos_, event.modifiers);
 
-    SelectionManager::instance().applySelection(path, currentMode_);
+    SelectionManager::instance().applySelection(path, currentMode_, SelectionType::Rectangle);
     SelectionManager::instance().clearPreview();
 }
 

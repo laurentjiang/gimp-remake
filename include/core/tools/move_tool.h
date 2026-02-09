@@ -72,6 +72,17 @@ class MoveTool : public Tool {
      */
     bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers) override;
 
+    /**
+     * @brief Sets copy mode for the next stroke.
+     *
+     * When copy mode is enabled, the source pixels are NOT cleared,
+     * resulting in a copy-move operation (like Shift+Alt in GIMP).
+     * Mode is reset to false after the stroke ends.
+     *
+     * @param copyMode True to copy pixels, false to cut them.
+     */
+    void setCopyMode(bool copyMode) { copyMode_ = copyMode; }
+
   protected:
     void beginStroke(const ToolInputEvent& event) override;
     void continueStroke(const ToolInputEvent& event) override;
@@ -79,9 +90,10 @@ class MoveTool : public Tool {
     void cancelStroke() override;
 
   private:
-    QPoint startPos_;    ///< Initial mouse position.
-    QPoint currentPos_;  ///< Current mouse position.
-    QPoint lastDelta_;   ///< Recorded movement from last completed stroke.
+    QPoint startPos_;        ///< Initial mouse position.
+    QPoint currentPos_;      ///< Current mouse position.
+    QPoint lastDelta_;       ///< Recorded movement from last completed stroke.
+    bool copyMode_ = false;  ///< If true, source pixels are not cleared (copy-move).
 
     // Floating buffer for selection move
     std::vector<std::uint8_t> floatingBuffer_;  ///< Extracted pixels (RGBA).

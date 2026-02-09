@@ -603,15 +603,20 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
 
         const bool ctrlAlt = (event->modifiers() & Qt::ControlModifier) != 0 &&
                              (event->modifiers() & Qt::AltModifier) != 0;
+        const bool shiftAlt = (event->modifiers() & Qt::ShiftModifier) != 0 &&
+                              (event->modifiers() & Qt::AltModifier) != 0;
         const std::string& activeToolId = ToolRegistry::instance().getActiveTool();
         const bool isSelectionTool = activeToolId.find("select") != std::string::npos;
 
-        if (ctrlAlt && isSelectionTool && SelectionManager::instance().hasSelection()) {
+        // Ctrl+Alt = cut-move, Shift+Alt = copy-move
+        if ((ctrlAlt || shiftAlt) && isSelectionTool &&
+            SelectionManager::instance().hasSelection()) {
             const QPainterPath& selPath = SelectionManager::instance().selectionPath();
             if (selPath.contains(QPointF(toolEvent.canvasPos))) {
-                // Click inside selection with Ctrl+Alt - delegate to MoveTool
+                // Click inside selection with modifier - delegate to MoveTool
                 auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
                 if (moveTool) {
+                    moveTool->setCopyMode(shiftAlt);  // Shift+Alt = copy mode
                     m_moveOverride = true;
                     m_isStroking = true;
                     bool handled = moveTool->onMousePress(toolEvent);

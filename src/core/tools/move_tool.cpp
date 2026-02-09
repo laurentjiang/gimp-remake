@@ -44,7 +44,11 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     auto layer = document_->layers()[0];
     targetLayer_ = layer;
     extractSelectionPixels(layer);
-    clearSourcePixels(layer);
+
+    // Only clear source if not in copy mode (Shift+Alt = copy, Ctrl+Alt = cut)
+    if (!copyMode_) {
+        clearSourcePixels(layer);
+    }
 }
 
 void MoveTool::continueStroke(const ToolInputEvent& event)
@@ -220,6 +224,7 @@ void MoveTool::commitMove()
 {
     if (!targetLayer_ || floatingBuffer_.empty()) {
         clearFloatingState();
+        copyMode_ = false;
         return;
     }
 
@@ -235,24 +240,29 @@ void MoveTool::commitMove()
 
     if (unionRect.isEmpty()) {
         clearFloatingState();
+        copyMode_ = false;
         return;
     }
 
-    // Create command and capture before state (after clear but before paste)
+    // Create command and capture before state
     auto cmd = std::make_shared<MoveCommand>(targetLayer_, unionRect);
 
-    // Source is already cleared, so capture current state as "after clear, before paste"
-    // We need to restore the original pixels first to get "before" state
-    // Actually, we need to recapture as the layer has been modified
+    if (copyMode_) {
+        // Copy mode: source was never cleared, just paste at new location
+        cmd->captureBeforeState();
+        pasteFloatingBuffer(targetLayer_, offset);
+        cmd->captureAfterState();
+    } else {
+        // Cut mode: source was cleared, need to restore for before state
+        // Restore original pixels temporarily to capture before state
+        pasteFloatingBuffer(targetLayer_, QPoint(0, 0));  // Paste at original location
+        cmd->captureBeforeState();
 
-    // Restore original pixels temporarily to capture before state
-    pasteFloatingBuffer(targetLayer_, QPoint(0, 0));  // Paste at original location
-    cmd->captureBeforeState();
-
-    // Clear again and paste at new location
-    clearSourcePixels(targetLayer_);
-    pasteFloatingBuffer(targetLayer_, offset);
-    cmd->captureAfterState();
+        // Clear again and paste at new location
+        clearSourcePixels(targetLayer_);
+        pasteFloatingBuffer(targetLayer_, offset);
+        cmd->captureAfterState();
+    }
 
     // Dispatch command
     if (commandBus_) {
@@ -260,19 +270,24 @@ void MoveTool::commitMove()
     }
 
     clearFloatingState();
+    copyMode_ = false;
 }
 
 void MoveTool::cancelMove()
 {
     if (!targetLayer_ || floatingBuffer_.empty()) {
         clearFloatingState();
+        copyMode_ = false;
         return;
     }
 
-    // Restore original pixels at original location
-    pasteFloatingBuffer(targetLayer_, QPoint(0, 0));
+    // Only restore if we were in cut mode (source was cleared)
+    if (!copyMode_) {
+        pasteFloatingBuffer(targetLayer_, QPoint(0, 0));
+    }
 
     clearFloatingState();
+    copyMode_ = false;
 }
 
 void MoveTool::clearFloatingState()

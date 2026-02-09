@@ -211,6 +211,12 @@ void EllipseSelectTool::beginStroke(const ToolInputEvent& event)
 
     // In Adjusting phase, check for handle hits first
     if (phase_ == EllipseSelectionPhase::Adjusting) {
+        // Sync bounds from SelectionManager in case selection was transformed externally
+        const auto& selPath = SelectionManager::instance().selectionPath();
+        if (!selPath.isEmpty()) {
+            currentBounds_ = selPath.boundingRect();
+        }
+
         activeHandle_ = hitTestHandle(canvasPos, zoomLevel);
         if (activeHandle_ != EllipseSelectionHandle::None) {
             // Start resize from handle
@@ -360,14 +366,22 @@ void EllipseSelectTool::endStroke(const ToolInputEvent& event)
 
 void EllipseSelectTool::cancelStroke()
 {
-    activeHandle_ = EllipseSelectionHandle::None;
-    SelectionManager::instance().clearPreview();
+    resetToIdle();
+}
 
-    if (phase_ == EllipseSelectionPhase::Creating) {
-        phase_ = EllipseSelectionPhase::Idle;
-        currentBounds_ = QRectF();
-    }
-    // Keep Adjusting phase active if we were adjusting
+void EllipseSelectTool::resetToIdle()
+{
+    SelectionManager::instance().clearPreview();
+    phase_ = EllipseSelectionPhase::Idle;
+    currentBounds_ = QRectF();
+    activeHandle_ = EllipseSelectionHandle::None;
+    originalBounds_ = QRectF();
+}
+
+void EllipseSelectTool::onDeactivate()
+{
+    resetToIdle();
+    Tool::onDeactivate();
 }
 
 }  // namespace gimp

@@ -53,6 +53,11 @@ class EllipseSelectTool : public Tool {
     /// Handle key press for Enter/Escape during Adjusting phase
     bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers) override;
 
+    /**
+     * @brief Called when tool is deactivated. Resets phase state.
+     */
+    void onDeactivate() override;
+
   protected:
     void beginStroke(const ToolInputEvent& event) override;
     void continueStroke(const ToolInputEvent& event) override;
@@ -70,6 +75,9 @@ class EllipseSelectTool : public Tool {
 
     /// Get anchor point for a given handle (opposite corner/edge)
     [[nodiscard]] QPointF getAnchorForHandle(EllipseSelectionHandle handle) const;
+
+    /// Resets tool to idle state, clearing phase and bounds
+    void resetToIdle();
 
     QPoint startPos_;
     QPoint currentPos_;

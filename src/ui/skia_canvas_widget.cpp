@@ -302,6 +302,13 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         QTransform transform;
         transform.translate(m_viewport.panX, m_viewport.panY);
         transform.scale(m_viewport.zoomLevel, m_viewport.zoomLevel);
+
+        // If moving selection contents, also translate by the move offset
+        if (moveTool && moveTool->isMovingSelection()) {
+            QPoint moveOffset = moveTool->floatingOffset();
+            transform.translate(moveOffset.x(), moveOffset.y());
+        }
+
         painter.setTransform(transform, true);
         painter.setRenderHint(QPainter::Antialiasing, true);
 

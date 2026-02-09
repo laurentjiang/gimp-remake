@@ -278,6 +278,9 @@ void MoveTool::commitMove()
         commandBus_->dispatch(cmd);
     }
 
+    // Update selection outline to follow the moved pixels
+    SelectionManager::instance().translateSelection(offset);
+
     clearFloatingState();
     modifierOverride_ = false;
 }

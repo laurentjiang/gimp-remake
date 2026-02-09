@@ -10,6 +10,7 @@
 #include "core/document.h"
 
 #include <QPainterPath>
+#include <QPoint>
 
 #include <memory>
 
@@ -156,6 +157,24 @@ class SelectionManager {
                 break;
         }
 
+        syncSelectionToDocument();
+    }
+
+    /**
+     * @brief Translates the current selection by the given offset.
+     *
+     * Used after moving selection contents to update the selection outline
+     * to follow the moved pixels.
+     *
+     * @param offset The translation offset in canvas coordinates.
+     */
+    void translateSelection(const QPoint& offset)
+    {
+        if (selection_.isEmpty() || (offset.x() == 0 && offset.y() == 0)) {
+            return;
+        }
+
+        selection_.translate(offset.x(), offset.y());
         syncSelectionToDocument();
     }
 

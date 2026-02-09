@@ -195,6 +195,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_tool_state_machine.cpp"
         "tests/unit/test_color_picker_tool.cpp"
         "tests/unit/test_draw_command.cpp"
+        "tests/unit/test_move_command.cpp"
         "tests/unit/test_selection_command.cpp"
         "tests/unit/test_canvas_viewport.cpp"
         "tests/unit/test_event_bus.cpp"

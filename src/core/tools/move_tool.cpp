@@ -239,9 +239,31 @@ void MoveTool::commitMove()
 
     QPoint offset = currentPos_ - startPos_;
 
+    // Clamp offset to keep floating rect within layer bounds
+    // This prevents losing pixels that would go outside the canvas
+    int layerWidth = targetLayer_->width();
+    int layerHeight = targetLayer_->height();
+    QRect dstRect = floatingRect_.translated(offset);
+
+    // Clamp horizontally
+    if (dstRect.left() < 0) {
+        offset.setX(offset.x() - dstRect.left());
+    } else if (dstRect.right() >= layerWidth) {
+        offset.setX(offset.x() - (dstRect.right() - layerWidth + 1));
+    }
+
+    // Clamp vertically
+    if (dstRect.top() < 0) {
+        offset.setY(offset.y() - dstRect.top());
+    } else if (dstRect.bottom() >= layerHeight) {
+        offset.setY(offset.y() - (dstRect.bottom() - layerHeight + 1));
+    }
+
+    // Recalculate destination rect with clamped offset
+    dstRect = floatingRect_.translated(offset);
+
     // Calculate the bounding rect that covers both source and destination
     QRect srcRect = floatingRect_;
-    QRect dstRect = floatingRect_.translated(offset);
     QRect unionRect = srcRect.united(dstRect);
 
     // Clip to layer bounds

@@ -266,9 +266,15 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
     }
 
     // Render floating buffer for selection move preview
-    // Query directly from MoveTool if it's active and has a floating buffer
+    // Query MoveTool for floating buffer - either active tool or via move override
+    MoveTool* moveTool = nullptr;
     Tool* currentTool = activeTool();
-    auto* moveTool = dynamic_cast<MoveTool*>(currentTool);
+    if (m_moveOverride) {
+        // During modifier move override, get MoveTool directly
+        moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    } else {
+        moveTool = dynamic_cast<MoveTool*>(currentTool);
+    }
     if (moveTool && moveTool->isMovingSelection()) {
         const auto* floatBuf = moveTool->floatingBuffer();
         QRect floatBounds = moveTool->floatingRect();
@@ -616,6 +622,8 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
                 // Click inside selection with modifier - delegate to MoveTool
                 auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
                 if (moveTool) {
+                    // Reset MoveTool to ensure it's in Idle state before starting
+                    moveTool->reset();
                     moveTool->setCopyMode(shiftAlt);  // Shift+Alt = copy mode
                     m_moveOverride = true;
                     m_isStroking = true;
@@ -646,10 +654,10 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
                 }
             } else {
                 handled = moveTool->onMouseMove(toolEvent);
-                if (handled) {
-                    updateCacheFromLayer();
+                // Always update during active move for real-time feedback
+                // The floating buffer is composited in paintEvent
+                if (handled || moveTool->isMovingSelection()) {
                     update();
-                    emit canvasModified();
                 }
             }
             return;

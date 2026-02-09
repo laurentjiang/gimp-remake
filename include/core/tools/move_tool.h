@@ -10,14 +10,23 @@
 #include "core/tool.h"
 
 #include <QPoint>
+#include <QRect>
+
+#include <cstdint>
+#include <memory>
+#include <vector>
 
 namespace gimp {
+
+class Layer;
 
 /**
  * @brief Tool for moving layers or selections.
  *
- * The move tool translates the active layer or selection by dragging.
- * It records the delta movement and issues a MoveCommand on commit.
+ * When a selection exists and the user clicks inside it, the selected pixels
+ * are extracted into a floating buffer, the source is cleared to transparent,
+ * and the buffer is rendered at the cursor offset during drag. On release or
+ * Enter, the floating buffer is committed. Escape cancels the move.
  */
 class MoveTool : public Tool {
   public:
@@ -31,6 +40,37 @@ class MoveTool : public Tool {
      */
     [[nodiscard]] QPoint lastDelta() const { return lastDelta_; }
 
+    /*! @brief Returns true if currently moving a selection.
+     *  @return True if floating buffer is active.
+     */
+    [[nodiscard]] bool isMovingSelection() const { return !floatingBuffer_.empty(); }
+
+    /*! @brief Returns the floating buffer pixel data.
+     *  @return Pointer to RGBA data, or nullptr if not moving selection.
+     */
+    [[nodiscard]] const std::vector<std::uint8_t>* floatingBuffer() const
+    {
+        return floatingBuffer_.empty() ? nullptr : &floatingBuffer_;
+    }
+
+    /*! @brief Returns the floating buffer bounds (source rect).
+     *  @return Bounding rectangle of the extracted pixels.
+     */
+    [[nodiscard]] QRect floatingRect() const { return floatingRect_; }
+
+    /*! @brief Returns the current movement offset for the floating buffer.
+     *  @return Offset from original position.
+     */
+    [[nodiscard]] QPoint floatingOffset() const { return currentPos_ - startPos_; }
+
+    /**
+     * @brief Handles key events during active move.
+     * @param key The key pressed.
+     * @param modifiers Active modifiers.
+     * @return True if handled (Enter commits, Escape cancels).
+     */
+    bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers) override;
+
   protected:
     void beginStroke(const ToolInputEvent& event) override;
     void continueStroke(const ToolInputEvent& event) override;
@@ -41,6 +81,45 @@ class MoveTool : public Tool {
     QPoint startPos_;    ///< Initial mouse position.
     QPoint currentPos_;  ///< Current mouse position.
     QPoint lastDelta_;   ///< Recorded movement from last completed stroke.
+
+    // Floating buffer for selection move
+    std::vector<std::uint8_t> floatingBuffer_;  ///< Extracted pixels (RGBA).
+    QRect floatingRect_;                        ///< Bounding rect of extracted region.
+    std::shared_ptr<Layer> targetLayer_;        ///< Layer being modified.
+
+    /**
+     * @brief Extracts pixels from the selection region into floatingBuffer_.
+     * @param layer The layer to extract from.
+     */
+    void extractSelectionPixels(const std::shared_ptr<Layer>& layer);
+
+    /**
+     * @brief Clears the source pixels in the selection region to transparent.
+     * @param layer The layer to modify.
+     */
+    void clearSourcePixels(const std::shared_ptr<Layer>& layer);
+
+    /**
+     * @brief Pastes the floating buffer at the new position.
+     * @param layer The layer to paste to.
+     * @param offset The movement offset from original position.
+     */
+    void pasteFloatingBuffer(const std::shared_ptr<Layer>& layer, QPoint offset);
+
+    /**
+     * @brief Commits the move operation with undo support.
+     */
+    void commitMove();
+
+    /**
+     * @brief Restores original pixels and cancels the move.
+     */
+    void cancelMove();
+
+    /**
+     * @brief Clears floating buffer state.
+     */
+    void clearFloatingState();
 };
 
 }  // namespace gimp

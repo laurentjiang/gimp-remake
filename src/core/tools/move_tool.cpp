@@ -551,6 +551,14 @@ void MoveTool::commitFloatingBuffer()
     }
 }
 
+void MoveTool::cancelFloatingBuffer()
+{
+    if (!floatingBuffer_.empty()) {
+        cancelMove();
+        state_ = ToolState::Idle;
+    }
+}
+
 void MoveTool::clearFloatingState()
 {
     floatingBuffer_.clear();

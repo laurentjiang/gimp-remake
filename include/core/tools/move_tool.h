@@ -157,6 +157,15 @@ class MoveTool : public Tool, public ToolOptions {
     void commitFloatingBuffer();
 
     /**
+     * @brief Cancels the current floating buffer (if any) without committing.
+     *
+     * This is used when an external action (like undo) needs to discard
+     * a pending move operation. Pixels are restored to their original
+     * position and the floating buffer is cleared.
+     */
+    void cancelFloatingBuffer();
+
+    /**
      * @brief Hit-tests for a transform handle at the given position.
      * @param pos Canvas position to test.
      * @param zoomLevel Current zoom level for size compensation.

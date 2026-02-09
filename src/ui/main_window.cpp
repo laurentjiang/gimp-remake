@@ -421,6 +421,15 @@ void MainWindow::positionDebugHud()
 
 void MainWindow::onUndo()
 {
+    // Cancel any pending floating buffer before undo to prevent stale pixels
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->cancelFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
     if (m_historyManager && m_historyManager->undo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();
@@ -431,6 +440,15 @@ void MainWindow::onUndo()
 
 void MainWindow::onRedo()
 {
+    // Cancel any pending floating buffer before redo to prevent stale pixels
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->cancelFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
     if (m_historyManager && m_historyManager->redo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();

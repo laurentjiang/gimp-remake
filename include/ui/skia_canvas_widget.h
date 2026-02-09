@@ -114,6 +114,11 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Invalidates the cached render, triggering re-render on next paint. */
     void invalidateCache();
 
+    /*! @brief Clears the move override flag.
+     *  Used when an external action (like undo) cancels a pending move.
+     */
+    void clearMoveOverride() { m_moveOverride = false; }
+
   signals:
     /*! @brief Emitted when the viewport changes (pan or zoom).
      *  @param viewport The new viewport state.

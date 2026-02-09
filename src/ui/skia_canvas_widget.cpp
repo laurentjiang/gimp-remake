@@ -15,7 +15,9 @@
 #include "core/tool.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/ellipse_selection_tool.h"
 #include "core/tools/move_tool.h"
+#include "core/tools/rect_selection_tool.h"
 #include "render/skia_renderer.h"
 
 #include <QApplication>
@@ -366,22 +368,37 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         painter.restore();
     }
 
-    // Draw transform handles around selection:
-    // - When floating buffer is active: use getHandleRects() (accounts for offset/scale)
-    // - When just selection exists: use getSelectionHandleRects() (raw selection bounds)
-    std::vector<QRect> handleRects;
+    // Draw transform handles:
+    // - When MoveTool has floating buffer: use its getHandleRects() (for content transform)
+    // - When selection tool is in Adjusting phase: use its getHandleRects() (for outline resize)
+    std::vector<QRectF> handleRectsF;
     if (moveTool && moveTool->isMovingSelection()) {
-        handleRects = moveTool->getHandleRects();
-    } else if (SelectionManager::instance().hasSelection()) {
-        handleRects = MoveTool::getSelectionHandleRects();
+        // MoveTool handles for floating buffer transform
+        for (const auto& r : moveTool->getHandleRects()) {
+            handleRectsF.emplace_back(r);
+        }
+    } else {
+        // Check if current tool is a selection tool in Adjusting phase
+        Tool* currentTool = activeTool();
+        if (auto* rectTool = dynamic_cast<RectSelectTool*>(currentTool)) {
+            if (rectTool->phase() == SelectionPhase::Adjusting) {
+                auto handles = rectTool->getHandleRects(m_viewport.zoomLevel);
+                handleRectsF.assign(handles.begin(), handles.end());
+            }
+        } else if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(currentTool)) {
+            if (ellipseTool->phase() == EllipseSelectionPhase::Adjusting) {
+                auto handles = ellipseTool->getHandleRects(m_viewport.zoomLevel);
+                handleRectsF.assign(handles.begin(), handles.end());
+            }
+        }
     }
 
-    if (!handleRects.empty()) {
+    if (!handleRectsF.empty()) {
         painter.save();
         painter.setRenderHint(QPainter::Antialiasing, false);
 
         // Transform handle rects to screen coordinates
-        for (const auto& handleRect : handleRects) {
+        for (const auto& handleRect : handleRectsF) {
             float screenX =
                 m_viewport.panX + static_cast<float>(handleRect.x()) * m_viewport.zoomLevel;
             float screenY =
@@ -678,6 +695,7 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     toolEvent.buttons = event->buttons();
     toolEvent.modifiers = event->modifiers();
     toolEvent.pressure = 1.0F;
+    toolEvent.zoomLevel = m_viewport.zoomLevel;
 
     // Check for Ctrl+Alt move override on press
     if (isPress) {

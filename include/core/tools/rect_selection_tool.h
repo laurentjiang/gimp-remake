@@ -12,11 +12,42 @@
 
 #include <QPainterPath>
 #include <QPoint>
+#include <QRectF>
+
+#include <vector>
 
 namespace gimp {
 
 /**
+ * @brief Selection tool phase.
+ */
+enum class SelectionPhase {
+    Idle,      ///< No active selection operation
+    Creating,  ///< Drawing a new selection
+    Adjusting  ///< Resizing an existing selection via handles
+};
+
+/**
+ * @brief Handle position for selection resize.
+ */
+enum class SelectionHandle {
+    None,
+    TopLeft,
+    Top,
+    TopRight,
+    Right,
+    BottomRight,
+    Bottom,
+    BottomLeft,
+    Left
+};
+
+/**
  * @brief Rectangle selection tool with modifier support.
+ *
+ * After creating a selection, handles appear around it. The user can drag
+ * handles to resize the selection outline (marching ants). Press Enter to
+ * finalize, Escape to cancel, or click outside to start a new selection.
  */
 class RectSelectTool : public Tool {
   public:
@@ -24,6 +55,23 @@ class RectSelectTool : public Tool {
 
     [[nodiscard]] std::string id() const override { return "select_rect"; }
     [[nodiscard]] std::string name() const override { return "Rectangle Select"; }
+
+    /**
+     * @brief Returns the current selection phase.
+     */
+    [[nodiscard]] SelectionPhase phase() const { return phase_; }
+
+    /**
+     * @brief Returns handle rectangles for the current selection bounds.
+     * @param zoomLevel Current canvas zoom for screen-space sizing.
+     * @return Vector of 8 handle rects in canvas coordinates.
+     */
+    [[nodiscard]] std::vector<QRectF> getHandleRects(float zoomLevel) const;
+
+    /**
+     * @brief Handles key events for Enter/Escape.
+     */
+    bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers) override;
 
   protected:
     void beginStroke(const ToolInputEvent& event) override;
@@ -33,13 +81,17 @@ class RectSelectTool : public Tool {
 
   private:
     static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
-    QPainterPath buildRectPath(const QPoint& start,
-                               const QPoint& current,
-                               Qt::KeyboardModifiers modifiers) const;
+    QPainterPath buildRectPath(const QRectF& rect) const;
+    SelectionHandle hitTestHandle(const QPoint& pos, float zoomLevel) const;
+    QPointF getAnchorForHandle(SelectionHandle handle) const;
+    void finalizeSelection();
 
-    QPoint startPos_;
-    QPoint currentPos_;
+    SelectionPhase phase_ = SelectionPhase::Idle;
+    QRectF currentBounds_;  ///< Current selection bounding rect.
+    QPoint startPos_;       ///< Start position for creating or drag start.
     SelectionMode currentMode_ = SelectionMode::Replace;
+    SelectionHandle activeHandle_ = SelectionHandle::None;
+    QPointF scaleAnchor_;  ///< Fixed corner during resize.
 };
 
 }  // namespace gimp

@@ -56,40 +56,12 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
         return;
     }
 
-    // Check if clicking on a selection handle (no floating buffer yet)
-    auto& selMgr = SelectionManager::instance();
-    if (selMgr.hasSelection()) {
-        TransformHandle selHandle = hitTestSelectionHandle(event.canvasPos);
-        if (selHandle != TransformHandle::None) {
-            // Need to create floating buffer first, then start scaling
-            if (document_ && document_->layers().count() > 0) {
-                auto layer = document_->layers()[0];
-                targetLayer_ = layer;
-                extractSelectionPixels(layer);
-
-                // Determine effective copy mode
-                bool effectiveCopyMode =
-                    modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
-                if (!effectiveCopyMode) {
-                    clearSourcePixels(layer);
-                }
-
-                // Now set up scaling
-                activeHandle_ = selHandle;
-                startPos_ = event.canvasPos;
-                currentPos_ = event.canvasPos;
-                originalSize_ = QSizeF(floatingRect_.width(), floatingRect_.height());
-                scaleAnchor_ = getAnchorForHandle(activeHandle_, QRectF(floatingRect_));
-                return;
-            }
-        }
-    }
-
     startPos_ = event.canvasPos;
     currentPos_ = event.canvasPos;
     clearFloatingState();
 
     // Check if we have a selection and click is inside it
+    auto& selMgr = SelectionManager::instance();
     if (!document_ || document_->layers().count() == 0) {
         return;
     }
@@ -842,73 +814,6 @@ std::vector<std::uint8_t> MoveTool::getScaledBuffer() const
     }
 
     return scaled;
-}
-
-std::vector<QRect> MoveTool::getSelectionHandleRects()
-{
-    std::vector<QRect> handles;
-
-    auto& selMgr = SelectionManager::instance();
-    if (!selMgr.hasSelection()) {
-        return handles;
-    }
-
-    QRectF bounds = selMgr.selectionPath().boundingRect();
-    if (bounds.isEmpty()) {
-        return handles;
-    }
-
-    int left = static_cast<int>(std::floor(bounds.left()));
-    int top = static_cast<int>(std::floor(bounds.top()));
-    int right = static_cast<int>(std::ceil(bounds.right()));
-    int bottom = static_cast<int>(std::ceil(bounds.bottom()));
-    int midX = (left + right) / 2;
-    int midY = (top + bottom) / 2;
-
-    // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
-    handles.push_back(
-        QRect(left - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(midX - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(right - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(midX - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(left - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
-    handles.push_back(
-        QRect(left - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
-
-    return handles;
-}
-
-TransformHandle MoveTool::hitTestSelectionHandle(const QPoint& pos)
-{
-    auto handles = getSelectionHandleRects();
-    if (handles.empty()) {
-        return TransformHandle::None;
-    }
-
-    static const TransformHandle handleTypes[] = {TransformHandle::TopLeft,
-                                                  TransformHandle::Top,
-                                                  TransformHandle::TopRight,
-                                                  TransformHandle::Right,
-                                                  TransformHandle::BottomRight,
-                                                  TransformHandle::Bottom,
-                                                  TransformHandle::BottomLeft,
-                                                  TransformHandle::Left};
-
-    for (size_t i = 0; i < handles.size(); ++i) {
-        if (handles[i].contains(pos)) {
-            return handleTypes[i];
-        }
-    }
-
-    return TransformHandle::None;
 }
 
 QPointF MoveTool::getAnchorForHandle(TransformHandle handle, const QRectF& bounds)

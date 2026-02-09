@@ -27,6 +27,7 @@ struct ToolInputEvent {
     Qt::MouseButtons buttons;         ///< Currently pressed mouse buttons.
     Qt::KeyboardModifiers modifiers;  ///< Active keyboard modifiers.
     float pressure = 1.0F;            ///< Pen pressure (0.0 to 1.0), 1.0 for mouse.
+    float zoomLevel = 1.0F;           ///< Current canvas zoom level.
 };
 
 /**

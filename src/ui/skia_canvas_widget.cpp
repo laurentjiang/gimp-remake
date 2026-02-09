@@ -366,36 +366,42 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         painter.restore();
     }
 
-    // Draw transform handles when floating selection is active
+    // Draw transform handles around selection:
+    // - When floating buffer is active: use getHandleRects() (accounts for offset/scale)
+    // - When just selection exists: use getSelectionHandleRects() (raw selection bounds)
+    std::vector<QRect> handleRects;
     if (moveTool && moveTool->isMovingSelection()) {
-        auto handleRects = moveTool->getHandleRects();
-        if (!handleRects.empty()) {
-            painter.save();
-            painter.setRenderHint(QPainter::Antialiasing, false);
+        handleRects = moveTool->getHandleRects();
+    } else if (SelectionManager::instance().hasSelection()) {
+        handleRects = MoveTool::getSelectionHandleRects();
+    }
 
-            // Transform handle rects to screen coordinates
-            for (const auto& handleRect : handleRects) {
-                float screenX =
-                    m_viewport.panX + static_cast<float>(handleRect.x()) * m_viewport.zoomLevel;
-                float screenY =
-                    m_viewport.panY + static_cast<float>(handleRect.y()) * m_viewport.zoomLevel;
-                float screenW = static_cast<float>(handleRect.width()) * m_viewport.zoomLevel;
-                float screenH = static_cast<float>(handleRect.height()) * m_viewport.zoomLevel;
+    if (!handleRects.empty()) {
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing, false);
 
-                // Ensure minimum visible size
-                screenW = std::max(6.0F, screenW);
-                screenH = std::max(6.0F, screenH);
+        // Transform handle rects to screen coordinates
+        for (const auto& handleRect : handleRects) {
+            float screenX =
+                m_viewport.panX + static_cast<float>(handleRect.x()) * m_viewport.zoomLevel;
+            float screenY =
+                m_viewport.panY + static_cast<float>(handleRect.y()) * m_viewport.zoomLevel;
+            float screenW = static_cast<float>(handleRect.width()) * m_viewport.zoomLevel;
+            float screenH = static_cast<float>(handleRect.height()) * m_viewport.zoomLevel;
 
-                QRectF screenRect(screenX, screenY, screenW, screenH);
+            // Ensure minimum visible size
+            screenW = std::max(6.0F, screenW);
+            screenH = std::max(6.0F, screenH);
 
-                // Draw handle: white fill with black border
-                painter.setPen(QPen(Qt::black, 1));
-                painter.setBrush(Qt::white);
-                painter.drawRect(screenRect);
-            }
+            QRectF screenRect(screenX, screenY, screenW, screenH);
 
-            painter.restore();
+            // Draw handle: white fill with black border
+            painter.setPen(QPen(Qt::black, 1));
+            painter.setBrush(Qt::white);
+            painter.drawRect(screenRect);
         }
+
+        painter.restore();
     }
 }
 

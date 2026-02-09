@@ -33,11 +33,19 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     if (isMovingSelection()) {
         activeHandle_ = hitTestHandle(event.canvasPos);
         if (activeHandle_ != TransformHandle::None) {
-            // Starting a scale operation
+            // Starting a scale operation - store anchor point (opposite corner)
             startPos_ = event.canvasPos;
             currentPos_ = event.canvasPos;
             originalSize_ = QSizeF(floatingRect_.width() * currentScale_.width(),
                                    floatingRect_.height() * currentScale_.height());
+
+            // Calculate current transformed bounds for anchor
+            QPoint offset = floatingOffset();
+            QRectF currentBounds(floatingRect_.x() + offset.x(),
+                                 floatingRect_.y() + offset.y(),
+                                 floatingRect_.width() * currentScale_.width(),
+                                 floatingRect_.height() * currentScale_.height());
+            scaleAnchor_ = getAnchorForHandle(activeHandle_, currentBounds);
             return;
         }
 
@@ -46,6 +54,35 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
         startPos_ = event.canvasPos - currentOffset;
         currentPos_ = event.canvasPos;
         return;
+    }
+
+    // Check if clicking on a selection handle (no floating buffer yet)
+    auto& selMgr = SelectionManager::instance();
+    if (selMgr.hasSelection()) {
+        TransformHandle selHandle = hitTestSelectionHandle(event.canvasPos);
+        if (selHandle != TransformHandle::None) {
+            // Need to create floating buffer first, then start scaling
+            if (document_ && document_->layers().count() > 0) {
+                auto layer = document_->layers()[0];
+                targetLayer_ = layer;
+                extractSelectionPixels(layer);
+
+                // Determine effective copy mode
+                bool effectiveCopyMode =
+                    modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
+                if (!effectiveCopyMode) {
+                    clearSourcePixels(layer);
+                }
+
+                // Now set up scaling
+                activeHandle_ = selHandle;
+                startPos_ = event.canvasPos;
+                currentPos_ = event.canvasPos;
+                originalSize_ = QSizeF(floatingRect_.width(), floatingRect_.height());
+                scaleAnchor_ = getAnchorForHandle(activeHandle_, QRectF(floatingRect_));
+                return;
+            }
+        }
     }
 
     startPos_ = event.canvasPos;
@@ -57,7 +94,6 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
         return;
     }
 
-    auto& selMgr = SelectionManager::instance();
     if (!selMgr.hasSelection()) {
         // No selection - future: move entire layer
         return;
@@ -88,44 +124,53 @@ void MoveTool::continueStroke(const ToolInputEvent& event)
     proportionalScale_ = (event.modifiers & Qt::ShiftModifier) != 0;
     currentPos_ = event.canvasPos;
 
-    // If scaling, update scale factors based on handle drag
+    // If scaling, update scale factors based on anchor and mouse position
     if (activeHandle_ != TransformHandle::None && !floatingRect_.isEmpty()) {
-        QPoint delta = currentPos_ - startPos_;
         double origW = static_cast<double>(floatingRect_.width());
         double origH = static_cast<double>(floatingRect_.height());
+        double mouseX = static_cast<double>(currentPos_.x());
+        double mouseY = static_cast<double>(currentPos_.y());
 
-        // Calculate new scale based on which handle is being dragged
+        // Calculate new size based on distance from anchor to mouse
         double newScaleX = currentScale_.width();
         double newScaleY = currentScale_.height();
 
         switch (activeHandle_) {
             case TransformHandle::TopLeft:
-                newScaleX = (originalSize_.width() - delta.x()) / origW;
-                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                // Mouse is top-left, anchor is bottom-right
+                newScaleX = (scaleAnchor_.x() - mouseX) / origW;
+                newScaleY = (scaleAnchor_.y() - mouseY) / origH;
                 break;
             case TransformHandle::TopRight:
-                newScaleX = (originalSize_.width() + delta.x()) / origW;
-                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                // Mouse is top-right, anchor is bottom-left
+                newScaleX = (mouseX - scaleAnchor_.x()) / origW;
+                newScaleY = (scaleAnchor_.y() - mouseY) / origH;
                 break;
             case TransformHandle::BottomLeft:
-                newScaleX = (originalSize_.width() - delta.x()) / origW;
-                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                // Mouse is bottom-left, anchor is top-right
+                newScaleX = (scaleAnchor_.x() - mouseX) / origW;
+                newScaleY = (mouseY - scaleAnchor_.y()) / origH;
                 break;
             case TransformHandle::BottomRight:
-                newScaleX = (originalSize_.width() + delta.x()) / origW;
-                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                // Mouse is bottom-right, anchor is top-left
+                newScaleX = (mouseX - scaleAnchor_.x()) / origW;
+                newScaleY = (mouseY - scaleAnchor_.y()) / origH;
                 break;
             case TransformHandle::Top:
-                newScaleY = (originalSize_.height() - delta.y()) / origH;
+                // Mouse defines top edge, anchor is bottom
+                newScaleY = (scaleAnchor_.y() - mouseY) / origH;
                 break;
             case TransformHandle::Bottom:
-                newScaleY = (originalSize_.height() + delta.y()) / origH;
+                // Mouse defines bottom edge, anchor is top
+                newScaleY = (mouseY - scaleAnchor_.y()) / origH;
                 break;
             case TransformHandle::Left:
-                newScaleX = (originalSize_.width() - delta.x()) / origW;
+                // Mouse defines left edge, anchor is right
+                newScaleX = (scaleAnchor_.x() - mouseX) / origW;
                 break;
             case TransformHandle::Right:
-                newScaleX = (originalSize_.width() + delta.x()) / origW;
+                // Mouse defines right edge, anchor is left
+                newScaleX = (mouseX - scaleAnchor_.x()) / origW;
                 break;
             case TransformHandle::None:
                 break;
@@ -150,6 +195,61 @@ void MoveTool::continueStroke(const ToolInputEvent& event)
         }
 
         currentScale_ = QSizeF(newScaleX, newScaleY);
+
+        // Update position offset to keep anchor fixed
+        // New top-left = anchor - (scaled size in anchor's direction)
+        double scaledW = origW * newScaleX;
+        double scaledH = origH * newScaleY;
+        double newLeft = 0;
+        double newTop = 0;
+
+        switch (activeHandle_) {
+            case TransformHandle::TopLeft:
+            case TransformHandle::Top:
+            case TransformHandle::Left:
+                // Anchor is on right/bottom side, new position moves
+                newLeft = scaleAnchor_.x() - scaledW;
+                newTop = scaleAnchor_.y() - scaledH;
+                if (activeHandle_ == TransformHandle::Top) {
+                    newLeft = floatingRect_.x();  // X doesn't change for top edge
+                }
+                if (activeHandle_ == TransformHandle::Left) {
+                    newTop = floatingRect_.y();  // Y doesn't change for left edge
+                }
+                break;
+            case TransformHandle::TopRight:
+                newLeft = scaleAnchor_.x();
+                newTop = scaleAnchor_.y() - scaledH;
+                break;
+            case TransformHandle::BottomLeft:
+                newLeft = scaleAnchor_.x() - scaledW;
+                newTop = scaleAnchor_.y();
+                break;
+            case TransformHandle::BottomRight:
+            case TransformHandle::Bottom:
+            case TransformHandle::Right:
+                // Anchor is on left/top side, position comes from anchor
+                newLeft = scaleAnchor_.x();
+                newTop = scaleAnchor_.y();
+                if (activeHandle_ == TransformHandle::Bottom) {
+                    newLeft = floatingRect_.x();  // X doesn't change
+                }
+                if (activeHandle_ == TransformHandle::Right) {
+                    newTop = floatingRect_.y();  // Y doesn't change
+                }
+                break;
+            case TransformHandle::None:
+                newLeft = floatingRect_.x();
+                newTop = floatingRect_.y();
+                break;
+        }
+
+        // Update startPos_ so floatingOffset() returns the correct offset
+        // floatingOffset = currentPos_ - startPos_ should equal (newLeft - floatingRect_.x(),
+        // newTop - floatingRect_.y())
+        int offsetX = static_cast<int>(std::round(newLeft)) - floatingRect_.x();
+        int offsetY = static_cast<int>(std::round(newTop)) - floatingRect_.y();
+        startPos_ = currentPos_ - QPoint(offsetX, offsetY);
     }
 }
 
@@ -475,6 +575,7 @@ void MoveTool::clearFloatingState()
     activeHandle_ = TransformHandle::None;
     currentScale_ = QSizeF(1.0, 1.0);
     originalSize_ = QSizeF();
+    scaleAnchor_ = QPointF();
     proportionalScale_ = false;
 }
 
@@ -741,6 +842,98 @@ std::vector<std::uint8_t> MoveTool::getScaledBuffer() const
     }
 
     return scaled;
+}
+
+std::vector<QRect> MoveTool::getSelectionHandleRects()
+{
+    std::vector<QRect> handles;
+
+    auto& selMgr = SelectionManager::instance();
+    if (!selMgr.hasSelection()) {
+        return handles;
+    }
+
+    QRectF bounds = selMgr.selectionPath().boundingRect();
+    if (bounds.isEmpty()) {
+        return handles;
+    }
+
+    int left = static_cast<int>(std::floor(bounds.left()));
+    int top = static_cast<int>(std::floor(bounds.top()));
+    int right = static_cast<int>(std::ceil(bounds.right()));
+    int bottom = static_cast<int>(std::ceil(bounds.bottom()));
+    int midX = (left + right) / 2;
+    int midY = (top + bottom) / 2;
+
+    // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
+    handles.push_back(
+        QRect(left - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(midX - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, top - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(right - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(midX - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(left - kHandleHalfSize, bottom - kHandleHalfSize, kHandleSize, kHandleSize));
+    handles.push_back(
+        QRect(left - kHandleHalfSize, midY - kHandleHalfSize, kHandleSize, kHandleSize));
+
+    return handles;
+}
+
+TransformHandle MoveTool::hitTestSelectionHandle(const QPoint& pos)
+{
+    auto handles = getSelectionHandleRects();
+    if (handles.empty()) {
+        return TransformHandle::None;
+    }
+
+    static const TransformHandle handleTypes[] = {TransformHandle::TopLeft,
+                                                  TransformHandle::Top,
+                                                  TransformHandle::TopRight,
+                                                  TransformHandle::Right,
+                                                  TransformHandle::BottomRight,
+                                                  TransformHandle::Bottom,
+                                                  TransformHandle::BottomLeft,
+                                                  TransformHandle::Left};
+
+    for (size_t i = 0; i < handles.size(); ++i) {
+        if (handles[i].contains(pos)) {
+            return handleTypes[i];
+        }
+    }
+
+    return TransformHandle::None;
+}
+
+QPointF MoveTool::getAnchorForHandle(TransformHandle handle, const QRectF& bounds)
+{
+    switch (handle) {
+        case TransformHandle::TopLeft:
+            return bounds.bottomRight();
+        case TransformHandle::Top:
+            return QPointF(bounds.center().x(), bounds.bottom());
+        case TransformHandle::TopRight:
+            return bounds.bottomLeft();
+        case TransformHandle::Right:
+            return QPointF(bounds.left(), bounds.center().y());
+        case TransformHandle::BottomRight:
+            return bounds.topLeft();
+        case TransformHandle::Bottom:
+            return QPointF(bounds.center().x(), bounds.top());
+        case TransformHandle::BottomLeft:
+            return bounds.topRight();
+        case TransformHandle::Left:
+            return QPointF(bounds.right(), bounds.center().y());
+        case TransformHandle::None:
+        default:
+            return bounds.center();
+    }
 }
 
 }  // namespace gimp

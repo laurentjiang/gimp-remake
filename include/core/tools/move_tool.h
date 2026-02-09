@@ -112,6 +112,13 @@ class MoveTool : public Tool, public ToolOptions {
     [[nodiscard]] std::vector<QRect> getHandleRects() const;
 
     /**
+     * @brief Returns handle rectangles for the current selection (static, no floating buffer
+     * needed).
+     * @return Vector of handle rects based on SelectionManager bounds.
+     */
+    [[nodiscard]] static std::vector<QRect> getSelectionHandleRects();
+
+    /**
      * @brief Scales the floating buffer to the current scale factors.
      * @return Scaled pixel data.
      */
@@ -171,6 +178,7 @@ class MoveTool : public Tool, public ToolOptions {
     TransformHandle activeHandle_ = TransformHandle::None;  ///< Handle being dragged.
     QSizeF currentScale_{1.0, 1.0};   ///< Current scale factors during transform.
     QSizeF originalSize_;             ///< Original floating buffer size.
+    QPointF scaleAnchor_;             ///< Anchor point (opposite corner) for scaling.
     bool proportionalScale_ = false;  ///< True if Shift is held for proportional scaling.
 
     // Floating buffer for selection move
@@ -240,6 +248,21 @@ class MoveTool : public Tool, public ToolOptions {
      * @return The handle at that position, or None.
      */
     [[nodiscard]] TransformHandle hitTestHandle(const QPoint& pos) const;
+
+    /**
+     * @brief Hit-tests for a transform handle on selection bounds (before floating buffer).
+     * @param pos Canvas position to test.
+     * @return The handle at that position, or None.
+     */
+    [[nodiscard]] static TransformHandle hitTestSelectionHandle(const QPoint& pos);
+
+    /**
+     * @brief Returns the anchor point for the given handle (opposite corner/edge).
+     * @param handle The handle being dragged.
+     * @param bounds The bounding rect.
+     * @return Anchor point in canvas coordinates.
+     */
+    [[nodiscard]] static QPointF getAnchorForHandle(TransformHandle handle, const QRectF& bounds);
 };
 
 }  // namespace gimp

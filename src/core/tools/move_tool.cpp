@@ -12,6 +12,9 @@
 #include "core/layer.h"
 #include "core/selection_manager.h"
 
+#include <QImage>
+#include <QPainter>
+
 #include <algorithm>
 #include <cstring>
 
@@ -349,13 +352,24 @@ void MoveTool::rasterizeSelectionMask(const QPainterPath& selPath, const QRect& 
             }
         }
     } else {
-        // Unknown/complex: Fall back to QPainterPath::contains()
+        // Unknown/freeform: Use QPainter rasterization for efficient mask generation
+        // This is O(height * path_complexity) instead of O(width * height * path_edges)
+        QImage maskImage(width, height, QImage::Format_Grayscale8);
+        maskImage.fill(0);
+
+        QPainter painter(&maskImage);
+        painter.setRenderHint(QPainter::Antialiasing, false);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(Qt::white);
+        painter.translate(-x1, -y1);  // Translate to local coordinates
+        painter.drawPath(selPath);
+        painter.end();
+
+        // Extract boolean mask from grayscale scanlines
         for (int row = 0; row < height; ++row) {
+            const uchar* scanline = maskImage.constScanLine(row);
             for (int col = 0; col < width; ++col) {
-                int px = x1 + col;
-                int py = y1 + row;
-                selectionMask_[static_cast<std::size_t>(row) * width + col] =
-                    selPath.contains(QPointF(px + 0.5, py + 0.5));
+                selectionMask_[static_cast<std::size_t>(row) * width + col] = (scanline[col] > 0);
             }
         }
     }

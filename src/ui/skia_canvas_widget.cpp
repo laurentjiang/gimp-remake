@@ -699,6 +699,12 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
 
     // Check for Ctrl+Alt move override on press
     if (isPress) {
+        // Auto-commit any pending move operation before starting new stroke
+        auto* pendingMoveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+        if (pendingMoveTool && pendingMoveTool->isMovingSelection()) {
+            pendingMoveTool->commitFloatingBuffer();
+            invalidateCache();
+        }
         m_moveOverride = false;  // Reset on new stroke
 
         const bool ctrlAlt = (event->modifiers() & Qt::ControlModifier) != 0 &&

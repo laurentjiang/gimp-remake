@@ -40,8 +40,9 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
             QPoint currentOffset = floatingOffset();
 
             // Starting a scale operation - store anchor point (opposite corner)
-            startPos_ = event.canvasPos;
+            // Set startPos_ to preserve the offset so floatingOffset() returns currentOffset
             currentPos_ = event.canvasPos;
+            startPos_ = currentPos_ - currentOffset;
             originalSize_ = QSizeF(floatingRect_.width() * currentScale_.width(),
                                    floatingRect_.height() * currentScale_.height());
 

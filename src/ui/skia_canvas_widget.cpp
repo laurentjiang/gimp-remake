@@ -379,6 +379,15 @@ void SkiaCanvasWidget::wheelEvent(QWheelEvent* event)
 
 void SkiaCanvasWidget::keyPressEvent(QKeyEvent* event)
 {
+    // Forward to active tool if in Active state
+    Tool* tool = activeTool();
+    if (tool && tool->state() == ToolState::Active) {
+        if (tool->onKeyPress(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            event->accept();
+            return;
+        }
+    }
+
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
         m_spaceHeld = true;
         if (!m_isPanning) {
@@ -413,6 +422,15 @@ void SkiaCanvasWidget::keyPressEvent(QKeyEvent* event)
 
 void SkiaCanvasWidget::keyReleaseEvent(QKeyEvent* event)
 {
+    // Forward to active tool if in Active state
+    Tool* tool = activeTool();
+    if (tool && tool->state() == ToolState::Active) {
+        if (tool->onKeyRelease(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            event->accept();
+            return;
+        }
+    }
+
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
         m_spaceHeld = false;
         if (!m_isPanning) {

@@ -122,6 +122,22 @@ class Tool {
      */
     void reset();
 
+    /**
+     * @brief Called when a key is pressed while tool is active.
+     * @param key The key that was pressed.
+     * @param modifiers Active keyboard modifiers.
+     * @return True if the event was handled.
+     */
+    virtual bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers);
+
+    /**
+     * @brief Called when a key is released while tool is active.
+     * @param key The key that was released.
+     * @param modifiers Active keyboard modifiers.
+     * @return True if the event was handled.
+     */
+    virtual bool onKeyRelease(Qt::Key key, Qt::KeyboardModifiers modifiers);
+
   protected:
     /*! @brief Called when transitioning from Idle to Active.
      *  @param event The triggering input event.

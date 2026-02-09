@@ -129,7 +129,8 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document)
     return true;
 }
 
-bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document, CommandBus* commandBus)
+bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
+                                    CommandBus* commandBus)
 {
     if (!copySelection(document)) {
         return false;
@@ -157,7 +158,8 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document, C
         return false;
     }
 
-    auto cutCommand = std::make_shared<DrawCommand>(layer, regionX, regionY, regionWidth, regionHeight);
+    auto cutCommand =
+        std::make_shared<DrawCommand>(layer, regionX, regionY, regionWidth, regionHeight);
     cutCommand->captureBeforeState();
 
     auto& data = layer->data();

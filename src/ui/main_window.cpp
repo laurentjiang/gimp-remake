@@ -194,6 +194,13 @@ void MainWindow::setupMenuBar()
     editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
     editMenu->addAction("&Paste", QKeySequence::Paste, []() {});
 
+    auto* selectMenu = menuBar()->addMenu("&Select");
+    selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
+    selectMenu->addAction(
+        "&None", QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A), this, &MainWindow::onSelectNone);
+    selectMenu->addAction(
+        "&Invert", QKeySequence(Qt::CTRL | Qt::Key_I), this, &MainWindow::onSelectInvert);
+
     auto* viewMenu = menuBar()->addMenu("&View");
     viewMenu->addAction("Zoom &In", QKeySequence::ZoomIn, []() {});
     viewMenu->addAction("Zoom &Out", QKeySequence::ZoomOut, []() {});
@@ -546,6 +553,64 @@ void MainWindow::onApplySharpen()
     } else {
         statusBar()->showMessage("Failed to apply sharpen filter", 2000);
     }
+}
+
+void MainWindow::onSelectAll()
+{
+    if (!m_document) {
+        return;
+    }
+
+    // Create a path covering the entire canvas
+    QPainterPath fullCanvasPath;
+    fullCanvasPath.addRect(0, 0, m_document->width(), m_document->height());
+
+    SelectionManager::instance().applySelection(fullCanvasPath, SelectionMode::Replace);
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{true, "menu"});
+    m_canvasWidget->update();
+    statusBar()->showMessage("Selected all", 1000);
+}
+
+void MainWindow::onSelectNone()
+{
+    SelectionManager::instance().clear();
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{false, "menu"});
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->update();
+    }
+    statusBar()->showMessage("Selection cleared", 1000);
+}
+
+void MainWindow::onSelectInvert()
+{
+    if (!m_document) {
+        return;
+    }
+
+    // Create full canvas path
+    QPainterPath fullCanvasPath;
+    fullCanvasPath.addRect(0, 0, m_document->width(), m_document->height());
+
+    // Get current selection and invert it
+    const QPainterPath& currentSelection = SelectionManager::instance().selectionPath();
+    QPainterPath inverted;
+
+    if (currentSelection.isEmpty()) {
+        // No selection = select all
+        inverted = fullCanvasPath;
+    } else {
+        // XOR with full canvas to invert
+        inverted = fullCanvasPath.subtracted(currentSelection);
+    }
+
+    SelectionManager::instance().applySelection(inverted, SelectionMode::Replace);
+    bool hasSelection = !inverted.isEmpty();
+    // NOLINTNEXTLINE(modernize-use-designated-initializers)
+    EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
+    m_canvasWidget->update();
+    statusBar()->showMessage("Selection inverted", 1000);
 }
 
 }  // namespace gimp

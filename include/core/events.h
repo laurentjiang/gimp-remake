@@ -149,4 +149,15 @@ struct LogMessageEvent {
     std::string source;                  ///< Component that generated the message.
 };
 
+/**
+ * @brief Event fired when the selection changes.
+ *
+ * Published when the selection is modified by tools or menu commands
+ * (Select All, Deselect, Invert, etc.).
+ */
+struct SelectionChangedEvent {
+    bool hasSelection = false;  ///< Whether a selection now exists.
+    std::string source;         ///< Source of the change (e.g., "menu", "tool").
+};
+
 }  // namespace gimp

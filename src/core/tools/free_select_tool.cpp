@@ -61,8 +61,10 @@ void FreeSelectTool::continueStroke(const ToolInputEvent& event)
     // to avoid excessive point density during fast strokes
     if (!points_.empty()) {
         const QPointF& lastPoint = points_.back();
-        const float dx = static_cast<float>(event.canvasPos.x()) - static_cast<float>(lastPoint.x());
-        const float dy = static_cast<float>(event.canvasPos.y()) - static_cast<float>(lastPoint.y());
+        const float dx =
+            static_cast<float>(event.canvasPos.x()) - static_cast<float>(lastPoint.x());
+        const float dy =
+            static_cast<float>(event.canvasPos.y()) - static_cast<float>(lastPoint.y());
         const float distance = std::sqrt(dx * dx + dy * dy);
 
         if (distance < kMinPointDistance) {

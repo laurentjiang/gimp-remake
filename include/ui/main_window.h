@@ -86,6 +86,9 @@ class MainWindow : public QMainWindow {
     void onResetColors();
     void onApplyBlur();
     void onApplySharpen();
+    void onSelectAll();
+    void onSelectNone();
+    void onSelectInvert();
 
   private:
     void setupMenuBar();

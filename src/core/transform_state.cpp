@@ -14,9 +14,7 @@
 
 namespace gimp {
 
-TransformState::TransformState(const QRectF& bounds) : originalBounds_(bounds)
-{
-}
+TransformState::TransformState(const QRectF& bounds) : originalBounds_(bounds) {}
 
 bool TransformState::isIdentity() const
 {
@@ -94,7 +92,8 @@ void TransformState::scaleNonUniform(qreal sx, qreal sy, const QPointF& anchor)
 
     // Apply scale to current offset from anchor
     QPointF offset = currentCenter - anchor;
-    QPointF newOffset = QPointF(offset.x() * sx / scale_.width(), offset.y() * sy / scale_.height());
+    QPointF newOffset =
+        QPointF(offset.x() * sx / scale_.width(), offset.y() * sy / scale_.height());
     QPointF newCenter = anchor + newOffset;
 
     translation_ = newCenter - center;
@@ -157,8 +156,7 @@ std::vector<QRectF> TransformState::getHandleRects(qreal handleSize) const
     auto positions = getHandlePositions();
 
     for (const auto& pos : positions) {
-        handles.push_back(
-            QRectF(pos.x() - halfSize, pos.y() - halfSize, handleSize, handleSize));
+        handles.push_back(QRectF(pos.x() - halfSize, pos.y() - halfSize, handleSize, handleSize));
     }
 
     return handles;
@@ -172,13 +170,13 @@ TransformHandle TransformState::hitTestHandle(const QPointF& pos, qreal handleSi
     }
 
     static const TransformHandle handleTypes[] = {TransformHandle::TopLeft,
-                                                   TransformHandle::Top,
-                                                   TransformHandle::TopRight,
-                                                   TransformHandle::Right,
-                                                   TransformHandle::BottomRight,
-                                                   TransformHandle::Bottom,
-                                                   TransformHandle::BottomLeft,
-                                                   TransformHandle::Left};
+                                                  TransformHandle::Top,
+                                                  TransformHandle::TopRight,
+                                                  TransformHandle::Right,
+                                                  TransformHandle::BottomRight,
+                                                  TransformHandle::Bottom,
+                                                  TransformHandle::BottomLeft,
+                                                  TransformHandle::Left};
 
     for (std::size_t i = 0; i < handles.size(); ++i) {
         if (handles[i].contains(pos)) {
@@ -270,13 +268,11 @@ void TransformState::updateFromHandleDrag(TransformHandle handle,
     }
 
     // Normalize bounds (handle inverted dragging)
-    QRectF newBounds =
-        QRectF(QPointF(newLeft, newTop), QPointF(newRight, newBottom)).normalized();
+    QRectF newBounds = QRectF(QPointF(newLeft, newTop), QPointF(newRight, newBottom)).normalized();
 
     // Calculate scale factors relative to original
     qreal sx = originalBounds_.width() > 0.0 ? newBounds.width() / originalBounds_.width() : 1.0;
-    qreal sy =
-        originalBounds_.height() > 0.0 ? newBounds.height() / originalBounds_.height() : 1.0;
+    qreal sy = originalBounds_.height() > 0.0 ? newBounds.height() / originalBounds_.height() : 1.0;
 
     if (proportional) {
         // Use the larger scale factor for uniform scaling
@@ -288,8 +284,8 @@ void TransformState::updateFromHandleDrag(TransformHandle handle,
     // Calculate translation so anchor remains fixed
     // New anchor position should equal original anchor position
     QPointF originalTopLeft = originalBounds_.topLeft();
-    QPointF newTopLeft = anchor - QPointF(anchor.x() - originalTopLeft.x(),
-                                           anchor.y() - originalTopLeft.y());
+    QPointF newTopLeft =
+        anchor - QPointF(anchor.x() - originalTopLeft.x(), anchor.y() - originalTopLeft.y());
 
     // Recalculate based on scale from anchor
     QPointF scaledTopLeft =

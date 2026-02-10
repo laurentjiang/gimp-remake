@@ -172,12 +172,12 @@ class TransformState {
     void updateFromDrag(const QPointF& delta);
 
   private:
-    QRectF originalBounds_;              ///< Original bounds before transformation.
-    QPointF translation_{0.0, 0.0};      ///< Current translation offset.
-    QSizeF scale_{1.0, 1.0};             ///< Current scale factors.
-    qreal rotation_ = 0.0;               ///< Current rotation angle (degrees).
+    QRectF originalBounds_;          ///< Original bounds before transformation.
+    QPointF translation_{0.0, 0.0};  ///< Current translation offset.
+    QSizeF scale_{1.0, 1.0};         ///< Current scale factors.
+    qreal rotation_ = 0.0;           ///< Current rotation angle (degrees).
     TransformHandle activeHandle_ = TransformHandle::None;  ///< Currently active handle.
-    QPointF scaleAnchor_;                ///< Anchor point during scale operation.
+    QPointF scaleAnchor_;  ///< Anchor point during scale operation.
 
     /// @brief Rebuilds transform matrix from components.
     [[nodiscard]] QTransform buildMatrix() const;

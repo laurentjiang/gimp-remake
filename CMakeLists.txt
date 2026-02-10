@@ -210,6 +210,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "tests/unit/test_fill_tool.cpp"
         "tests/unit/test_gradient_tool.cpp"
         "tests/unit/test_free_select_tool.cpp"
+        "tests/unit/test_transform_state.cpp"
         "tests/unit/test_color_chooser_panel.cpp"
         "tests/unit/test_shortcut_manager.cpp"
         # Integration tests (file I/O, rendering)

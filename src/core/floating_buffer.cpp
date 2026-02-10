@@ -29,7 +29,7 @@ void FloatingBuffer::clear()
 }
 
 bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
-                                       const QPainterPath& selectionPath)
+                                      const QPainterPath& selectionPath)
 {
     if (!layer || selectionPath.isEmpty()) {
         return false;
@@ -52,11 +52,7 @@ bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
     int height = y2 - y1;
     sourceRect_ = QRect(x1, y1, width, height);
 
-    spdlog::debug("[FloatingBuffer] Extracting {}x{} pixels at ({},{})",
-                  width,
-                  height,
-                  x1,
-                  y1);
+    spdlog::debug("[FloatingBuffer] Extracting {}x{} pixels at ({},{})", width, height, x1, y1);
 
     // Pre-rasterize the selection mask
     rasterizeSelectionMask(selectionPath, sourceRect_);

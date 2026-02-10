@@ -593,7 +593,11 @@ void MainWindow::onApplyBlur()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     BlurFilter filter;
     filter.setRadius(static_cast<float>(radius));
 
@@ -620,7 +624,11 @@ void MainWindow::onApplySharpen()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     SharpenFilter filter;
     filter.setAmount(static_cast<float>(amount));
 

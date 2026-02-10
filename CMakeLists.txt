@@ -74,6 +74,7 @@ add_executable(gimp-remake
     "src/core/commands/paste_command.cpp"
     "src/render/skia_renderer.cpp"
     "src/render/skia_compositor.cpp"
+    "src/render/gpu_context.cpp"
     "resources/resources.qrc"
     # Headers with Q_OBJECT (required for AUTOMOC when headers are in separate include/ dir)
     "include/ui/main_window.h"

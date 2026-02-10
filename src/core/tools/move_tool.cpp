@@ -86,7 +86,11 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     }
 
     // Extract pixels from selection using FloatingBuffer
-    auto layer = document_->layers()[0];
+    auto layer = document_->activeLayer();
+    if (!layer) {
+        spdlog::warn("[MoveTool] No active layer");
+        return;
+    }
     targetLayer_ = layer;
 
     // Store full selection bounds BEFORE extraction which clips to layer

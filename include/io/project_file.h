@@ -58,13 +58,66 @@ class ProjectFile : public Document {
      */
     void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
+        // Find index of layer being removed to adjust active index
+        std::size_t removedIndex = m_layers.count();  // invalid sentinel
+        for (std::size_t i = 0; i < m_layers.count(); ++i) {
+            if (m_layers[i] == layer) {
+                removedIndex = i;
+                break;
+            }
+        }
+
         m_layers.removeLayer(layer);
+
+        // Adjust active layer index if needed
+        if (!m_layers.empty()) {
+            if (m_activeLayerIndex >= m_layers.count()) {
+                m_activeLayerIndex = m_layers.count() - 1;
+            } else if (removedIndex < m_activeLayerIndex) {
+                --m_activeLayerIndex;
+            }
+        } else {
+            m_activeLayerIndex = 0;
+        }
     }
 
-    /*! @brief Returns the layer stack.
+    /*! @brief Returns the layer stack (const).
      *  @return Const reference to the layer stack.
      */
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
+
+    /*! @brief Returns the layer stack (mutable).
+     *  @return Mutable reference to the layer stack.
+     */
+    gimp::LayerStack& layers() override { return m_layers; }
+
+    /*! @brief Returns the currently active layer.
+     *  @return Shared pointer to the active layer, or nullptr if no layers.
+     */
+    [[nodiscard]] std::shared_ptr<gimp::Layer> activeLayer() const override
+    {
+        if (m_layers.empty()) {
+            return nullptr;
+        }
+        return m_layers[m_activeLayerIndex];
+    }
+
+    /*! @brief Returns the index of the currently active layer.
+     *  @return Index in the layer stack (0-based).
+     */
+    [[nodiscard]] std::size_t activeLayerIndex() const override { return m_activeLayerIndex; }
+
+    /*! @brief Sets the active layer by index.
+     *  @param index The layer index to make active (clamped to valid range).
+     */
+    void setActiveLayerIndex(std::size_t index) override
+    {
+        if (m_layers.empty()) {
+            m_activeLayerIndex = 0;
+            return;
+        }
+        m_activeLayerIndex = std::min(index, m_layers.count() - 1);
+    }
 
     /*! @brief Returns the tile store for dirty region tracking.
      *  @return Reference to the tile store.
@@ -92,10 +145,11 @@ class ProjectFile : public Document {
     [[nodiscard]] QPainterPath selectionPath() const override { return selection_; }
 
   private:
-    int m_width;                ///< Canvas width.
-    int m_height;               ///< Canvas height.
-    gimp::LayerStack m_layers;  ///< Layer stack.
-    QPainterPath selection_;    ///< Stored selection path.
+    int m_width;                           ///< Canvas width.
+    int m_height;                          ///< Canvas height.
+    std::size_t m_activeLayerIndex = 0;    ///< Index of the active layer.
+    gimp::LayerStack m_layers;             ///< Layer stack.
+    QPainterPath selection_;               ///< Stored selection path.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

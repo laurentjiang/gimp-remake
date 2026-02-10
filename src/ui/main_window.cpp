@@ -58,7 +58,7 @@ namespace {
 
 class SimpleDocument : public gimp::Document {
   public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
+    SimpleDocument(int w, int h) : m_width(w), m_height(h), m_activeLayerIndex(0) {}
 
     std::shared_ptr<gimp::Layer> addLayer() override
     {
@@ -69,10 +69,51 @@ class SimpleDocument : public gimp::Document {
 
     void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
+        // Find index of layer being removed to adjust active index
+        std::size_t removedIndex = m_layers.count();  // invalid sentinel
+        for (std::size_t i = 0; i < m_layers.count(); ++i) {
+            if (m_layers[i] == layer) {
+                removedIndex = i;
+                break;
+            }
+        }
+
         m_layers.removeLayer(layer);
+
+        // Adjust active layer index if needed
+        if (!m_layers.empty()) {
+            if (m_activeLayerIndex >= m_layers.count()) {
+                m_activeLayerIndex = m_layers.count() - 1;
+            } else if (removedIndex < m_activeLayerIndex) {
+                --m_activeLayerIndex;
+            }
+        } else {
+            m_activeLayerIndex = 0;
+        }
     }
 
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
+
+    gimp::LayerStack& layers() override { return m_layers; }
+
+    [[nodiscard]] std::shared_ptr<gimp::Layer> activeLayer() const override
+    {
+        if (m_layers.empty()) {
+            return nullptr;
+        }
+        return m_layers[m_activeLayerIndex];
+    }
+
+    [[nodiscard]] std::size_t activeLayerIndex() const override { return m_activeLayerIndex; }
+
+    void setActiveLayerIndex(std::size_t index) override
+    {
+        if (m_layers.empty()) {
+            m_activeLayerIndex = 0;
+            return;
+        }
+        m_activeLayerIndex = std::min(index, m_layers.count() - 1);
+    }
 
     gimp::TileStore& tileStore() override { return m_dummyTileStore; }
 
@@ -85,6 +126,7 @@ class SimpleDocument : public gimp::Document {
   private:
     int m_width;
     int m_height;
+    std::size_t m_activeLayerIndex;
     gimp::LayerStack m_layers;
     QPainterPath m_selection;
 

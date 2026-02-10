@@ -25,7 +25,8 @@ class EllipseSelectTool : public Tool {
     void cancelStroke() override;
 
   private:
-    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
+    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers,
+                                              Qt::MouseButtons buttons);
     QPainterPath buildEllipsePath(const QPoint& start,
                                   const QPoint& current,
                                   Qt::KeyboardModifiers modifiers) const;

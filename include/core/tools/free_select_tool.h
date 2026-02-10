@@ -39,11 +39,13 @@ class FreeSelectTool : public Tool {
 
   private:
     /**
-     * @brief Resolves the selection mode from keyboard modifiers.
+     * @brief Resolves the selection mode from input modifiers and buttons.
      * @param modifiers Active keyboard modifiers.
+     * @param buttons Active mouse buttons.
      * @return Selection mode (Replace, Add, or Subtract).
      */
-    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
+    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers,
+                                              Qt::MouseButtons buttons);
 
     /**
      * @brief Builds a closed painter path from collected points.

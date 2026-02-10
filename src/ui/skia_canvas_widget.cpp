@@ -307,20 +307,6 @@ void SkiaCanvasWidget::advanceSelectionAnimation()
     update();
 }
 
-void SkiaCanvasWidget::advanceSelectionAnimation()
-{
-    if (!SelectionManager::instance().hasSelection() &&
-        !SelectionManager::instance().hasPreview()) {
-        return;
-    }
-
-    m_marchingOffset += 1.0F;
-    if (m_marchingOffset >= 8.0F) {
-        m_marchingOffset = 0.0F;
-    }
-    update();
-}
-
 void SkiaCanvasWidget::mousePressEvent(QMouseEvent* event)
 {
     m_lastMousePos = event->pos();

@@ -7,6 +7,8 @@
 
 #include "core/tools/rect_selection_tool.h"
 
+#include "core/command_bus.h"
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
 
@@ -31,10 +33,11 @@ QRectF clampRectToDocument(const QRectF& rect, const Document* document)
 
 }  // namespace
 
-SelectionMode RectSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
+SelectionMode RectSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers,
+                                                   Qt::MouseButtons buttons)
 {
     if ((modifiers & Qt::ControlModifier) != 0) {
-        if ((modifiers & Qt::AltModifier) != 0) {
+        if ((buttons & Qt::RightButton) != 0) {
             return SelectionMode::Subtract;
         }
         return SelectionMode::Add;
@@ -88,7 +91,7 @@ void RectSelectTool::beginStroke(const ToolInputEvent& event)
 {
     startPos_ = event.canvasPos;
     currentPos_ = event.canvasPos;
-    currentMode_ = resolveSelectionMode(event.modifiers);
+    currentMode_ = resolveSelectionMode(event.modifiers, event.buttons);
 
     auto previewPath = buildRectPath(startPos_, currentPos_, event.modifiers);
     SelectionManager::instance().setPreview(previewPath, currentMode_);
@@ -106,7 +109,17 @@ void RectSelectTool::endStroke(const ToolInputEvent& event)
     currentPos_ = event.canvasPos;
     auto path = buildRectPath(startPos_, currentPos_, event.modifiers);
 
+    std::shared_ptr<SelectionCommand> cmd;
+    if (commandBus()) {
+        cmd = std::make_shared<SelectionCommand>("Rectangle Selection");
+        cmd->captureBeforeState();
+    }
+
     SelectionManager::instance().applySelection(path, currentMode_);
+    if (cmd) {
+        cmd->captureAfterState();
+        commandBus()->dispatch(cmd);
+    }
     SelectionManager::instance().clearPreview();
 }
 

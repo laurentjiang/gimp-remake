@@ -7,7 +7,6 @@
 
 #include "ui/main_window.h"
 
-#include "core/clipboard_manager.h"
 #include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
@@ -144,30 +143,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
-    // Subscribe to mouse position changes for paste operations
-    m_mousePosSubscription = EventBus::instance().subscribe<MousePositionChangedEvent>(
-        [this](const MousePositionChangedEvent& event) {
-            if (event.canvasX >= 0 && event.canvasY >= 0) {
-                m_lastCanvasPos = QPoint(event.canvasX, event.canvasY);
-                m_hasMousePos = true;
-            } else {
-                m_hasMousePos = false;
-            }
-        });
-
-    // Subscribe to layer selection changes
-    m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
-        [this](const LayerSelectionChangedEvent& event) { m_activeLayerIndex = event.layerIndex; });
-
-    // Subscribe to selection changes to update menu action states
-    // Only Cut requires a selection; Copy can copy entire layer when no selection
-    m_selectionChangedSubscription = EventBus::instance().subscribe<SelectionChangedEvent>(
-        [this](const SelectionChangedEvent& event) {
-            if (m_cutAction) {
-                m_cutAction->setEnabled(event.hasSelection);
-            }
-        });
-
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -199,9 +174,6 @@ MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
-    EventBus::instance().unsubscribe(m_mousePosSubscription);
-    EventBus::instance().unsubscribe(m_layerSelectionSubscription);
-    EventBus::instance().unsubscribe(m_selectionChangedSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -218,14 +190,11 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    editMenu->addSeparator();
-    m_cutAction = editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
-    m_copyAction = editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
-    m_pasteAction = editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
-
-    // Cut requires selection; Copy always works (copies entire layer if no selection)
-    m_cutAction->setEnabled(false);
-    m_pasteAction->setEnabled(ClipboardManager::instance().hasImage());
+    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
+    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
+    // active layer management, floating selection concept, and LayerStack
+    // operations (activeLayer, moveLayer, insertAt) to work correctly.
+    // See ClipboardManager for the implementation stub.
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -687,73 +656,6 @@ void MainWindow::onSelectInvert()
     EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
     m_canvasWidget->update();
     statusBar()->showMessage("Selection inverted", 1000);
-}
-
-void MainWindow::onCut()
-{
-    if (!m_document) {
-        return;
-    }
-
-    // Get the active layer (or fallback to first layer)
-    std::shared_ptr<Layer> activeLayer;
-    if (m_activeLayerIndex < m_document->layers().count()) {
-        activeLayer = m_document->layers()[m_activeLayerIndex];
-    }
-
-    if (ClipboardManager::instance().cutSelection(m_document, activeLayer, m_commandBus.get())) {
-        if (m_canvasWidget) {
-            m_canvasWidget->invalidateCache();
-        }
-        if (m_pasteAction) {
-            m_pasteAction->setEnabled(true);
-        }
-        statusBar()->showMessage("Cut selection", 1500);
-    } else {
-        statusBar()->showMessage("Nothing to cut", 1500);
-    }
-}
-
-void MainWindow::onCopy()
-{
-    if (!m_document) {
-        return;
-    }
-
-    // Get the active layer (or fallback to first layer)
-    std::shared_ptr<Layer> activeLayer;
-    if (m_activeLayerIndex < m_document->layers().count()) {
-        activeLayer = m_document->layers()[m_activeLayerIndex];
-    }
-
-    if (ClipboardManager::instance().copySelection(m_document, activeLayer)) {
-        if (m_pasteAction) {
-            m_pasteAction->setEnabled(true);
-        }
-        statusBar()->showMessage("Copied selection", 1500);
-    } else {
-        statusBar()->showMessage("Nothing to copy", 1500);
-    }
-}
-
-void MainWindow::onPaste()
-{
-    if (!m_document) {
-        return;
-    }
-
-    const QPoint pastePos =
-        m_hasMousePos ? m_lastCanvasPos : QPoint(m_document->width() / 2, m_document->height() / 2);
-
-    if (ClipboardManager::instance().pasteToDocument(
-            m_document, m_commandBus.get(), pastePos, m_hasMousePos)) {
-        if (m_canvasWidget) {
-            m_canvasWidget->invalidateCache();
-        }
-        statusBar()->showMessage("Pasted", 1500);
-    } else {
-        statusBar()->showMessage("Nothing to paste", 1500);
-    }
 }
 
 }  // namespace gimp

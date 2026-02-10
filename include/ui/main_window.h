@@ -91,9 +91,6 @@ class MainWindow : public QMainWindow {
     void onSelectAll();
     void onSelectNone();
     void onSelectInvert();
-    void onCut();
-    void onCopy();
-    void onPaste();
 
   private:
     void setupMenuBar();
@@ -110,10 +107,6 @@ class MainWindow : public QMainWindow {
 
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
     EventBus::SubscriptionId m_colorChangedSubscription = 0;
-    EventBus::SubscriptionId m_mousePosSubscription = 0;
-    EventBus::SubscriptionId m_layerSelectionSubscription = 0;
-
-    std::size_t m_activeLayerIndex = 0;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;
@@ -135,14 +128,6 @@ class MainWindow : public QMainWindow {
     QTabWidget* m_rightTabWidget = nullptr;
 
     QAction* m_toggleDebugAction = nullptr;
-    QAction* m_cutAction = nullptr;
-    QAction* m_copyAction = nullptr;
-    QAction* m_pasteAction = nullptr;
-
-    EventBus::SubscriptionId m_selectionChangedSubscription = 0;
-
-    QPoint m_lastCanvasPos = QPoint(-1, -1);
-    bool m_hasMousePos = false;
 };
 
 }  // namespace gimp

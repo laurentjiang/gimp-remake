@@ -477,8 +477,13 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
     QPixmap scaledTile =
         m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
 
-    // Draw tiled checkerboard
-    painter.drawTiledPixmap(visibleRect.toRect(), scaledTile);
+    // Calculate tile offset to maintain pattern alignment with canvas origin during pan
+    int tilePatternSize = scaledTileSize * 2;
+    int offsetX = static_cast<int>(m_viewport.panX) % tilePatternSize;
+    int offsetY = static_cast<int>(m_viewport.panY) % tilePatternSize;
+
+    // Draw tiled checkerboard with offset for proper alignment
+    painter.drawTiledPixmap(visibleRect.toRect(), scaledTile, QPoint(offsetX, offsetY));
 
     painter.restore();
 }

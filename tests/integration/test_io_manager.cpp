@@ -9,6 +9,9 @@
 #include "io/io_manager.h"
 #include "io/project_file.h"
 
+#include <QPainterPath>
+
+#include <cmath>
 #include <filesystem>
 
 #include <catch2/catch_test_macros.hpp>
@@ -24,6 +27,27 @@ const std::filesystem::path SOURCE_ROOT = ".";
 // Test input/output directories (relative to source root)
 const std::string TEST_INPUT_IMAGE = (SOURCE_ROOT / "tests/img/starry_night.jpg").string();
 const std::string TEST_OUTPUT_DIR = (SOURCE_ROOT / "tests/img/generated/").string();
+
+bool pathsMatch(const QPainterPath& a, const QPainterPath& b)
+{
+    if (a.elementCount() != b.elementCount()) {
+        return false;
+    }
+
+    for (int i = 0; i < a.elementCount(); ++i) {
+        const auto ea = a.elementAt(i);
+        const auto eb = b.elementAt(i);
+        if (ea.type != eb.type) {
+            return false;
+        }
+
+        if (std::abs(ea.x - eb.x) > 0.001 || std::abs(ea.y - eb.y) > 0.001) {
+            return false;
+        }
+    }
+
+    return true;
+}
 }  // namespace
 
 TEST_CASE("IOManager reads and writes image files", "[io][integration]")
@@ -98,6 +122,13 @@ TEST_CASE("IOManager exports and imports ProjectFile", "[io][integration]")
     layer3->setOpacity(0.5F);
     layer3->setBlendMode(gimp::BlendMode::Overlay);
 
+    QPainterPath selectionPath;
+    selectionPath.moveTo(10.0, 15.0);
+    selectionPath.lineTo(200.0, 25.0);
+    selectionPath.cubicTo(220.0, 30.0, 240.0, 50.0, 260.0, 70.0);
+    selectionPath.closeSubpath();
+    project.setSelectionPath(selectionPath);
+
     SECTION("Export project to JSON")
     {
         const std::string outputPath = TEST_OUTPUT_DIR + "test_project_export.json";
@@ -139,5 +170,8 @@ TEST_CASE("IOManager exports and imports ProjectFile", "[io][integration]")
         REQUIRE(importedLayer3->opacity() == 0.5F);
         REQUIRE(importedLayer3->blendMode() == gimp::BlendMode::Overlay);
         REQUIRE(importedLayer3->visible() == true);
+
+        REQUIRE(!imported.selectionPath().isEmpty());
+        REQUIRE(pathsMatch(imported.selectionPath(), selectionPath));
     }
 }

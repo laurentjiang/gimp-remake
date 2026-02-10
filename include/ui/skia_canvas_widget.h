@@ -116,6 +116,12 @@ class SkiaCanvasWidget : public QOpenGLWidget {
     /*! @brief Invalidates the cached render, triggering re-render on next paint. */
     void invalidateCache();
 
+    /**
+     * @brief Replaces the active document and resets cached rendering state.
+     * @param document The new document to display.
+     */
+    void setDocument(std::shared_ptr<Document> document);
+
     /*! @brief Clears the move override flag.
      *  Used when an external action (like undo) cancels a pending move.
      */

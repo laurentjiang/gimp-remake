@@ -29,6 +29,8 @@
 #include "core/tools/move_tool.h"
 #include "core/tools/pencil_tool.h"
 #include "core/tools/rect_selection_tool.h"
+#include "io/io_manager.h"
+#include "io/project_file.h"
 #include "render/skia_renderer.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
@@ -44,8 +46,12 @@
 #include "ui/tool_options_panel.h"
 #include "ui/toolbox_panel.h"
 
+#include "error_handling/error_codes.h"
+#include "error_handling/error_handler.h"
 #include "history/simple_history_manager.h"
 
+#include <QFileDialog>
+#include <QFileInfo>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QKeyEvent>
@@ -228,6 +234,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setupShortcuts();
     createDocument();
 
+    if (m_commandPalette) {
+        m_commandPalette->setHistoryManager(m_historyManager.get());
+        m_commandPalette->setCommandAction("file.new", [this]() { createDocument(); });
+        m_commandPalette->setCommandAction("file.open", [this]() { onOpenProject(); });
+        m_commandPalette->setCommandAction("file.save", [this]() { onSaveProject(); });
+        m_commandPalette->setCommandAction("file.save_as", [this]() { onSaveProjectAs(); });
+    }
+
     statusBar()->showMessage("Ready");
 }
 
@@ -242,11 +256,12 @@ MainWindow::~MainWindow()
 void MainWindow::setupMenuBar()
 {
     auto* fileMenu = menuBar()->addMenu("&File");
-    fileMenu->addAction("&New", QKeySequence::New, []() {});
-    fileMenu->addAction("&Open", QKeySequence::Open, []() {});
+    fileMenu->addAction("&New Project", QKeySequence::New, this, &MainWindow::createDocument);
+    fileMenu->addAction("&Open Project...", QKeySequence::Open, this, &MainWindow::onOpenProject);
     fileMenu->addSeparator();
-    fileMenu->addAction("&Save", QKeySequence::Save, []() {});
-    fileMenu->addAction("Save &As...", QKeySequence::SaveAs, []() {});
+    fileMenu->addAction("&Save Project", QKeySequence::Save, this, &MainWindow::onSaveProject);
+    fileMenu->addAction(
+        "Save Project &As...", QKeySequence::SaveAs, this, &MainWindow::onSaveProjectAs);
     fileMenu->addSeparator();
     fileMenu->addAction("E&xit", QKeySequence::Quit, this, &QMainWindow::close);
 
@@ -402,6 +417,7 @@ void MainWindow::setupShortcuts()
 void MainWindow::createDocument()
 {
     auto simpleDoc = std::make_shared<SimpleDocument>(800, 600);
+    m_document = std::make_shared<ProjectFile>(800, 600);
 
     auto bg = simpleDoc->addLayer();
     bg->setName("Background");
@@ -423,22 +439,41 @@ void MainWindow::createDocument()
 
     SelectionManager::instance().setDocument(m_document);
 
-    m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
-    setCentralWidget(m_canvasWidget);
+    if (!m_canvasWidget) {
+        m_canvasWidget = new SkiaCanvasWidget(m_document, m_renderer, this);
+        setCentralWidget(m_canvasWidget);
 
-    // Connect performance counter signal
-    connect(m_canvasWidget, &SkiaCanvasWidget::framePainted, m_debugHud, &DebugHud::onFramePainted);
+        // Connect performance counter signal
+        connect(
+            m_canvasWidget, &SkiaCanvasWidget::framePainted, m_debugHud, &DebugHud::onFramePainted);
+    } else {
+        m_canvasWidget->setDocument(m_document);
+        m_canvasWidget->resetView();
+        m_canvasWidget->invalidateCache();
+    }
 
     m_layersPanel->setDocument(m_document);
     m_debugHud->setDocument(m_document);
+
+    if (m_historyManager) {
+        m_historyManager->clear();
+    }
+    if (m_historyPanel) {
+        m_historyPanel->clear();
+    }
+
+    m_projectPath.clear();
+    statusBar()->showMessage("New project created", 2000);
 }
 
 void MainWindow::set_document(std::shared_ptr<Document> document)
 {
     m_document = std::move(document);
     SelectionManager::instance().setDocument(m_document);
+    ToolFactory::instance().setDocument(m_document);
     if (m_canvasWidget != nullptr) {
-        m_canvasWidget->update();
+        m_canvasWidget->setDocument(m_document);
+        m_canvasWidget->invalidateCache();
     }
     m_layersPanel->setDocument(m_document);
     m_debugHud->setDocument(m_document);
@@ -796,6 +831,132 @@ void MainWindow::onPaste()
     } else {
         statusBar()->showMessage("Nothing to paste", 2000);
     }
+}
+
+std::shared_ptr<ProjectFile> MainWindow::buildProjectSnapshot() const
+{
+    if (!m_document) {
+        return nullptr;
+    }
+
+    auto existingProject = std::dynamic_pointer_cast<ProjectFile>(m_document);
+    if (existingProject) {
+        return existingProject;
+    }
+
+    auto snapshot = std::make_shared<ProjectFile>(m_document->width(), m_document->height());
+    snapshot->setSelectionPath(m_document->selectionPath());
+
+    const auto& layers = m_document->layers();
+    for (const auto& layer : layers) {
+        if (!layer) {
+            continue;
+        }
+
+        auto newLayer = snapshot->addLayer();
+        newLayer->setName(layer->name());
+        newLayer->setVisible(layer->visible());
+        newLayer->setOpacity(layer->opacity());
+        newLayer->setBlendMode(layer->blendMode());
+
+        if (newLayer->data().size() != layer->data().size()) {
+            error::ErrorHandler::GetInstance().ReportError(
+                error::ErrorCode::InvalidArgumentSize,
+                "Layer data size mismatch while saving project");
+            return nullptr;
+        }
+
+        newLayer->data() = layer->data();
+    }
+
+    return snapshot;
+}
+
+void MainWindow::onOpenProject()
+{
+    const QString filePath = QFileDialog::getOpenFileName(
+        this, "Open Project", QString(), "GIMP Project (*.gimp *.json)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists()) {
+        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOFileNotFound,
+                                                       filePath.toStdString());
+        statusBar()->showMessage("Project file not found", 3000);
+        return;
+    }
+
+    IOManager ioManager;
+    try {
+        auto imported =
+            std::make_shared<ProjectFile>(ioManager.importProject(filePath.toStdString()));
+        set_document(imported);
+        if (m_canvasWidget) {
+            m_canvasWidget->fitInView();
+        }
+
+        if (m_historyManager) {
+            m_historyManager->clear();
+        }
+        if (m_historyPanel) {
+            m_historyPanel->clear();
+        }
+
+        m_projectPath = filePath;
+        statusBar()->showMessage("Project loaded", 2000);
+    } catch (const std::exception& ex) {
+        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOCorruptedFile,
+                                                       ex.what());
+        statusBar()->showMessage("Failed to open project", 3000);
+    }
+}
+
+void MainWindow::onSaveProject()
+{
+    if (!m_document) {
+        statusBar()->showMessage("No project to save", 2000);
+        return;
+    }
+
+    if (m_projectPath.isEmpty()) {
+        onSaveProjectAs();
+        return;
+    }
+
+    auto snapshot = buildProjectSnapshot();
+    if (!snapshot) {
+        statusBar()->showMessage("Failed to prepare project for saving", 3000);
+        return;
+    }
+
+    IOManager ioManager;
+    if (!ioManager.exportProject(*snapshot, m_projectPath.toStdString())) {
+        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOWriteError,
+                                                       m_projectPath.toStdString());
+        statusBar()->showMessage("Failed to save project", 3000);
+        return;
+    }
+
+    statusBar()->showMessage("Project saved", 2000);
+}
+
+void MainWindow::onSaveProjectAs()
+{
+    QString filePath = QFileDialog::getSaveFileName(
+        this, "Save Project", m_projectPath, "GIMP Project (*.gimp *.json)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    QFileInfo fileInfo(filePath);
+    if (fileInfo.suffix().isEmpty()) {
+        filePath += ".gimp";
+    }
+
+    m_projectPath = filePath;
+    onSaveProject();
 }
 
 }  // namespace gimp

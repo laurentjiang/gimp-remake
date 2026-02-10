@@ -16,6 +16,7 @@
 #include <QMenuBar>
 #include <QPoint>
 #include <QShortcut>
+#include <QString>
 #include <QTabWidget>
 
 #include <memory>
@@ -27,6 +28,7 @@ class ColorChooserPanel;
 class CommandPalette;
 class DebugHud;
 class Document;
+class ProjectFile;
 class HistoryPanel;
 class Layer;
 class LayersPanel;
@@ -94,6 +96,9 @@ class MainWindow : public QMainWindow {
     void onCut();
     void onCopy();
     void onPaste();
+    void onOpenProject();
+    void onSaveProject();
+    void onSaveProjectAs();
 
   private:
     void setupMenuBar();
@@ -102,6 +107,7 @@ class MainWindow : public QMainWindow {
     void setupShortcuts();
     void createDocument();
     void positionDebugHud();
+    std::shared_ptr<ProjectFile> buildProjectSnapshot() const;
 
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
@@ -135,6 +141,7 @@ class MainWindow : public QMainWindow {
     QTabWidget* m_rightTabWidget = nullptr;
 
     QAction* m_toggleDebugAction = nullptr;
+    QString m_projectPath;
 };
 
 }  // namespace gimp

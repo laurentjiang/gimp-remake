@@ -7,6 +7,7 @@
 
 #include "ui/main_window.h"
 
+#include "core/clipboard_manager.h"
 #include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
@@ -194,6 +195,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
                 }
             });
 
+    // Subscribe to mouse position changes for cursor-aware paste
+    m_mousePositionSubscription =
+        EventBus::instance().subscribe<MousePositionChangedEvent>(
+            [this](const MousePositionChangedEvent& event) {
+                m_lastCanvasMousePos = QPoint(event.canvasX, event.canvasY);
+            });
+
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -226,6 +234,7 @@ MainWindow::~MainWindow()
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
     EventBus::instance().unsubscribe(m_layerSelectionSubscription);
+    EventBus::instance().unsubscribe(m_mousePositionSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -242,11 +251,10 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
-    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
-    // active layer management, floating selection concept, and LayerStack
-    // operations (activeLayer, moveLayer, insertAt) to work correctly.
-    // See ClipboardManager for the implementation stub.
+    editMenu->addSeparator();
+    editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
+    editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
+    editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -716,6 +724,56 @@ void MainWindow::onSelectInvert()
     EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
     m_canvasWidget->update();
     statusBar()->showMessage("Selection inverted", 1000);
+}
+
+void MainWindow::onCut()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to cut from", 2000);
+        return;
+    }
+
+    if (ClipboardManager::instance().cutSelection(m_document, nullptr, m_commandBus.get())) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Cut to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to cut (no selection)", 2000);
+    }
+}
+
+void MainWindow::onCopy()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to copy from", 2000);
+        return;
+    }
+
+    if (ClipboardManager::instance().copySelection(m_document, nullptr)) {
+        statusBar()->showMessage("Copied to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Failed to copy", 2000);
+    }
+}
+
+void MainWindow::onPaste()
+{
+    if (!m_document) {
+        statusBar()->showMessage("No document to paste into", 2000);
+        return;
+    }
+
+    // Use cursor position if available, otherwise center on canvas
+    bool useCursor = (m_lastCanvasMousePos.x() >= 0 && m_lastCanvasMousePos.y() >= 0 &&
+                      m_lastCanvasMousePos.x() < m_document->width() &&
+                      m_lastCanvasMousePos.y() < m_document->height());
+
+    if (ClipboardManager::instance().pasteToDocument(
+            m_document, m_commandBus.get(), m_lastCanvasMousePos, useCursor)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Pasted from clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to paste", 2000);
+    }
 }
 
 }  // namespace gimp

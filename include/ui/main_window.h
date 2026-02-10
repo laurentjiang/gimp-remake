@@ -135,6 +135,11 @@ class MainWindow : public QMainWindow {
     QTabWidget* m_rightTabWidget = nullptr;
 
     QAction* m_toggleDebugAction = nullptr;
+    QAction* m_cutAction = nullptr;
+    QAction* m_copyAction = nullptr;
+    QAction* m_pasteAction = nullptr;
+
+    EventBus::SubscriptionId m_selectionChangedSubscription = 0;
 
     QPoint m_lastCanvasPos = QPoint(-1, -1);
     bool m_hasMousePos = false;

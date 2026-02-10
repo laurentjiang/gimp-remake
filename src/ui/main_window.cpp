@@ -157,8 +157,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 
     // Subscribe to layer selection changes
     m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
-        [this](const LayerSelectionChangedEvent& event) {
-            m_activeLayerIndex = event.layerIndex;
+        [this](const LayerSelectionChangedEvent& event) { m_activeLayerIndex = event.layerIndex; });
+
+    // Subscribe to selection changes to update menu action states
+    m_selectionChangedSubscription = EventBus::instance().subscribe<SelectionChangedEvent>(
+        [this](const SelectionChangedEvent& event) {
+            if (m_cutAction) {
+                m_cutAction->setEnabled(event.hasSelection);
+            }
+            if (m_copyAction) {
+                m_copyAction->setEnabled(event.hasSelection);
+            }
         });
 
     // Create log bridge and panel
@@ -194,6 +203,7 @@ MainWindow::~MainWindow()
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
     EventBus::instance().unsubscribe(m_mousePosSubscription);
     EventBus::instance().unsubscribe(m_layerSelectionSubscription);
+    EventBus::instance().unsubscribe(m_selectionChangedSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -211,9 +221,14 @@ void MainWindow::setupMenuBar()
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
     editMenu->addSeparator();
-    editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
-    editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
-    editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
+    m_cutAction = editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
+    m_copyAction = editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
+    m_pasteAction = editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
+
+    // Initially disable cut/copy (no selection), paste depends on clipboard
+    m_cutAction->setEnabled(false);
+    m_copyAction->setEnabled(false);
+    m_pasteAction->setEnabled(ClipboardManager::instance().hasImage());
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -693,6 +708,9 @@ void MainWindow::onCut()
         if (m_canvasWidget) {
             m_canvasWidget->invalidateCache();
         }
+        if (m_pasteAction) {
+            m_pasteAction->setEnabled(true);
+        }
         statusBar()->showMessage("Cut selection", 1500);
     } else {
         statusBar()->showMessage("Nothing to cut", 1500);
@@ -712,6 +730,9 @@ void MainWindow::onCopy()
     }
 
     if (ClipboardManager::instance().copySelection(m_document, activeLayer)) {
+        if (m_pasteAction) {
+            m_pasteAction->setEnabled(true);
+        }
         statusBar()->showMessage("Copied selection", 1500);
     } else {
         statusBar()->showMessage("Nothing to copy", 1500);

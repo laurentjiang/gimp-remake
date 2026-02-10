@@ -56,11 +56,13 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
     constexpr int kTileSize = 8;
     m_checkerboardTile = QPixmap(kTileSize * 2, kTileSize * 2);
+    m_checkerboardTile.fill(Qt::transparent);  // Initialize pixmap
     QPainter tilePainter(&m_checkerboardTile);
-    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(204, 204, 204));
-    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(255, 255, 255));
-    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(255, 255, 255));
-    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(204, 204, 204));
+    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(180, 180, 180));
+    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(220, 220, 220));
+    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(220, 220, 220));
+    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(180, 180, 180));
+    tilePainter.end();
 
     m_selectionTimer.setInterval(80);
     connect(
@@ -477,13 +479,9 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
     QPixmap scaledTile =
         m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
 
-    // Calculate tile offset to maintain pattern alignment with canvas origin during pan
-    int tilePatternSize = scaledTileSize * 2;
-    int offsetX = static_cast<int>(m_viewport.panX) % tilePatternSize;
-    int offsetY = static_cast<int>(m_viewport.panY) % tilePatternSize;
-
-    // Draw tiled checkerboard with offset for proper alignment
-    painter.drawTiledPixmap(visibleRect.toRect(), scaledTile, QPoint(offsetX, offsetY));
+    // Draw tiled pixmap from the canvas origin (rect.topLeft()) so pattern aligns with canvas
+    // The clip rect ensures we only paint within the visible area
+    painter.drawTiledPixmap(rect.toRect(), scaledTile);
 
     painter.restore();
 }

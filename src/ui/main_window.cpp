@@ -63,6 +63,8 @@ class SimpleDocument : public gimp::Document {
     {
     }
 
+    void resetLayerCounter() { m_layerCounter = 0; }
+
     std::shared_ptr<gimp::Layer> addLayer() override
     {
         auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
@@ -401,10 +403,12 @@ void MainWindow::setupShortcuts()
 
 void MainWindow::createDocument()
 {
-    m_document = std::make_shared<SimpleDocument>(800, 600);
+    auto simpleDoc = std::make_shared<SimpleDocument>(800, 600);
 
-    auto bg = m_document->addLayer();
+    auto bg = simpleDoc->addLayer();
     bg->setName("Background");
+    simpleDoc->resetLayerCounter();  // Next layer will be "Layer 1"
+    m_document = simpleDoc;
     auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;

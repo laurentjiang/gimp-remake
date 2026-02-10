@@ -120,6 +120,11 @@ class ProjectFile : public Document {
         m_activeLayerIndex = std::min(index, m_layers.count() - 1);
     }
 
+    /*! @brief Resets the layer counter to 0.
+     *  Use after creating the background layer so next layer is "Layer 1".
+     */
+    void resetLayerCounter() { m_layerCounter = 0; }
+
     /*! @brief Returns the tile store for dirty region tracking.
      *  @return Reference to the tile store.
      */

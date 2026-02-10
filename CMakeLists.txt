@@ -267,6 +267,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
         spdlog::spdlog
         ${OpenCV_LIBS}
     )

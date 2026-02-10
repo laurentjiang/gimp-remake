@@ -24,9 +24,12 @@
 #include <QImage>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QOpenGLContext>
 #include <QPainter>
 #include <QPen>
 #include <QWheelEvent>
+
+#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <cmath>
@@ -40,7 +43,7 @@ namespace gimp {
 SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
                                    std::shared_ptr<SkiaRenderer> renderer,
                                    QWidget* parent)
-    : QWidget(parent),
+    : QOpenGLWidget(parent),
       m_document(std::move(document)),
       m_renderer(std::move(renderer))
 {
@@ -48,7 +51,6 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
-    invalidateCache();
 
     // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
     constexpr int kTileSize = 8;
@@ -66,15 +68,18 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
 
     // Subscribe to layer events to refresh canvas when layers change
     m_layerStackSub = EventBus::instance().subscribe<LayerStackChangedEvent>(
-        [this](const LayerStackChangedEvent& /*event*/) { invalidateCache(); });
+        [this](const LayerStackChangedEvent& /*event*/) { update(); });
     m_layerSelectionSub = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
-        [this](const LayerSelectionChangedEvent& /*event*/) { invalidateCache(); });
+        [this](const LayerSelectionChangedEvent& /*event*/) { update(); });
+    m_layerPropertySub = EventBus::instance().subscribe<LayerPropertyChangedEvent>(
+        [this](const LayerPropertyChangedEvent& /*event*/) { update(); });
 }
 
 SkiaCanvasWidget::~SkiaCanvasWidget()
 {
     EventBus::instance().unsubscribe(m_layerStackSub);
     EventBus::instance().unsubscribe(m_layerSelectionSub);
+    EventBus::instance().unsubscribe(m_layerPropertySub);
 }
 
 QPointF SkiaCanvasWidget::screenToCanvas(const QPoint& screenPos) const
@@ -171,90 +176,70 @@ void SkiaCanvasWidget::zoomOut()
 
 void SkiaCanvasWidget::invalidateCache()
 {
-    m_cacheValid = false;
     update();
 }
 
-void SkiaCanvasWidget::renderIfNeeded()
+void SkiaCanvasWidget::initializeGL()
 {
-    if (m_cacheValid || !m_document || !m_renderer) {
-        return;
+    auto gpuCtx = std::make_unique<GpuContext>();
+    if (gpuCtx->initialize(context())) {
+        m_gpuContext = std::move(gpuCtx);
+        spdlog::info("SkiaCanvasWidget: GPU context initialized successfully");
+    } else {
+        spdlog::warn("SkiaCanvasWidget: GPU context init failed, falling back to raster");
+        m_gpuContext = std::make_unique<NullGpuContext>();
     }
-
-    m_renderer->render(*m_document);
-
-    auto skImage = m_renderer->get_result();
-    if (!skImage) {
-        return;
-    }
-
-    const SkImageInfo info = skImage->imageInfo();
-    m_cachedImage = QImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
-
-    const SkPixmap pixmap(info, m_cachedImage.bits(), m_cachedImage.bytesPerLine());
-    if (skImage->readPixels(pixmap, 0, 0)) {
-        m_cacheValid = true;
-    }
+    m_renderer->setGpuContext(m_gpuContext.get());
 }
 
-void SkiaCanvasWidget::updateCacheFromLayer()
+void SkiaCanvasWidget::resizeGL(int /*w*/, int /*h*/)
 {
-    // Use full compositor to properly composite all visible layers.
-    // This ensures multi-layer documents render correctly during strokes.
-    if (!m_document || !m_renderer || m_document->layers().count() == 0) {
-        return;
-    }
-
-    m_renderer->render(*m_document);
-
-    auto skImage = m_renderer->get_result();
-    if (!skImage) {
-        return;
-    }
-
-    const SkImageInfo info = skImage->imageInfo();
-    if (m_cachedImage.isNull() || m_cachedImage.width() != info.width() ||
-        m_cachedImage.height() != info.height()) {
-        m_cachedImage = QImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
-    }
-
-    const SkPixmap pixmap(info, m_cachedImage.bits(), m_cachedImage.bytesPerLine());
-    if (skImage->readPixels(pixmap, 0, 0)) {
-        m_cacheValid = true;
-    }
+    // Surfaces will be recreated on next render - nothing to do here
 }
 
-void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
+void SkiaCanvasWidget::paintGL()
 {
-    (void)event;
-
     const auto startTime = std::chrono::high_resolution_clock::now();
-
-    QPainter painter(this);
-    painter.fillRect(rect(), QColor(64, 64, 64));
 
     if (!m_document || !m_renderer) {
         return;
     }
 
-    renderIfNeeded();
+    // 1. Render document via Skia (GPU or CPU based on context)
+    m_renderer->render(*m_document);
 
-    if (!m_cacheValid || m_cachedImage.isNull()) {
-        return;
-    }
+    // 2. Flush Skia before handing off to Qt
+    m_gpuContext->flush();
 
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
+    // 3. CRITICAL: Reset GL state so Qt's QPainter works correctly
+    //    Skia leaves bound textures/shaders that confuse Qt
+    m_gpuContext->resetContext();
+
+    // 4. Draw overlays using QPainter
+    QPainter painter(this);
+    painter.fillRect(rect(), QColor(64, 64, 64));
 
     const QRectF targetRect(m_viewport.panX,
                             m_viewport.panY,
-                            static_cast<float>(m_cachedImage.width()) * m_viewport.zoomLevel,
-                            static_cast<float>(m_cachedImage.height()) * m_viewport.zoomLevel);
+                            static_cast<float>(m_document->width()) * m_viewport.zoomLevel,
+                            static_cast<float>(m_document->height()) * m_viewport.zoomLevel);
 
     // Draw checkerboard pattern for transparency visualization
     drawCheckerboard(painter, targetRect);
 
-    painter.drawImage(targetRect, m_cachedImage);
+    // Copy the Skia surface to a QImage for display (temporary until full GPU path)
+    auto skImage = m_renderer->get_result();
+    if (skImage) {
+        const SkImageInfo info = skImage->imageInfo();
+        QImage renderImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
+        const SkPixmap pixmap(info, renderImage.bits(), renderImage.bytesPerLine());
+        if (skImage->readPixels(pixmap, 0, 0)) {
+            painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
+            painter.drawImage(targetRect, renderImage);
+        }
+    }
 
+    // Draw pixel grid at high zoom
     if (m_viewport.zoomLevel >= 8.0F) {
         painter.setPen(QColor(128, 128, 128, 80));
         const int startX = static_cast<int>(m_viewport.panX);
@@ -436,6 +421,12 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 
         painter.restore();
     }
+
+    painter.end();
+
+    // 5. CRITICAL: Reset state AGAIN so Skia works next frame
+    //    Qt leaves the GL state dirty
+    m_gpuContext->resetContext();
 
     const auto endTime = std::chrono::high_resolution_clock::now();
     const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
@@ -799,7 +790,6 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
                     m_isStroking = true;
                     bool handled = moveTool->onMousePress(toolEvent);
                     if (handled) {
-                        updateCacheFromLayer();
                         update();
                         emit canvasModified();
                     }
@@ -827,13 +817,8 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     }
 
     if (handled) {
-        // Fast path: update cache directly from layer during stroke
-        if (m_isStroking) {
-            updateCacheFromLayer();
-            update();
-        } else {
-            invalidateCache();
-        }
+        // GPU rendering: just trigger repaint
+        update();
         emit canvasModified();
     }
 }

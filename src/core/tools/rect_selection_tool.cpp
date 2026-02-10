@@ -82,13 +82,13 @@ SelectionHandle RectSelectTool::hitTestHandle(const QPoint& pos, float zoomLevel
     }
 
     static constexpr std::array<SelectionHandle, 8> kHandleTypes = {SelectionHandle::TopLeft,
-                                                                     SelectionHandle::Top,
-                                                                     SelectionHandle::TopRight,
-                                                                     SelectionHandle::Right,
-                                                                     SelectionHandle::BottomRight,
-                                                                     SelectionHandle::Bottom,
-                                                                     SelectionHandle::BottomLeft,
-                                                                     SelectionHandle::Left};
+                                                                    SelectionHandle::Top,
+                                                                    SelectionHandle::TopRight,
+                                                                    SelectionHandle::Right,
+                                                                    SelectionHandle::BottomRight,
+                                                                    SelectionHandle::Bottom,
+                                                                    SelectionHandle::BottomLeft,
+                                                                    SelectionHandle::Left};
 
     QPointF posF(pos);
     for (size_t i = 0; i < handles.size(); ++i) {

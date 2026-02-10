@@ -160,13 +160,13 @@ TransformHandle TransformState::hitTestHandle(const QPointF& pos, qreal handleSi
     }
 
     static constexpr std::array<TransformHandle, 8> kHandleTypes = {TransformHandle::TopLeft,
-                                                                     TransformHandle::Top,
-                                                                     TransformHandle::TopRight,
-                                                                     TransformHandle::Right,
-                                                                     TransformHandle::BottomRight,
-                                                                     TransformHandle::Bottom,
-                                                                     TransformHandle::BottomLeft,
-                                                                     TransformHandle::Left};
+                                                                    TransformHandle::Top,
+                                                                    TransformHandle::TopRight,
+                                                                    TransformHandle::Right,
+                                                                    TransformHandle::BottomRight,
+                                                                    TransformHandle::Bottom,
+                                                                    TransformHandle::BottomLeft,
+                                                                    TransformHandle::Left};
 
     for (std::size_t i = 0; i < handles.size(); ++i) {
         if (handles[i].contains(pos)) {

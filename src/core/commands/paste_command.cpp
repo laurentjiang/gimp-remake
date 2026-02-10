@@ -51,7 +51,15 @@ void PasteCommand::apply()
     }
 
     if (!layer_) {
-        layer_ = document_->addLayer();
+        // Create layer and insert above active layer (GIMP behavior)
+        layer_ = std::make_shared<Layer>(document_->width(), document_->height());
+        layer_->setName("Pasted Layer");
+
+        // Insert above active layer
+        std::size_t insertIndex = document_->activeLayerIndex() + 1;
+        document_->layers().insertLayer(insertIndex, layer_);
+        document_->setActiveLayerIndex(insertIndex);
+
         createdLayer_ = true;
         captured_ = false;
     }

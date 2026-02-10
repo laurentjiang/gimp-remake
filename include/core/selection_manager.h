@@ -248,6 +248,34 @@ class SelectionManager {
         return preview_;
     }
 
+    /**
+     * @brief Clips the current selection to document bounds.
+     *
+     * Used after move/transform operations to ensure the selection path
+     * only covers pixels that actually exist within the document.
+     * This prevents color bleeding when re-selecting moved content.
+     *
+     * @param docWidth Document width in pixels.
+     * @param docHeight Document height in pixels.
+     */
+    void clipSelectionToDocument(int docWidth, int docHeight)
+    {
+        if (selection_.isEmpty() || docWidth <= 0 || docHeight <= 0) {
+            return;
+        }
+
+        QPainterPath docBounds;
+        docBounds.addRect(0, 0, docWidth, docHeight);
+        selection_ = selection_.intersected(docBounds);
+
+        // If selection is now empty, clear the type
+        if (selection_.isEmpty()) {
+            selectionType_ = SelectionType::Unknown;
+        }
+
+        syncSelectionToDocument();
+    }
+
   private:
     SelectionManager() = default;
 

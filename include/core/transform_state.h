@@ -154,16 +154,32 @@ class TransformState {
     [[nodiscard]] QPointF getAnchorForHandle(TransformHandle handle) const;
 
     /**
+     * @brief Begins a handle drag operation, capturing the anchor position.
+     *
+     * Must be called at the START of a handle drag (on mouse press). This
+     * captures the anchor position (opposite corner/edge) at that moment,
+     * which is then kept fixed during the entire drag operation.
+     *
+     * @param handle The handle being dragged.
+     */
+    void beginHandleDrag(TransformHandle handle);
+
+    /**
+     * @brief Ends the current handle drag operation.
+     */
+    void endHandleDrag();
+
+    /**
      * @brief Updates transform based on handle drag.
      *
      * Calculates the new scale/translation based on dragging a handle
-     * from its current position to a new position, keeping the anchor fixed.
+     * to a new position, keeping the anchor (captured in beginHandleDrag) fixed.
+     * Call beginHandleDrag() before the first call to this method.
      *
-     * @param handle The handle being dragged.
      * @param newPos New handle position in canvas coordinates.
      * @param proportional If true, constrain to uniform scaling.
      */
-    void updateFromHandleDrag(TransformHandle handle, const QPointF& newPos, bool proportional);
+    void updateFromHandleDrag(const QPointF& newPos, bool proportional);
 
     /**
      * @brief Updates transform based on free drag (translation only).

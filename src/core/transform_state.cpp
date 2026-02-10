@@ -63,7 +63,13 @@ QTransform TransformState::buildMatrix() const
 
 QRectF TransformState::transformedBounds() const
 {
-    return matrix().mapRect(originalBounds_);
+    // Compute directly to match updateFromHandleDrag() math
+    // The matrix uses center-based scaling, but handle drag uses top-left based translation
+    qreal scaledW = originalBounds_.width() * scale_.width();
+    qreal scaledH = originalBounds_.height() * scale_.height();
+    return QRectF(originalBounds_.left() + translation_.x(),
+                  originalBounds_.top() + translation_.y(),
+                  scaledW, scaledH);
 }
 
 void TransformState::translate(const QPointF& offset)
@@ -217,82 +223,143 @@ QPointF TransformState::getAnchorForHandle(TransformHandle handle) const
     }
 }
 
-void TransformState::updateFromHandleDrag(TransformHandle handle,
-                                          const QPointF& newPos,
-                                          bool proportional)
+void TransformState::beginHandleDrag(TransformHandle handle)
 {
-    if (originalBounds_.isEmpty() || handle == TransformHandle::None) {
+    activeHandle_ = handle;
+    // Capture anchor position at drag start - this stays fixed during the entire drag
+    scaleAnchor_ = getAnchorForHandle(handle);
+    spdlog::debug("[TransformState] Begin handle drag: handle={} anchor=({:.1f},{:.1f})",
+                  static_cast<int>(handle),
+                  scaleAnchor_.x(),
+                  scaleAnchor_.y());
+}
+
+void TransformState::endHandleDrag()
+{
+    activeHandle_ = TransformHandle::None;
+    scaleAnchor_ = QPointF();
+}
+
+void TransformState::updateFromHandleDrag(const QPointF& newPos, bool proportional)
+{
+    if (originalBounds_.isEmpty() || activeHandle_ == TransformHandle::None) {
         return;
     }
 
-    QPointF anchor = getAnchorForHandle(handle);
-    QRectF currentBounds = transformedBounds();
+    // Use the anchor captured at drag start (scaleAnchor_), not recalculated each frame
+    // This ensures the anchor stays fixed throughout the drag operation
 
-    // Calculate new bounds based on which handle is being dragged
-    qreal newLeft = currentBounds.left();
-    qreal newTop = currentBounds.top();
-    qreal newRight = currentBounds.right();
-    qreal newBottom = currentBounds.bottom();
+    // Calculate new scale based on mouse distance from anchor vs original distance
+    qreal origW = originalBounds_.width();
+    qreal origH = originalBounds_.height();
 
-    switch (handle) {
+    // Compute scale factors based on which handle is being dragged
+    qreal sx = scale_.width();
+    qreal sy = scale_.height();
+
+    switch (activeHandle_) {
         case TransformHandle::TopLeft:
-            newLeft = newPos.x();
-            newTop = newPos.y();
+            // Mouse is at top-left, anchor is bottom-right
+            sx = (scaleAnchor_.x() - newPos.x()) / origW;
+            sy = (scaleAnchor_.y() - newPos.y()) / origH;
             break;
         case TransformHandle::Top:
-            newTop = newPos.y();
+            // Only Y changes
+            sy = (scaleAnchor_.y() - newPos.y()) / origH;
             break;
         case TransformHandle::TopRight:
-            newRight = newPos.x();
-            newTop = newPos.y();
+            sx = (newPos.x() - scaleAnchor_.x()) / origW;
+            sy = (scaleAnchor_.y() - newPos.y()) / origH;
             break;
         case TransformHandle::Right:
-            newRight = newPos.x();
+            sx = (newPos.x() - scaleAnchor_.x()) / origW;
             break;
         case TransformHandle::BottomRight:
-            newRight = newPos.x();
-            newBottom = newPos.y();
+            sx = (newPos.x() - scaleAnchor_.x()) / origW;
+            sy = (newPos.y() - scaleAnchor_.y()) / origH;
             break;
         case TransformHandle::Bottom:
-            newBottom = newPos.y();
+            sy = (newPos.y() - scaleAnchor_.y()) / origH;
             break;
         case TransformHandle::BottomLeft:
-            newLeft = newPos.x();
-            newBottom = newPos.y();
+            sx = (scaleAnchor_.x() - newPos.x()) / origW;
+            sy = (newPos.y() - scaleAnchor_.y()) / origH;
             break;
         case TransformHandle::Left:
-            newLeft = newPos.x();
+            sx = (scaleAnchor_.x() - newPos.x()) / origW;
             break;
         default:
             return;
     }
 
-    // Normalize bounds (handle inverted dragging)
-    QRectF newBounds = QRectF(QPointF(newLeft, newTop), QPointF(newRight, newBottom)).normalized();
-
-    // Calculate scale factors relative to original
-    qreal sx = originalBounds_.width() > 0.0 ? newBounds.width() / originalBounds_.width() : 1.0;
-    qreal sy = originalBounds_.height() > 0.0 ? newBounds.height() / originalBounds_.height() : 1.0;
+    // Clamp to minimum size (10% of original)
+    sx = std::max(0.1, sx);
+    sy = std::max(0.1, sy);
 
     if (proportional) {
-        // Use the larger scale factor for uniform scaling
-        qreal maxScale = std::max(std::abs(sx), std::abs(sy));
-        sx = sx < 0 ? -maxScale : maxScale;
-        sy = sy < 0 ? -maxScale : maxScale;
+        // For corner handles, use the average; for edge handles, only one dimension changed
+        if (activeHandle_ == TransformHandle::TopLeft ||
+            activeHandle_ == TransformHandle::TopRight ||
+            activeHandle_ == TransformHandle::BottomLeft ||
+            activeHandle_ == TransformHandle::BottomRight) {
+            qreal avgScale = std::max(sx, sy);
+            sx = avgScale;
+            sy = avgScale;
+        }
     }
 
-    // Calculate translation so anchor remains fixed
-    // New anchor position should equal original anchor position
-    QPointF originalTopLeft = originalBounds_.topLeft();
-    QPointF newTopLeft =
-        anchor - QPointF(anchor.x() - originalTopLeft.x(), anchor.y() - originalTopLeft.y());
+    // Calculate the new top-left position to keep anchor fixed
+    // The anchor is at a fixed position. After scaling, the original anchor corner
+    // should map to the same screen position.
+    qreal scaledW = origW * sx;
+    qreal scaledH = origH * sy;
 
-    // Recalculate based on scale from anchor
-    QPointF scaledTopLeft =
-        anchor + QPointF((originalBounds_.left() - anchor.x()) * sx / scale_.width(),
-                         (originalBounds_.top() - anchor.y()) * sy / scale_.height());
+    qreal newLeft = 0;
+    qreal newTop = 0;
 
-    translation_ = newBounds.topLeft() - originalBounds_.topLeft();
+    // Determine new top-left based on which corner/edge is anchored
+    switch (activeHandle_) {
+        case TransformHandle::TopLeft:
+        case TransformHandle::Top:
+        case TransformHandle::Left:
+            // Anchor is on bottom-right side
+            newLeft = scaleAnchor_.x() - scaledW;
+            newTop = scaleAnchor_.y() - scaledH;
+            if (activeHandle_ == TransformHandle::Top) {
+                newLeft = originalBounds_.left() + translation_.x();  // X unchanged
+            }
+            if (activeHandle_ == TransformHandle::Left) {
+                newTop = originalBounds_.top() + translation_.y();  // Y unchanged
+            }
+            break;
+        case TransformHandle::TopRight:
+            newLeft = scaleAnchor_.x();
+            newTop = scaleAnchor_.y() - scaledH;
+            break;
+        case TransformHandle::BottomLeft:
+            newLeft = scaleAnchor_.x() - scaledW;
+            newTop = scaleAnchor_.y();
+            break;
+        case TransformHandle::BottomRight:
+        case TransformHandle::Bottom:
+        case TransformHandle::Right:
+            // Anchor is on top-left side
+            newLeft = scaleAnchor_.x();
+            newTop = scaleAnchor_.y();
+            if (activeHandle_ == TransformHandle::Bottom) {
+                newLeft = originalBounds_.left() + translation_.x();  // X unchanged
+            }
+            if (activeHandle_ == TransformHandle::Right) {
+                newTop = originalBounds_.top() + translation_.y();  // Y unchanged
+            }
+            break;
+        default:
+            newLeft = originalBounds_.left();
+            newTop = originalBounds_.top();
+            break;
+    }
+
+    translation_ = QPointF(newLeft - originalBounds_.left(), newTop - originalBounds_.top());
     scale_ = QSizeF(sx, sy);
 
     spdlog::debug("[TransformState] Handle drag: scale=({:.2f},{:.2f}) offset=({:.1f},{:.1f})",

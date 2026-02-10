@@ -34,11 +34,19 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
 
     // If we already have an active floating buffer, check for handle hits first
     if (isMovingSelection()) {
+        QRectF txBounds = transform_.transformedBounds();
+        spdlog::debug("[MoveTool] Active buffer exists, transformed bounds: ({:.1f},{:.1f}) {:.1f}x{:.1f}",
+                      txBounds.left(),
+                      txBounds.top(),
+                      txBounds.width(),
+                      txBounds.height());
+
         qreal handleSize = kHandleScreenSize / event.zoomLevel;
         activeHandle_ = transform_.hitTestHandle(QPointF(event.canvasPos), handleSize);
 
         if (activeHandle_ != TransformHandle::None) {
-            // Starting a scale operation
+            // Starting a scale operation - capture anchor at this moment
+            transform_.beginHandleDrag(activeHandle_);
             startPos_ = event.canvasPos;
             currentPos_ = event.canvasPos;
             spdlog::debug("[MoveTool] Begin scale operation, handle: {}",
@@ -47,6 +55,9 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
         }
 
         // Not on a handle - continue move by updating drag start
+        spdlog::debug("[MoveTool] Continuing move (no handle hit), click at ({},{})",
+                      event.canvasPos.x(),
+                      event.canvasPos.y());
         startPos_ = event.canvasPos - transform_.translation().toPoint();
         currentPos_ = event.canvasPos;
         return;
@@ -105,9 +116,9 @@ void MoveTool::continueStroke(const ToolInputEvent& event)
     proportionalScale_ = (event.modifiers & Qt::ShiftModifier) != 0;
     currentPos_ = event.canvasPos;
 
-    // If scaling, update transform via handle drag
+    // If scaling, update transform via handle drag (uses cached anchor)
     if (activeHandle_ != TransformHandle::None && !buffer_.isEmpty()) {
-        transform_.updateFromHandleDrag(activeHandle_, QPointF(currentPos_), proportionalScale_);
+        transform_.updateFromHandleDrag(QPointF(currentPos_), proportionalScale_);
     } else if (isMovingSelection()) {
         // Free drag - update translation
         QPointF delta = QPointF(currentPos_ - startPos_);
@@ -133,6 +144,7 @@ void MoveTool::endStroke(const ToolInputEvent& event)
     // - Press Enter to commit or Escape to cancel
     // This matches GIMP transform tool behavior.
     if (activeHandle_ != TransformHandle::None) {
+        transform_.endHandleDrag();
         activeHandle_ = TransformHandle::None;
     }
     // Don't auto-commit - require explicit Enter key to finalize the transform
@@ -196,12 +208,32 @@ void MoveTool::commitMove()
                   scaledSize.height());
     QRect unionRect = srcRect.united(dstRect);
 
+    spdlog::debug("[MoveTool] srcRect=({},{}) {}x{}, dstRect=({},{}) {}x{}, union=({},{}) {}x{}",
+                  srcRect.x(),
+                  srcRect.y(),
+                  srcRect.width(),
+                  srcRect.height(),
+                  dstRect.x(),
+                  dstRect.y(),
+                  dstRect.width(),
+                  dstRect.height(),
+                  unionRect.x(),
+                  unionRect.y(),
+                  unionRect.width(),
+                  unionRect.height());
+
     // Clip to layer bounds
     unionRect = unionRect.intersected(QRect(0, 0, targetLayer_->width(), targetLayer_->height()));
 
-    if (unionRect.isEmpty()) {
-        clearFloatingState();
-        modifierOverride_ = false;
+    // Check if destination is fully outside layer bounds
+    QRect layerBounds(0, 0, targetLayer_->width(), targetLayer_->height());
+    QRect dstClipped = dstRect.intersected(layerBounds);
+
+    if (dstClipped.isEmpty()) {
+        // Destination is completely off-canvas - warn user and keep buffer active
+        spdlog::warn("[MoveTool] Cannot commit: selection is completely outside canvas. "
+                     "Move it back on canvas before committing.");
+        // Don't clear state - user can still move it back
         return;
     }
 
@@ -276,6 +308,13 @@ void MoveTool::commitMove()
         SelectionManager::instance().scaleSelection(scale, offset);
     } else {
         SelectionManager::instance().translateSelection(offset);
+    }
+
+    // Clip selection to document bounds to prevent color bleeding on next move
+    // This is needed when selection was partially moved off-canvas
+    if (dstClipped.width() < scaledSize.width() || dstClipped.height() < scaledSize.height()) {
+        SelectionManager::instance().clipSelectionToDocument(
+            targetLayer_->width(), targetLayer_->height());
     }
 
     clearFloatingState();

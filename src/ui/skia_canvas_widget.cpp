@@ -36,6 +36,7 @@
 #include <cstring>
 
 #include <include/core/SkImage.h>
+#include <include/core/SkImageInfo.h>
 #include <include/core/SkPixmap.h>
 
 namespace gimp {
@@ -205,17 +206,45 @@ void SkiaCanvasWidget::paintGL()
         return;
     }
 
+    // Ensure GPU context is valid (should always be after initializeGL)
+    if (!m_gpuContext) {
+        spdlog::error("SkiaCanvasWidget::paintGL called with null GPU context");
+        return;
+    }
+
     // 1. Render document via Skia (GPU or CPU based on context)
     m_renderer->render(*m_document);
 
-    // 2. Flush Skia before handing off to Qt
+    // 2. Copy rendered surface to QImage BEFORE resetting GL state
+    //    GPU readPixels requires valid Skia GL state
+    QImage renderImage;
+    auto skImage = m_renderer->get_result();
+    if (skImage) {
+        const int imgW = skImage->width();
+        const int imgH = skImage->height();
+
+        // Create QImage with correct format for Windows (BGRA)
+        renderImage = QImage(imgW, imgH, QImage::Format_ARGB32_Premultiplied);
+
+        // Use BGRA format for SkPixmap to match QImage's byte order on Windows
+        const SkImageInfo targetInfo =
+            SkImageInfo::Make(imgW, imgH, kBGRA_8888_SkColorType, kPremul_SkAlphaType);
+        const SkPixmap pixmap(targetInfo, renderImage.bits(), renderImage.bytesPerLine());
+
+        if (!skImage->readPixels(pixmap, 0, 0)) {
+            spdlog::warn("SkiaCanvasWidget: readPixels failed");
+            renderImage = QImage();  // Clear on failure
+        }
+    }
+
+    // 3. Flush Skia GPU work
     m_gpuContext->flush();
 
-    // 3. CRITICAL: Reset GL state so Qt's QPainter works correctly
+    // 4. CRITICAL: Reset GL state so Qt's QPainter works correctly
     //    Skia leaves bound textures/shaders that confuse Qt
     m_gpuContext->resetContext();
 
-    // 4. Draw overlays using QPainter
+    // 5. Draw overlays using QPainter (after GL state reset)
     QPainter painter(this);
     painter.fillRect(rect(), QColor(64, 64, 64));
 
@@ -227,16 +256,10 @@ void SkiaCanvasWidget::paintGL()
     // Draw checkerboard pattern for transparency visualization
     drawCheckerboard(painter, targetRect);
 
-    // Copy the Skia surface to a QImage for display (temporary until full GPU path)
-    auto skImage = m_renderer->get_result();
-    if (skImage) {
-        const SkImageInfo info = skImage->imageInfo();
-        QImage renderImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
-        const SkPixmap pixmap(info, renderImage.bits(), renderImage.bytesPerLine());
-        if (skImage->readPixels(pixmap, 0, 0)) {
-            painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
-            painter.drawImage(targetRect, renderImage);
-        }
+    // Draw the pre-rendered document image
+    if (!renderImage.isNull()) {
+        painter.setRenderHint(QPainter::SmoothPixmapTransform, m_viewport.zoomLevel < 1.0F);
+        painter.drawImage(targetRect, renderImage);
     }
 
     // Draw pixel grid at high zoom

@@ -7,8 +7,10 @@
 
 #pragma once
 
+#include "core/floating_buffer.h"
 #include "core/tool.h"
 #include "core/tool_options.h"
+#include "core/transform_state.h"
 
 #include <QPainterPath>
 #include <QPoint>
@@ -30,21 +32,6 @@ class Layer;
 enum class MoveMode {
     Cut,  ///< Cut pixels from source (source becomes transparent)
     Copy  ///< Copy pixels (source remains intact)
-};
-
-/**
- * @brief Transform handle positions.
- */
-enum class TransformHandle {
-    None,         ///< No handle (move mode)
-    TopLeft,      ///< Top-left corner
-    Top,          ///< Top edge center
-    TopRight,     ///< Top-right corner
-    Right,        ///< Right edge center
-    BottomRight,  ///< Bottom-right corner
-    Bottom,       ///< Bottom edge center
-    BottomLeft,   ///< Bottom-left corner
-    Left          ///< Left edge center
 };
 
 /**
@@ -70,30 +57,30 @@ class MoveTool : public Tool, public ToolOptions {
     /*! @brief Returns true if currently moving a selection.
      *  @return True if floating buffer is active.
      */
-    [[nodiscard]] bool isMovingSelection() const { return !floatingBuffer_.empty(); }
+    [[nodiscard]] bool isMovingSelection() const { return !buffer_.isEmpty(); }
 
     /*! @brief Returns the floating buffer pixel data.
      *  @return Pointer to RGBA data, or nullptr if not moving selection.
      */
     [[nodiscard]] const std::vector<std::uint8_t>* floatingBuffer() const
     {
-        return floatingBuffer_.empty() ? nullptr : &floatingBuffer_;
+        return buffer_.isEmpty() ? nullptr : &buffer_.data();
     }
 
     /*! @brief Returns the floating buffer bounds (source rect).
      *  @return Bounding rectangle of the extracted pixels.
      */
-    [[nodiscard]] QRect floatingRect() const { return floatingRect_; }
+    [[nodiscard]] QRect floatingRect() const { return buffer_.sourceRect(); }
 
     /*! @brief Returns the current movement offset for the floating buffer.
      *  @return Offset from original position.
      */
-    [[nodiscard]] QPoint floatingOffset() const { return currentPos_ - startPos_; }
+    [[nodiscard]] QPoint floatingOffset() const { return transform_.translation().toPoint(); }
 
     /*! @brief Returns the current scale factors for the floating buffer.
      *  @return Scale factor (1.0 = no scale).
      */
-    [[nodiscard]] QSizeF floatingScale() const { return currentScale_; }
+    [[nodiscard]] QSizeF floatingScale() const { return transform_.scale(); }
 
     /*! @brief Returns true if currently scaling (vs just moving).
      *  @return True if a transform handle is being dragged.
@@ -196,53 +183,17 @@ class MoveTool : public Tool, public ToolOptions {
 
     // Transform state
     TransformHandle activeHandle_ = TransformHandle::None;  ///< Handle being dragged.
-    QSizeF currentScale_{1.0, 1.0};   ///< Current scale factors during transform.
-    QSizeF originalSize_;             ///< Original floating buffer size.
-    QPointF scaleAnchor_;             ///< Anchor point (opposite corner) for scaling.
     bool proportionalScale_ = false;  ///< True if Shift is held for proportional scaling.
 
-    // Floating buffer for selection move
-    std::vector<std::uint8_t> floatingBuffer_;  ///< Extracted pixels (RGBA).
-    QRect floatingRect_;                        ///< Bounding rect of extracted region.
-    std::shared_ptr<Layer> targetLayer_;        ///< Layer being modified.
-    std::vector<bool> selectionMask_;           ///< Pre-rasterized selection mask.
-
-    /**
-     * @brief Pre-rasterizes the selection path into a boolean mask.
-     * @param selPath The selection path to rasterize.
-     * @param bounds The bounding rectangle for the mask.
-     */
-    void rasterizeSelectionMask(const QPainterPath& selPath, const QRect& bounds);
-
-    /**
-     * @brief Extracts pixels from the selection region into floatingBuffer_.
-     * @param layer The layer to extract from.
-     */
-    void extractSelectionPixels(const std::shared_ptr<Layer>& layer);
-
-    /**
-     * @brief Clears the source pixels in the selection region to transparent.
-     * @param layer The layer to modify.
-     */
-    void clearSourcePixels(const std::shared_ptr<Layer>& layer);
-
-    /**
-     * @brief Pastes the floating buffer at the new position.
-     * @param layer The layer to paste to.
-     * @param offset The movement offset from original position.
-     */
-    void pasteFloatingBuffer(const std::shared_ptr<Layer>& layer, QPoint offset);
+    // Floating buffer and transform using new encapsulated classes
+    FloatingBuffer buffer_;               ///< Extracted pixels and selection mask.
+    TransformState transform_;            ///< Current transformation state.
+    std::shared_ptr<Layer> targetLayer_;  ///< Layer being modified.
 
     /**
      * @brief Commits the move operation with undo support.
      */
     void commitMove();
-
-    /**
-     * @brief Checks if the destination rect is fully inside layer bounds.
-     * @return True if all pixels would fit inside the layer.
-     */
-    [[nodiscard]] bool isDestinationInsideBounds() const;
 
     /**
      * @brief Restores original pixels and cancels the move.
@@ -253,22 +204,6 @@ class MoveTool : public Tool, public ToolOptions {
      * @brief Clears floating buffer state.
      */
     void clearFloatingState();
-
-    /**
-     * @brief Checks if a pixel in the mask is selected.
-     * @param col Column in floatingRect_ coordinates.
-     * @param row Row in floatingRect_ coordinates.
-     * @return True if the pixel is inside the selection.
-     */
-    [[nodiscard]] bool isPixelSelected(int col, int row) const;
-
-    /**
-     * @brief Returns the anchor point for the given handle (opposite corner/edge).
-     * @param handle The handle being dragged.
-     * @param bounds The bounding rect.
-     * @return Anchor point in canvas coordinates.
-     */
-    [[nodiscard]] static QPointF getAnchorForHandle(TransformHandle handle, const QRectF& bounds);
 };
 
 }  // namespace gimp

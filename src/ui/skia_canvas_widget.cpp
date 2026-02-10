@@ -340,7 +340,8 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         if (moveTool && moveTool->isMovingSelection()) {
             QPoint moveOffset = moveTool->floatingOffset();
             QSizeF scale = moveTool->floatingScale();
-            QRect bounds = moveTool->floatingRect();
+            // Use full selection bounds (not clipped sourceRect) for marching ants
+            QRectF bounds = moveTool->selectionBounds();
 
             // Transform: translate to position, scale from top-left
             transform.translate(bounds.x() + moveOffset.x(), bounds.y() + moveOffset.y());

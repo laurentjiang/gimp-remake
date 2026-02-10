@@ -93,8 +93,9 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
         return;
     }
 
-    // Initialize transform state with buffer bounds
-    transform_.setOriginalBounds(QRectF(buffer_.sourceRect()));
+    // Use full selection bounds for transform (handles, marching ants)
+    // NOT the clipped sourceRect - that would make handles appear cropped
+    transform_.setOriginalBounds(selPath.boundingRect());
 
     spdlog::debug("[MoveTool] Extracted selection pixels, bounds: ({},{}) {}x{}",
                   buffer_.sourceRect().x(),
@@ -310,12 +311,11 @@ void MoveTool::commitMove()
         SelectionManager::instance().translateSelection(offset);
     }
 
-    // Clip selection to document bounds to prevent color bleeding on next move
-    // This is needed when selection was partially moved off-canvas
-    if (dstClipped.width() < scaledSize.width() || dstClipped.height() < scaledSize.height()) {
-        SelectionManager::instance().clipSelectionToDocument(
-            targetLayer_->width(), targetLayer_->height());
-    }
+    // Clip selection path to document bounds after commit.
+    // Off-canvas pixels are lost on paste, so the selection must reflect that.
+    // This prevents color bleeding when re-selecting (path would claim wrong pixels).
+    SelectionManager::instance().clipSelectionToDocument(
+        targetLayer_->width(), targetLayer_->height());
 
     clearFloatingState();
     modifierOverride_ = false;

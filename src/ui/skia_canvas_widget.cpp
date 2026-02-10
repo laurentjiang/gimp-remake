@@ -276,6 +276,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         QSizeF floatScale = moveTool->floatingScale();
 
         if (!floatBounds.isEmpty()) {
+            // Clip to document bounds - floating buffer should appear behind gray background
+            painter.save();
+            painter.setClipRect(targetRect);
+
             // Get scaled buffer if scaling, otherwise use original
             std::vector<std::uint8_t> scaledBuf;
             const std::uint8_t* bufData = nullptr;
@@ -316,12 +320,17 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
                 QRectF floatingRect(destX, destY, destW, destH);
                 painter.drawImage(floatingRect, floatingImage);
             }
+
+            painter.restore();
         }
     }
 
     const QPainterPath selectionPath = SelectionManager::instance().displayPath();
     if (!selectionPath.isEmpty()) {
         painter.save();
+
+        // Clip marching ants to document bounds - selection should appear behind gray background
+        painter.setClipRect(targetRect);
 
         QTransform transform;
         transform.translate(m_viewport.panX, m_viewport.panY);

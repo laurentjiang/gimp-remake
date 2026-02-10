@@ -15,6 +15,11 @@
 
 namespace gimp {
 
+namespace {
+/// Minimum scale factor to prevent selection from becoming too small.
+constexpr qreal kMinScaleFactor = 0.1;
+}  // namespace
+
 TransformState::TransformState(const QRectF& bounds) : originalBounds_(bounds) {}
 
 bool TransformState::isIdentity() const
@@ -84,30 +89,6 @@ void TransformState::setTranslation(const QPointF& offset)
     translation_ = offset;
 }
 
-void TransformState::scaleUniform(qreal factor, const QPointF& anchor)
-{
-    scaleNonUniform(factor, factor, anchor);
-}
-
-void TransformState::scaleNonUniform(qreal sx, qreal sy, const QPointF& anchor)
-{
-    // Scale relative to anchor point
-    // New position = anchor + (old_position - anchor) * scale
-    // This means translation needs to change to keep anchor fixed
-
-    QPointF center = originalBounds_.center();
-    QPointF currentCenter = center + translation_;
-
-    // Apply scale to current offset from anchor
-    QPointF offset = currentCenter - anchor;
-    QPointF newOffset =
-        QPointF(offset.x() * sx / scale_.width(), offset.y() * sy / scale_.height());
-    QPointF newCenter = anchor + newOffset;
-
-    translation_ = newCenter - center;
-    scale_ = QSizeF(scale_.width() * sx / scale_.width(), scale_.height() * sy / scale_.height());
-}
-
 void TransformState::setScale(const QSizeF& scale)
 {
     scale_ = scale;
@@ -115,7 +96,8 @@ void TransformState::setScale(const QSizeF& scale)
 
 void TransformState::rotate(qreal degrees, const QPointF& anchor)
 {
-    (void)anchor;  // Rotation implementation for future use
+    // TODO: Implement anchor-relative rotation when rotation feature is added
+    (void)anchor;
     rotation_ += degrees;
 }
 
@@ -295,8 +277,8 @@ void TransformState::updateFromHandleDrag(const QPointF& newPos, bool proportion
     }
 
     // Clamp to minimum size (10% of original)
-    sx = std::max(0.1, sx);
-    sy = std::max(0.1, sy);
+    sx = std::max(kMinScaleFactor, sx);
+    sy = std::max(kMinScaleFactor, sy);
 
     if (proportional) {
         // For corner handles, use the average; for edge handles, only one dimension changed

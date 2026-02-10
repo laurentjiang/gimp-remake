@@ -39,8 +39,7 @@ enum class TransformHandle {
  * internally for unified handling of:
  * - Translation (move)
  * - Uniform/non-uniform scaling
- * - Rotation (future)
- * - Skew (future)
+ * - Rotation (partial implementation, anchor ignored)
  *
  * The class provides methods to:
  * - Track original bounds and current transform
@@ -96,21 +95,6 @@ class TransformState {
      * @param offset New translation offset.
      */
     void setTranslation(const QPointF& offset);
-
-    /**
-     * @brief Applies uniform scaling relative to an anchor point.
-     * @param factor Scale factor.
-     * @param anchor Anchor point (remains fixed during scale).
-     */
-    void scaleUniform(qreal factor, const QPointF& anchor);
-
-    /**
-     * @brief Applies non-uniform scaling relative to an anchor point.
-     * @param sx Horizontal scale factor.
-     * @param sy Vertical scale factor.
-     * @param anchor Anchor point (remains fixed during scale).
-     */
-    void scaleNonUniform(qreal sx, qreal sy, const QPointF& anchor);
 
     /**
      * @brief Sets the scale directly.

@@ -39,13 +39,13 @@ bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
     QRectF boundingF = selectionPath.boundingRect();
     QRect bounding = boundingF.toAlignedRect();
 
-    spdlog::warn("[FloatingBuffer] Selection bounds: ({},{}) {}x{}, layer: {}x{}",
-                 bounding.left(),
-                 bounding.top(),
-                 bounding.width(),
-                 bounding.height(),
-                 layer->width(),
-                 layer->height());
+    spdlog::debug("[FloatingBuffer] Selection bounds: ({},{}) {}x{}, layer: {}x{}",
+                  bounding.left(),
+                  bounding.top(),
+                  bounding.width(),
+                  bounding.height(),
+                  layer->width(),
+                  layer->height());
 
     // Clip to layer bounds
     int x1 = std::max(0, bounding.left());
@@ -67,7 +67,7 @@ bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
     int height = y2 - y1;
     sourceRect_ = QRect(x1, y1, width, height);
 
-    spdlog::warn("[FloatingBuffer] Extracting {}x{} pixels at ({},{})", width, height, x1, y1);
+    spdlog::debug("[FloatingBuffer] Extracting {}x{} pixels at ({},{})", width, height, x1, y1);
 
     // Pre-rasterize the selection mask
     rasterizeSelectionMask(selectionPath, sourceRect_);

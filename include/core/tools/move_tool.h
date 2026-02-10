@@ -67,8 +67,9 @@ class MoveTool : public Tool, public ToolOptions {
         return buffer_.isEmpty() ? nullptr : &buffer_.data();
     }
 
-    /*! @brief Returns the floating buffer bounds (source rect).
-     *  Used for pixel rendering position - may be clipped to layer bounds.
+    /*! @brief Returns the floating buffer bounds (clipped source rect).
+     *  Used for pixel rendering - clipped to layer bounds.
+     *  For full visual selection bounds (marching ants/handles), use selectionBounds().
      *  @return Bounding rectangle of the extracted pixels.
      */
     [[nodiscard]] QRect floatingRect() const { return buffer_.sourceRect(); }

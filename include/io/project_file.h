@@ -48,6 +48,7 @@ class ProjectFile : public Document {
     std::shared_ptr<gimp::Layer> addLayer(int width, int height)
     {
         auto layer = std::make_shared<gimp::Layer>(width, height);
+        layer->setName("Layer " + std::to_string(++m_layerCounter));
         m_layers.addLayer(layer);
         return layer;
     }
@@ -148,6 +149,7 @@ class ProjectFile : public Document {
     int m_width;                         ///< Canvas width.
     int m_height;                        ///< Canvas height.
     std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
+    int m_layerCounter = 0;              ///< Counter for auto-incrementing layer names.
     gimp::LayerStack m_layers;           ///< Layer stack.
     QPainterPath selection_;             ///< Stored selection path.
 

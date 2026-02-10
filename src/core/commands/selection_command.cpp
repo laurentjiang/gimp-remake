@@ -33,11 +33,8 @@ void SelectionCommand::captureAfterState()
 
 void SelectionCommand::apply()
 {
-    // Set the selection to the after state
-    SelectionManager::instance().clear();
-    if (!afterPath_.isEmpty()) {
-        SelectionManager::instance().applySelection(afterPath_, SelectionMode::Replace, afterType_);
-    }
+    // Restore the after state
+    SelectionManager::instance().restoreSelection(afterPath_, afterType_);
 
     // Publish selection changed event
     // NOLINTNEXTLINE(modernize-use-designated-initializers)
@@ -46,12 +43,8 @@ void SelectionCommand::apply()
 
 void SelectionCommand::undo()
 {
-    // Set the selection to the before state
-    SelectionManager::instance().clear();
-    if (!beforePath_.isEmpty()) {
-        SelectionManager::instance().applySelection(
-            beforePath_, SelectionMode::Replace, beforeType_);
-    }
+    // Restore the before state
+    SelectionManager::instance().restoreSelection(beforePath_, beforeType_);
 
     // Publish selection changed event
     // NOLINTNEXTLINE(modernize-use-designated-initializers)

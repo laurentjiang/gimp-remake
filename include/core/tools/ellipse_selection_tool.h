@@ -1,18 +1,12 @@
 #pragma once
 
-#include "core/selection_manager.h"
-#include "core/tool.h"
+#include "core/tools/selection_tool_base.h"
 
 #include <QPainterPath>
 #include <QPoint>
 #include <QRectF>
 
 #include <array>
-#include <memory>
-
-namespace gimp {
-class SelectionCommand;
-}  // namespace gimp
 
 namespace gimp {
 
@@ -42,7 +36,7 @@ inline constexpr float kEllipseHandleScreenSize = 8.0F;
 /**
  * @brief Ellipse selection tool with modifier support and handle-based resize.
  */
-class EllipseSelectTool : public Tool {
+class EllipseSelectTool : public SelectionToolBase {
   public:
     EllipseSelectTool() = default;
 
@@ -76,7 +70,6 @@ class EllipseSelectTool : public Tool {
     void cancelStroke() override;
 
   private:
-    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
     QPainterPath buildEllipsePath(const QPoint& start,
                                   const QPoint& current,
                                   Qt::KeyboardModifiers modifiers) const;
@@ -89,7 +82,6 @@ class EllipseSelectTool : public Tool {
 
     QPoint startPos_;
     QPoint currentPos_;
-    SelectionMode currentMode_ = SelectionMode::Replace;
 
     // Phase state
     EllipseSelectionPhase phase_ = EllipseSelectionPhase::Idle;
@@ -99,15 +91,6 @@ class EllipseSelectTool : public Tool {
     EllipseSelectionHandle activeHandle_ = EllipseSelectionHandle::None;
     QPointF scaleAnchor_;    // Fixed anchor point during resize
     QRectF originalBounds_;  // Bounds before resize started
-
-    /// Pending command for current selection operation.
-    std::shared_ptr<SelectionCommand> pendingCommand_;
-
-    /// Creates and initializes a new selection command.
-    void beginSelectionCommand(const std::string& description);
-
-    /// Finalizes and dispatches the pending command.
-    void commitSelectionCommand();
 };
 
 }  // namespace gimp

@@ -7,7 +7,6 @@
 
 #include "core/tools/rect_selection_tool.h"
 
-#include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
@@ -32,32 +31,6 @@ QRectF clampRectToDocument(const QRectF& rect, const Document* document)
 }
 
 }  // namespace
-
-void RectSelectTool::beginSelectionCommand(const std::string& description)
-{
-    pendingCommand_ = std::make_shared<SelectionCommand>(description);
-    pendingCommand_->captureBeforeState();
-}
-
-void RectSelectTool::commitSelectionCommand()
-{
-    if (pendingCommand_ && commandBus_) {
-        pendingCommand_->captureAfterState();
-        commandBus_->dispatch(pendingCommand_);
-    }
-    pendingCommand_.reset();
-}
-
-SelectionMode RectSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
-{
-    if ((modifiers & Qt::ControlModifier) != 0) {
-        if ((modifiers & Qt::AltModifier) != 0) {
-            return SelectionMode::Subtract;
-        }
-        return SelectionMode::Add;
-    }
-    return SelectionMode::Replace;
-}
 
 QPainterPath RectSelectTool::buildRectPath(const QRectF& rect) const
 {
@@ -323,8 +296,7 @@ void RectSelectTool::cancelStroke()
 
 void RectSelectTool::resetToIdle()
 {
-    SelectionManager::instance().clearPreview();
-    pendingCommand_.reset();
+    cancelSelectionOperation();
     phase_ = SelectionPhase::Idle;
     currentBounds_ = QRectF();
     activeHandle_ = SelectionHandle::None;

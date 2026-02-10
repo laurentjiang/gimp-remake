@@ -7,7 +7,6 @@
 
 #include "core/tools/ellipse_selection_tool.h"
 
-#include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
@@ -32,32 +31,6 @@ QRectF clampRectToDocument(const QRectF& rect, const Document* document)
 }
 
 }  // namespace
-
-void EllipseSelectTool::beginSelectionCommand(const std::string& description)
-{
-    pendingCommand_ = std::make_shared<SelectionCommand>(description);
-    pendingCommand_->captureBeforeState();
-}
-
-void EllipseSelectTool::commitSelectionCommand()
-{
-    if (pendingCommand_ && commandBus_) {
-        pendingCommand_->captureAfterState();
-        commandBus_->dispatch(pendingCommand_);
-    }
-    pendingCommand_.reset();
-}
-
-SelectionMode EllipseSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
-{
-    if ((modifiers & Qt::ControlModifier) != 0) {
-        if ((modifiers & Qt::AltModifier) != 0) {
-            return SelectionMode::Subtract;
-        }
-        return SelectionMode::Add;
-    }
-    return SelectionMode::Replace;
-}
 
 QPainterPath EllipseSelectTool::buildEllipsePath(const QPoint& start,
                                                  const QPoint& current,
@@ -405,8 +378,7 @@ void EllipseSelectTool::cancelStroke()
 
 void EllipseSelectTool::resetToIdle()
 {
-    SelectionManager::instance().clearPreview();
-    pendingCommand_.reset();
+    cancelSelectionOperation();
     phase_ = EllipseSelectionPhase::Idle;
     currentBounds_ = QRectF();
     activeHandle_ = EllipseSelectionHandle::None;

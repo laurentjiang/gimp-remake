@@ -154,10 +154,7 @@ void MoveCommand::updateState(const std::vector<std::uint8_t>& state)
 
 void MoveCommand::restoreSelection(const QPainterPath& path, SelectionType type)
 {
-    SelectionManager::instance().clear();
-    if (!path.isEmpty()) {
-        SelectionManager::instance().applySelection(path, SelectionMode::Replace, type);
-    }
+    SelectionManager::instance().restoreSelection(path, type);
     // Publish selection changed event so UI updates
     // NOLINTNEXTLINE(modernize-use-designated-initializers)
     EventBus::instance().publish(SelectionChangedEvent{!path.isEmpty(), "undo"});

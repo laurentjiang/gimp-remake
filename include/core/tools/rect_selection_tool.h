@@ -7,19 +7,13 @@
 
 #pragma once
 
-#include "core/selection_manager.h"
-#include "core/tool.h"
+#include "core/tools/selection_tool_base.h"
 
 #include <QPainterPath>
 #include <QPoint>
 #include <QRectF>
 
-#include <memory>
 #include <vector>
-
-namespace gimp {
-class SelectionCommand;
-}  // namespace gimp
 
 namespace gimp {
 
@@ -54,7 +48,7 @@ enum class SelectionHandle {
  * handles to resize the selection outline (marching ants). Press Enter to
  * finalize, Escape to cancel, or click outside to start a new selection.
  */
-class RectSelectTool : public Tool {
+class RectSelectTool : public SelectionToolBase {
   public:
     RectSelectTool() = default;
 
@@ -96,7 +90,6 @@ class RectSelectTool : public Tool {
     void cancelStroke() override;
 
   private:
-    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
     QPainterPath buildRectPath(const QRectF& rect) const;
     SelectionHandle hitTestHandle(const QPoint& pos, float zoomLevel) const;
     QPointF getAnchorForHandle(SelectionHandle handle) const;
@@ -105,18 +98,8 @@ class RectSelectTool : public Tool {
     SelectionPhase phase_ = SelectionPhase::Idle;
     QRectF currentBounds_;  ///< Current selection bounding rect.
     QPoint startPos_;       ///< Start position for creating or drag start.
-    SelectionMode currentMode_ = SelectionMode::Replace;
     SelectionHandle activeHandle_ = SelectionHandle::None;
     QPointF scaleAnchor_;  ///< Fixed corner during resize.
-
-    /// Pending command for current selection operation.
-    std::shared_ptr<SelectionCommand> pendingCommand_;
-
-    /// Creates and initializes a new selection command.
-    void beginSelectionCommand(const std::string& description);
-
-    /// Finalizes and dispatches the pending command.
-    void commitSelectionCommand();
 };
 
 }  // namespace gimp

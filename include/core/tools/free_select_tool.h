@@ -7,18 +7,12 @@
 
 #pragma once
 
-#include "core/selection_manager.h"
-#include "core/tool.h"
+#include "core/tools/selection_tool_base.h"
 
 #include <QPainterPath>
 #include <QPointF>
 
-#include <memory>
 #include <vector>
-
-namespace gimp {
-class SelectionCommand;
-}  // namespace gimp
 
 namespace gimp {
 
@@ -29,7 +23,7 @@ namespace gimp {
  * the path is closed and applied to the selection. Supports add/subtract
  * modes via Ctrl/Alt modifiers.
  */
-class FreeSelectTool : public Tool {
+class FreeSelectTool : public SelectionToolBase {
   public:
     FreeSelectTool() = default;
 
@@ -44,13 +38,6 @@ class FreeSelectTool : public Tool {
 
   private:
     /**
-     * @brief Resolves the selection mode from keyboard modifiers.
-     * @param modifiers Active keyboard modifiers.
-     * @return Selection mode (Replace, Add, or Subtract).
-     */
-    static SelectionMode resolveSelectionMode(Qt::KeyboardModifiers modifiers);
-
-    /**
      * @brief Builds a closed painter path from collected points.
      * @param close Whether to close the path (for final selection).
      * @return The constructed QPainterPath.
@@ -58,13 +45,9 @@ class FreeSelectTool : public Tool {
     [[nodiscard]] QPainterPath buildPath(bool close) const;
 
     std::vector<QPointF> points_;
-    SelectionMode currentMode_ = SelectionMode::Replace;
 
     /// Minimum distance between points to avoid excessive density.
     static constexpr float kMinPointDistance = 2.0F;
-
-    /// Pending command for current selection operation.
-    std::shared_ptr<SelectionCommand> pendingCommand_;
 };
 
 }  // namespace gimp

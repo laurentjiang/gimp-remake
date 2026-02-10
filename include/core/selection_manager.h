@@ -131,6 +131,23 @@ class SelectionManager {
     [[nodiscard]] SelectionMode previewMode() const { return previewMode_; }
 
     /**
+     * @brief Restores selection state directly (for undo/redo operations).
+     *
+     * Unlike applySelection(), this bypasses mode logic and directly sets the
+     * selection to the given path and type. Use this when restoring a previously
+     * captured state, not for interactive selection changes.
+     *
+     * @param path The selection path to restore.
+     * @param type The selection type hint.
+     */
+    void restoreSelection(const QPainterPath& path, SelectionType type = SelectionType::Unknown)
+    {
+        selection_ = path;
+        selectionType_ = type;
+        syncSelectionToDocument();
+    }
+
+    /**
      * @brief Applies a path to the committed selection using the given mode.
      * @param path The selection path to apply.
      * @param mode How to combine with existing selection.

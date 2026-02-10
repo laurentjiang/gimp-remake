@@ -93,10 +93,11 @@ class SkiaRenderer : public Renderer {
      */
     bool ensureSurface(sk_sp<SkSurface>& surface, int width, int height);
 
-    SkiaCompositor m_compositor;         ///< Compositor for layer blending.
-    sk_sp<SkSurface> m_surface;          ///< Offscreen render surface for full renders.
-    sk_sp<SkSurface> m_partialSurface;   ///< Offscreen surface for partial renders.
-    IGpuContext* m_gpuContext = nullptr; ///< GPU context (never null after init, uses NullGpuContext).
-    bool m_useGpu = false;               ///< Whether GPU rendering is currently active.
+    SkiaCompositor m_compositor;        ///< Compositor for layer blending.
+    sk_sp<SkSurface> m_surface;         ///< Offscreen render surface for full renders.
+    sk_sp<SkSurface> m_partialSurface;  ///< Offscreen surface for partial renders.
+    IGpuContext* m_gpuContext =
+        nullptr;            ///< GPU context (never null after init, uses NullGpuContext).
+    bool m_useGpu = false;  ///< Whether GPU rendering is currently active.
 };
 }  // namespace gimp

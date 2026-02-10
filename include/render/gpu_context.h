@@ -4,12 +4,15 @@
  *
  * Provides a clean abstraction over Skia's GrDirectContext, enabling GPU-accelerated
  * rendering when available and graceful fallback to CPU raster when not.
+ * @author Laurent Jiang
+ * @date 2025-02-10
  */
 
 #pragma once
 
-#include <gpu/ganesh/GrDirectContext.h>
 #include <memory>
+
+#include <gpu/ganesh/GrDirectContext.h>
 
 class QOpenGLContext;
 
@@ -22,7 +25,7 @@ namespace gimp {
  * Use GpuContext for real GPU rendering, NullGpuContext for CPU fallback.
  */
 class IGpuContext {
-public:
+  public:
     virtual ~IGpuContext() = default;
 
     /**
@@ -58,7 +61,7 @@ public:
  * OpenGL context is current (e.g., in QOpenGLWidget::initializeGL()).
  */
 class GpuContext : public IGpuContext {
-public:
+  public:
     GpuContext();
     ~GpuContext() override;
 
@@ -81,7 +84,7 @@ public:
     void resetContext() override;
     bool isValid() const override;
 
-private:
+  private:
     sk_sp<GrDirectContext> m_grContext;
 };
 
@@ -93,9 +96,9 @@ private:
  * decide between GPU and raster paths.
  */
 class NullGpuContext : public IGpuContext {
-public:
+  public:
     GrDirectContext* grContext() const override { return nullptr; }
-    void flush() override {}  // no-op
+    void flush() override {}         // no-op
     void resetContext() override {}  // no-op
     bool isValid() const override { return false; }
 };

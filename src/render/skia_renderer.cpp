@@ -10,10 +10,10 @@
 #include "core/document.h"
 #include "render/gpu_context.h"
 
-#include <include/core/SkCanvas.h>
-#include <gpu/ganesh/SkSurfaceGanesh.h>
-
 #include <iostream>
+
+#include <gpu/ganesh/SkSurfaceGanesh.h>
+#include <include/core/SkCanvas.h>
 
 namespace gimp {
 
@@ -21,18 +21,21 @@ SkiaRenderer::SkiaRenderer() = default;
 
 SkiaRenderer::~SkiaRenderer() = default;
 
-void SkiaRenderer::setGpuContext(IGpuContext* gpuContext) {
+void SkiaRenderer::setGpuContext(IGpuContext* gpuContext)
+{
     m_gpuContext = gpuContext;
     // Invalidate existing surfaces so they get recreated with correct backend
     m_surface.reset();
     m_partialSurface.reset();
 }
 
-bool SkiaRenderer::isUsingGpu() const {
+bool SkiaRenderer::isUsingGpu() const
+{
     return m_useGpu;
 }
 
-SkSurface* SkiaRenderer::surface() const {
+SkSurface* SkiaRenderer::surface() const
+{
     return m_surface.get();
 }
 
@@ -47,10 +50,7 @@ bool SkiaRenderer::ensureSurface(sk_sp<SkSurface>& surface, int width, int heigh
 
     // Try GPU surface if context is available and valid
     if (m_gpuContext && m_gpuContext->isValid()) {
-        surface = SkSurfaces::RenderTarget(
-            m_gpuContext->grContext(),
-            skgpu::Budgeted::kNo,
-            info);
+        surface = SkSurfaces::RenderTarget(m_gpuContext->grContext(), skgpu::Budgeted::kNo, info);
         if (surface) {
             m_useGpu = true;
             return true;

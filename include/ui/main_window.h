@@ -14,6 +14,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenuBar>
+#include <QPoint>
 #include <QShortcut>
 #include <QTabWidget>
 
@@ -27,6 +28,7 @@ class CommandPalette;
 class DebugHud;
 class Document;
 class HistoryPanel;
+class Layer;
 class LayersPanel;
 class LogBridge;
 class LogPanel;

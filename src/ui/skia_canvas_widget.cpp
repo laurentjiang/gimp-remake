@@ -25,6 +25,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPen>
 #include <QWheelEvent>
 
 #include <algorithm>
@@ -430,6 +431,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 
         painter.restore();
     }
+
+    const auto endTime = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
+    emit framePainted(frameDuration.count());
 }
 
 void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)

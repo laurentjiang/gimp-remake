@@ -190,10 +190,11 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    editMenu->addSeparator();
-    editMenu->addAction("Cu&t", QKeySequence::Cut, []() {});
-    editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
-    editMenu->addAction("&Paste", QKeySequence::Paste, []() {});
+    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
+    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
+    // active layer management, floating selection concept, and LayerStack
+    // operations (activeLayer, moveLayer, insertAt) to work correctly.
+    // See ClipboardManager for the implementation stub.
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);

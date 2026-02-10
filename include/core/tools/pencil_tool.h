@@ -83,7 +83,7 @@ class PencilTool : public Tool, public ToolOptions {
                        float toPressure);
 
     std::vector<StrokePoint> strokePoints_;
-    std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
+    std::vector<uint8_t> beforeState_;    ///< Layer data before stroke for undo.
     std::shared_ptr<Layer> activeLayer_;  ///< Layer being drawn on during stroke.
     int brushSize_ = 3;
     float opacity_ = 1.0F;  ///< Opacity/alpha value (0.0 to 1.0)

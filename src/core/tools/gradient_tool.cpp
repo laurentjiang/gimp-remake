@@ -65,7 +65,8 @@ void GradientTool::beginStroke(const ToolInputEvent& event)
     endY_ = event.canvasPos.y();
 
     // Capture before state
-    command_ = std::make_shared<DrawCommand>(activeLayer_, 0, 0, activeLayer_->width(), activeLayer_->height());
+    command_ = std::make_shared<DrawCommand>(
+        activeLayer_, 0, 0, activeLayer_->width(), activeLayer_->height());
     command_->captureBeforeState();
 }
 

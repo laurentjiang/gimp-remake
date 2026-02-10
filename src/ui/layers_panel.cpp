@@ -64,8 +64,7 @@ void LayersPanel::setupUi()
     connect(
         layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
     connect(layerList_, &QListWidget::itemClicked, this, &LayersPanel::onItemClicked);
-    connect(
-        layerList_, &QListWidget::itemDoubleClicked, this, &LayersPanel::onItemDoubleClicked);
+    connect(layerList_, &QListWidget::itemDoubleClicked, this, &LayersPanel::onItemDoubleClicked);
     connect(layerList_, &QListWidget::itemChanged, this, &LayersPanel::onItemChanged);
     connect(opacitySlider_, &QSlider::valueChanged, this, &LayersPanel::onOpacityChanged);
 
@@ -219,8 +218,7 @@ void LayersPanel::onItemClicked(QListWidgetItem* item)
                 layers[i]->setVisible(!layers[i]->visible());
                 updateLayerItem(item, layers[i]);
                 // NOLINTNEXTLINE(modernize-use-designated-initializers)
-                EventBus::instance().publish(
-                    LayerPropertyChangedEvent{layers[i], "visible"});
+                EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "visible"});
                 break;
             }
         }

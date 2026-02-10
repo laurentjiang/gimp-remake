@@ -59,7 +59,9 @@ namespace {
 
 class SimpleDocument : public gimp::Document {
   public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h), m_activeLayerIndex(0), m_layerCounter(0) {}
+    SimpleDocument(int w, int h) : m_width(w), m_height(h), m_activeLayerIndex(0), m_layerCounter(0)
+    {
+    }
 
     std::shared_ptr<gimp::Layer> addLayer() override
     {

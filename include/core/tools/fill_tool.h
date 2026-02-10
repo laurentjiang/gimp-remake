@@ -106,10 +106,10 @@ class FillTool : public Tool, public ToolOptions {
                               int width,
                               std::uint32_t color);
 
-    std::vector<uint8_t> beforeState_;  ///< Layer data before fill for undo.
+    std::vector<uint8_t> beforeState_;    ///< Layer data before fill for undo.
     std::shared_ptr<Layer> activeLayer_;  ///< Layer being filled.
-    int tolerance_ = 0;                 ///< Color matching tolerance (0-255).
-    bool fillPending_ = false;          ///< Whether a fill operation is pending commit.
+    int tolerance_ = 0;                   ///< Color matching tolerance (0-255).
+    bool fillPending_ = false;            ///< Whether a fill operation is pending commit.
 };
 
 }  // namespace gimp

@@ -9,8 +9,9 @@
 #include "core/command_bus.h"
 #include "core/layer.h"
 #include "core/selection_manager.h"
-#include "history/simple_history_manager.h"
 #include "io/project_file.h"
+
+#include "history/simple_history_manager.h"
 
 #include <QPainterPath>
 
@@ -59,8 +60,8 @@ void setRegionColor(const std::shared_ptr<gimp::Layer>& layer,
 /**
  * @brief Helper to get the color at a specific pixel.
  */
-std::tuple<uint8_t, uint8_t, uint8_t, uint8_t> getPixelColor(
-    const std::shared_ptr<gimp::Layer>& layer, int x, int y)
+std::tuple<uint8_t, uint8_t, uint8_t, uint8_t>
+getPixelColor(const std::shared_ptr<gimp::Layer>& layer, int x, int y)
 {
     const auto& data = layer->data();
     const int layerWidth = layer->width();
@@ -215,10 +216,6 @@ TEST_CASE("ClipboardManager pasteToDocument returns false with no clipboard imag
     auto emptyDoc = std::make_shared<gimp::ProjectFile>(1, 1);
     // No layer, so copy fails and clipboard should be empty
 
-    bool result = gimp::ClipboardManager::instance().pasteToDocument(
-        fixture.document, &fixture.commandBus, QPoint(50, 50), true);
-
-    // Result depends on whether clipboard has something from previous tests
     // This test mainly verifies no crash occurs
     REQUIRE_NOTHROW(gimp::ClipboardManager::instance().pasteToDocument(
         fixture.document, &fixture.commandBus, QPoint(50, 50), true));

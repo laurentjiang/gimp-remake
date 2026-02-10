@@ -47,9 +47,24 @@ void LayersPanel::setupUi()
     layerList_->setDragDropMode(QAbstractItemView::InternalMove);
     mainLayout_->addWidget(layerList_);
 
+    // Opacity slider
+    auto* opacityLayout = new QHBoxLayout();
+    opacityLayout->setSpacing(4);
+    opacityLabel_ = new QLabel("Opacity: 100%", this);
+    opacityLabel_->setFixedWidth(85);
+    opacityLayout->addWidget(opacityLabel_);
+
+    opacitySlider_ = new QSlider(Qt::Horizontal, this);
+    opacitySlider_->setRange(0, 100);
+    opacitySlider_->setValue(100);
+    opacitySlider_->setToolTip("Layer opacity");
+    opacityLayout->addWidget(opacitySlider_);
+    mainLayout_->addLayout(opacityLayout);
+
     connect(
         layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
     connect(layerList_, &QListWidget::itemClicked, this, &LayersPanel::onItemClicked);
+    connect(opacitySlider_, &QSlider::valueChanged, this, &LayersPanel::onOpacityChanged);
 
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(2);
@@ -142,6 +157,36 @@ void LayersPanel::onItemSelectionChanged()
             // NOLINTNEXTLINE(modernize-use-designated-initializers)
             EventBus::instance().publish(LayerSelectionChangedEvent{nullptr, layers[i], i});
             emit layerSelected(layers[i]);
+
+            // Update opacity slider to match selected layer
+            int opacityPercent = static_cast<int>(layers[i]->opacity() * 100.0F);
+            opacitySlider_->blockSignals(true);
+            opacitySlider_->setValue(opacityPercent);
+            opacitySlider_->blockSignals(false);
+            opacityLabel_->setText(QString("Opacity: %1%").arg(opacityPercent));
+            break;
+        }
+    }
+}
+
+void LayersPanel::onOpacityChanged(int value)
+{
+    auto items = layerList_->selectedItems();
+    if (items.isEmpty() || !document_) {
+        return;
+    }
+
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(items.first()->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            layers[i]->setOpacity(static_cast<float>(value) / 100.0F);
+            updateLayerItem(items.first(), layers[i]);
+            opacityLabel_->setText(QString("Opacity: %1%").arg(value));
+            // NOLINTNEXTLINE(modernize-use-designated-initializers)
+            EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "opacity"});
             break;
         }
     }

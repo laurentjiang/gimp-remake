@@ -9,8 +9,10 @@
 
 #include "core/event_bus.h"
 
+#include <QLabel>
 #include <QListWidget>
 #include <QPushButton>
+#include <QSlider>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -55,6 +57,7 @@ class LayersPanel : public QWidget {
   private slots:
     void onItemSelectionChanged();
     void onItemClicked(QListWidgetItem* item);
+    void onOpacityChanged(int value);
     void onAddLayerClicked();
     void onRemoveLayerClicked();
     void onMoveUpClicked();
@@ -67,6 +70,8 @@ class LayersPanel : public QWidget {
 
     QVBoxLayout* mainLayout_ = nullptr;
     QListWidget* layerList_ = nullptr;
+    QSlider* opacitySlider_ = nullptr;
+    QLabel* opacityLabel_ = nullptr;
     QPushButton* addButton_ = nullptr;
     QPushButton* removeButton_ = nullptr;
     QPushButton* moveUpButton_ = nullptr;

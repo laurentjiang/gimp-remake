@@ -192,12 +192,22 @@ void LayersPanel::onMoveUpClicked()
 
     const int row = layerList_->row(items.first());
     if (row > 0) {
+        // UI shows layers in reverse order (top of stack at top of list)
         const std::size_t fromIndex =
             document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex + 1;
-        // TODO(layers): Wire to LayerStack::move_layer when available
-        static_cast<void>(toIndex);
-        refreshLayerList();
+
+        auto layer = document_->layers()[fromIndex];
+        if (document_->layers().moveLayer(fromIndex, toIndex)) {
+            EventBus::instance().publish(
+                LayerStackChangedEvent{LayerStackChangedEvent::Action::Reordered, layer});
+            refreshLayerList();
+
+            // Re-select the moved layer (it's now at row - 1)
+            if (row - 1 >= 0 && row - 1 < layerList_->count()) {
+                layerList_->setCurrentRow(row - 1);
+            }
+        }
     }
 }
 
@@ -210,12 +220,22 @@ void LayersPanel::onMoveDownClicked()
 
     const int row = layerList_->row(items.first());
     if (row < layerList_->count() - 1) {
+        // UI shows layers in reverse order (top of stack at top of list)
         const std::size_t fromIndex =
             document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex - 1;
-        // TODO(layers): Wire to LayerStack::move_layer when available
-        static_cast<void>(toIndex);
-        refreshLayerList();
+
+        auto layer = document_->layers()[fromIndex];
+        if (document_->layers().moveLayer(fromIndex, toIndex)) {
+            EventBus::instance().publish(
+                LayerStackChangedEvent{LayerStackChangedEvent::Action::Reordered, layer});
+            refreshLayerList();
+
+            // Re-select the moved layer (it's now at row + 1)
+            if (row + 1 < layerList_->count()) {
+                layerList_->setCurrentRow(row + 1);
+            }
+        }
     }
 }
 

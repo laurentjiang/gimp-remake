@@ -11,6 +11,8 @@
 #include "core/commands/selection_command.h"
 #include "core/selection_manager.h"
 
+#include <spdlog/spdlog.h>
+
 namespace gimp {
 
 SelectionMode SelectionToolBase::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
@@ -26,6 +28,7 @@ SelectionMode SelectionToolBase::resolveSelectionMode(Qt::KeyboardModifiers modi
 
 void SelectionToolBase::beginSelectionCommand(const std::string& description)
 {
+    spdlog::debug("[Selection] Begin command: {}", description);
     pendingCommand_ = std::make_shared<SelectionCommand>(description);
     pendingCommand_->captureBeforeState();
 }
@@ -35,12 +38,14 @@ void SelectionToolBase::commitSelectionCommand()
     if (pendingCommand_ && commandBus_) {
         pendingCommand_->captureAfterState();
         commandBus_->dispatch(pendingCommand_);
+        spdlog::debug("[Selection] Command committed");
     }
     pendingCommand_.reset();
 }
 
 void SelectionToolBase::cancelSelectionOperation()
 {
+    spdlog::debug("[Selection] Operation cancelled");
     SelectionManager::instance().clearPreview();
     pendingCommand_.reset();
 }

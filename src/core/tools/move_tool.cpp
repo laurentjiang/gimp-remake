@@ -15,6 +15,8 @@
 #include <QImage>
 #include <QPainter>
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -295,6 +297,12 @@ void MoveTool::extractSelectionPixels(const std::shared_ptr<Layer>& layer)
     QRectF boundingF = selPath.boundingRect();
     QRect bounding = boundingF.toAlignedRect();
 
+    spdlog::debug("[MoveTool] Extracting selection pixels, bounds: ({},{}) {}x{}",
+                  bounding.x(),
+                  bounding.y(),
+                  bounding.width(),
+                  bounding.height());
+
     // Clip to layer bounds
     int x1 = std::max(0, bounding.left());
     int y1 = std::max(0, bounding.top());
@@ -427,6 +435,13 @@ void MoveTool::commitMove()
     bool hasScale = std::abs(currentScale_.width() - 1.0) > 0.001 ||
                     std::abs(currentScale_.height() - 1.0) > 0.001;
 
+    spdlog::debug("[MoveTool] Committing move: offset=({},{}) scale=({:.2f},{:.2f}) copy={}",
+                  offset.x(),
+                  offset.y(),
+                  currentScale_.width(),
+                  currentScale_.height(),
+                  effectiveCopyMode);
+
     // Calculate the bounding rect that covers both source and destination
     QRect srcRect = floatingRect_;
     QSize scaledSize = getScaledSize();
@@ -526,6 +541,7 @@ void MoveTool::commitMove()
 
 void MoveTool::cancelMove()
 {
+    spdlog::debug("[MoveTool] Cancelling move, restoring original pixels");
     if (!targetLayer_ || floatingBuffer_.empty()) {
         clearFloatingState();
         modifierOverride_ = false;

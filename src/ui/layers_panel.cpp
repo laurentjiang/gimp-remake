@@ -49,6 +49,7 @@ void LayersPanel::setupUi()
 
     connect(
         layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
+    connect(layerList_, &QListWidget::itemClicked, this, &LayersPanel::onItemClicked);
 
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(2);
@@ -142,6 +143,37 @@ void LayersPanel::onItemSelectionChanged()
             EventBus::instance().publish(LayerSelectionChangedEvent{nullptr, layers[i], i});
             emit layerSelected(layers[i]);
             break;
+        }
+    }
+}
+
+void LayersPanel::onItemClicked(QListWidgetItem* item)
+{
+    if (!item || !document_) {
+        return;
+    }
+
+    // Check if click was in the icon area (first ~24 pixels)
+    // We can detect this by checking the mouse position relative to the item rect
+    QPoint clickPos = layerList_->mapFromGlobal(QCursor::pos());
+    QRect itemRect = layerList_->visualItemRect(item);
+    int iconWidth = 24;  // Approximate icon width
+
+    if (clickPos.x() < itemRect.x() + iconWidth) {
+        // Click was on the visibility icon - toggle visibility
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+        const auto& layers = document_->layers();
+        for (std::size_t i = 0; i < layers.count(); ++i) {
+            if (layers[i].get() == rawPtr) {
+                layers[i]->setVisible(!layers[i]->visible());
+                updateLayerItem(item, layers[i]);
+                // NOLINTNEXTLINE(modernize-use-designated-initializers)
+                EventBus::instance().publish(
+                    LayerPropertyChangedEvent{layers[i], "visible"});
+                break;
+            }
         }
     }
 }

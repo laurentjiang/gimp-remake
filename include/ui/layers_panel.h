@@ -54,6 +54,7 @@ class LayersPanel : public QWidget {
 
   private slots:
     void onItemSelectionChanged();
+    void onItemClicked(QListWidgetItem* item);
     void onAddLayerClicked();
     void onRemoveLayerClicked();
     void onMoveUpClicked();

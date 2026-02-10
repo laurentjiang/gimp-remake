@@ -22,6 +22,9 @@ class Document;
  */
 class ClipboardManager {
   public:
+    /**
+     * @brief Returns the singleton instance of the ClipboardManager.
+     */
     static ClipboardManager& instance()
     {
         static ClipboardManager manager;

@@ -16,7 +16,7 @@ The **type** tells us what kind of change you are making:
 | **fix** | A bug fix or correction |
 | **docs** | Documentation changes only (README, etc.) |
 | **chore** | Maintenance (logging, dependencies, build tasks) |
-| **refactor** | Code changes that neither fix a bug nor add a feature |
+| **refacto** | Code changes that neither fix a bug nor add a feature |
 | **test** | Adding or updating tests |
 
 ### 2. Scopes

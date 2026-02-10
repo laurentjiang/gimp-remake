@@ -25,6 +25,13 @@ class Layer;
  */
 class PasteCommand : public Command {
   public:
+    /**
+     * @brief Constructs a paste command for a document.
+     * @param document The document to paste into.
+     * @param x Left position in canvas coordinates.
+     * @param y Top position in canvas coordinates.
+     * @param image The image data to paste.
+     */
     PasteCommand(std::shared_ptr<Document> document, int x, int y, const QImage& image);
 
     void apply() override;

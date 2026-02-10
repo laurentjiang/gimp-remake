@@ -79,6 +79,17 @@ class MoveTool : public Tool, public ToolOptions {
      */
     [[nodiscard]] QRectF selectionBounds() const { return transform_.originalBounds(); }
 
+    /*! @brief Returns the transformed bounding rectangle.
+     *  @return Current bounds after applying translation and scale.
+     */
+    [[nodiscard]] QRectF transformedBounds() const { return transform_.transformedBounds(); }
+
+    /*! @brief Returns the offset from full selection bounds to clipped buffer.
+     *  Used to correctly position pixel data when selection extends off-canvas.
+     *  @return Offset from selection origin to buffer origin.
+     */
+    [[nodiscard]] QPoint bufferOffset() const { return bufferOffset_; }
+
     /*! @brief Returns the current movement offset for the floating buffer.
      *  @return Offset from original position.
      */
@@ -196,6 +207,7 @@ class MoveTool : public Tool, public ToolOptions {
     FloatingBuffer buffer_;               ///< Extracted pixels and selection mask.
     TransformState transform_;            ///< Current transformation state.
     std::shared_ptr<Layer> targetLayer_;  ///< Layer being modified.
+    QPoint bufferOffset_;                 ///< Offset from full selection to clipped buffer.
 
     /**
      * @brief Commits the move operation with undo support.

@@ -742,12 +742,17 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     // Check for Ctrl+Alt move override on press
     if (isPress) {
         // Auto-commit any pending move operation before starting new stroke,
-        // but only if NOT clicking on a transform handle
+        // but only if clicking OUTSIDE the transformed selection bounds.
+        // Clicking inside the selection continues dragging; clicking on handles scales.
         auto* pendingMoveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
         if (pendingMoveTool && pendingMoveTool->isMovingSelection()) {
-            // Check if clicking on a handle - if so, don't commit yet
-            if (pendingMoveTool->hitTestHandle(toolEvent.canvasPos, toolEvent.zoomLevel) ==
-                TransformHandle::None) {
+            QRectF txBounds = pendingMoveTool->transformedBounds();
+            bool insideBounds = txBounds.contains(QPointF(toolEvent.canvasPos));
+            bool onHandle = pendingMoveTool->hitTestHandle(
+                                toolEvent.canvasPos, toolEvent.zoomLevel) != TransformHandle::None;
+
+            // Only commit if clicking outside the selection AND not on a handle
+            if (!insideBounds && !onHandle) {
                 pendingMoveTool->commitFloatingBuffer();
                 invalidateCache();
             }

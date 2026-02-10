@@ -35,11 +35,12 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     // If we already have an active floating buffer, check for handle hits first
     if (isMovingSelection()) {
         QRectF txBounds = transform_.transformedBounds();
-        spdlog::debug("[MoveTool] Active buffer exists, transformed bounds: ({:.1f},{:.1f}) {:.1f}x{:.1f}",
-                      txBounds.left(),
-                      txBounds.top(),
-                      txBounds.width(),
-                      txBounds.height());
+        spdlog::debug(
+            "[MoveTool] Active buffer exists, transformed bounds: ({:.1f},{:.1f}) {:.1f}x{:.1f}",
+            txBounds.left(),
+            txBounds.top(),
+            txBounds.width(),
+            txBounds.height());
 
         qreal handleSize = kHandleScreenSize / event.zoomLevel;
         activeHandle_ = transform_.hitTestHandle(QPointF(event.canvasPos), handleSize);
@@ -88,20 +89,36 @@ void MoveTool::beginStroke(const ToolInputEvent& event)
     auto layer = document_->layers()[0];
     targetLayer_ = layer;
 
+    // Store full selection bounds BEFORE extraction which clips to layer
+    QRectF fullSelBounds = selPath.boundingRect();
+
     if (!buffer_.extractFromLayer(layer, selPath)) {
         spdlog::warn("[MoveTool] Failed to extract selection pixels");
         return;
     }
 
-    // Use full selection bounds for transform (handles, marching ants)
-    // NOT the clipped sourceRect - that would make handles appear cropped
-    transform_.setOriginalBounds(selPath.boundingRect());
+    // Use FULL selection bounds for transform (handles, marching ants).
+    // This ensures visuals show at the logical selection position, not clipped position.
+    // FloatingBuffer's sourceRect is clipped to layer bounds for actual pixel operations.
+    transform_.setOriginalBounds(fullSelBounds);
 
-    spdlog::debug("[MoveTool] Extracted selection pixels, bounds: ({},{}) {}x{}",
-                  buffer_.sourceRect().x(),
-                  buffer_.sourceRect().y(),
-                  buffer_.sourceRect().width(),
-                  buffer_.sourceRect().height());
+    // Calculate offset from full selection to clipped buffer for rendering
+    QRect clippedRect = buffer_.sourceRect();
+    bufferOffset_ = QPoint(clippedRect.left() - static_cast<int>(fullSelBounds.left()),
+                           clippedRect.top() - static_cast<int>(fullSelBounds.top()));
+
+    spdlog::debug("[MoveTool] Full selection: ({:.0f},{:.0f}) {:.0f}x{:.0f}, buffer: ({},{}) "
+                  "{}x{}, offset: ({},{})",
+                  fullSelBounds.left(),
+                  fullSelBounds.top(),
+                  fullSelBounds.width(),
+                  fullSelBounds.height(),
+                  clippedRect.x(),
+                  clippedRect.y(),
+                  clippedRect.width(),
+                  clippedRect.height(),
+                  bufferOffset_.x(),
+                  bufferOffset_.y());
 
     // Determine effective copy mode: modifier override takes precedence over UI setting
     bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
@@ -311,11 +328,11 @@ void MoveTool::commitMove()
         SelectionManager::instance().translateSelection(offset);
     }
 
-    // Clip selection path to document bounds after commit.
-    // Off-canvas pixels are lost on paste, so the selection must reflect that.
-    // This prevents color bleeding when re-selecting (path would claim wrong pixels).
-    SelectionManager::instance().clipSelectionToDocument(
-        targetLayer_->width(), targetLayer_->height());
+    // Note: We do NOT clip the selection path to document bounds.
+    // The selection outline may extend off-canvas after a partial commit.
+    // Visual clipping is handled in SkiaCanvasWidget (painter.setClipRect).
+    // FloatingBuffer handles extraction clipping (only grabs on-canvas pixels).
+    // This allows GIMP-like behavior where floating layers extend beyond canvas.
 
     clearFloatingState();
     modifierOverride_ = false;
@@ -364,6 +381,7 @@ void MoveTool::clearFloatingState()
     targetLayer_.reset();
     activeHandle_ = TransformHandle::None;
     proportionalScale_ = false;
+    bufferOffset_ = QPoint(0, 0);
 }
 
 std::vector<ToolOption> MoveTool::getOptions() const
@@ -433,7 +451,7 @@ TransformHandle MoveTool::hitTestHandle(const QPoint& pos, float zoomLevel) cons
 QSize MoveTool::getScaledSize() const
 {
     if (buffer_.isEmpty()) {
-        return QSize();
+        return {};
     }
     return buffer_.getScaledSize(transform_.scale());
 }

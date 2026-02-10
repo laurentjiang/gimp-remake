@@ -144,19 +144,19 @@ QPointF EllipseSelectTool::getAnchorForHandle(EllipseSelectionHandle handle) con
         case EllipseSelectionHandle::TopLeft:
             return currentBounds_.bottomRight();
         case EllipseSelectionHandle::Top:
-            return QPointF(currentBounds_.center().x(), currentBounds_.bottom());
+            return {currentBounds_.center().x(), currentBounds_.bottom()};
         case EllipseSelectionHandle::TopRight:
             return currentBounds_.bottomLeft();
         case EllipseSelectionHandle::Right:
-            return QPointF(currentBounds_.left(), currentBounds_.center().y());
+            return {currentBounds_.left(), currentBounds_.center().y()};
         case EllipseSelectionHandle::BottomRight:
             return currentBounds_.topLeft();
         case EllipseSelectionHandle::Bottom:
-            return QPointF(currentBounds_.center().x(), currentBounds_.top());
+            return {currentBounds_.center().x(), currentBounds_.top()};
         case EllipseSelectionHandle::BottomLeft:
             return currentBounds_.topRight();
         case EllipseSelectionHandle::Left:
-            return QPointF(currentBounds_.right(), currentBounds_.center().y());
+            return {currentBounds_.right(), currentBounds_.center().y()};
         default:
             return currentBounds_.center();
     }

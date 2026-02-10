@@ -10,6 +10,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace gimp {
@@ -67,9 +68,10 @@ QRectF TransformState::transformedBounds() const
     // The matrix uses center-based scaling, but handle drag uses top-left based translation
     qreal scaledW = originalBounds_.width() * scale_.width();
     qreal scaledH = originalBounds_.height() * scale_.height();
-    return QRectF(originalBounds_.left() + translation_.x(),
-                  originalBounds_.top() + translation_.y(),
-                  scaledW, scaledH);
+    return {originalBounds_.left() + translation_.x(),
+            originalBounds_.top() + translation_.y(),
+            scaledW,
+            scaledH};
 }
 
 void TransformState::translate(const QPointF& offset)
@@ -137,14 +139,14 @@ std::vector<QPointF> TransformState::getHandlePositions() const
     qreal midY = bounds.center().y();
 
     // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
-    positions.push_back(QPointF(left, top));
-    positions.push_back(QPointF(midX, top));
-    positions.push_back(QPointF(right, top));
-    positions.push_back(QPointF(right, midY));
-    positions.push_back(QPointF(right, bottom));
-    positions.push_back(QPointF(midX, bottom));
-    positions.push_back(QPointF(left, bottom));
-    positions.push_back(QPointF(left, midY));
+    positions.emplace_back(left, top);
+    positions.emplace_back(midX, top);
+    positions.emplace_back(right, top);
+    positions.emplace_back(right, midY);
+    positions.emplace_back(right, bottom);
+    positions.emplace_back(midX, bottom);
+    positions.emplace_back(left, bottom);
+    positions.emplace_back(left, midY);
 
     return positions;
 }
@@ -162,7 +164,7 @@ std::vector<QRectF> TransformState::getHandleRects(qreal handleSize) const
     auto positions = getHandlePositions();
 
     for (const auto& pos : positions) {
-        handles.push_back(QRectF(pos.x() - halfSize, pos.y() - halfSize, handleSize, handleSize));
+        handles.emplace_back(pos.x() - halfSize, pos.y() - halfSize, handleSize, handleSize);
     }
 
     return handles;
@@ -175,18 +177,18 @@ TransformHandle TransformState::hitTestHandle(const QPointF& pos, qreal handleSi
         return TransformHandle::None;
     }
 
-    static const TransformHandle handleTypes[] = {TransformHandle::TopLeft,
-                                                  TransformHandle::Top,
-                                                  TransformHandle::TopRight,
-                                                  TransformHandle::Right,
-                                                  TransformHandle::BottomRight,
-                                                  TransformHandle::Bottom,
-                                                  TransformHandle::BottomLeft,
-                                                  TransformHandle::Left};
+    static constexpr std::array<TransformHandle, 8> kHandleTypes = {TransformHandle::TopLeft,
+                                                                     TransformHandle::Top,
+                                                                     TransformHandle::TopRight,
+                                                                     TransformHandle::Right,
+                                                                     TransformHandle::BottomRight,
+                                                                     TransformHandle::Bottom,
+                                                                     TransformHandle::BottomLeft,
+                                                                     TransformHandle::Left};
 
     for (std::size_t i = 0; i < handles.size(); ++i) {
         if (handles[i].contains(pos)) {
-            return handleTypes[i];
+            return kHandleTypes[i];
         }
     }
 

@@ -40,12 +40,12 @@ bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
     QRect bounding = boundingF.toAlignedRect();
 
     spdlog::warn("[FloatingBuffer] Selection bounds: ({},{}) {}x{}, layer: {}x{}",
-                  bounding.left(),
-                  bounding.top(),
-                  bounding.width(),
-                  bounding.height(),
-                  layer->width(),
-                  layer->height());
+                 bounding.left(),
+                 bounding.top(),
+                 bounding.width(),
+                 bounding.height(),
+                 layer->width(),
+                 layer->height());
 
     // Clip to layer bounds
     int x1 = std::max(0, bounding.left());
@@ -54,8 +54,12 @@ bool FloatingBuffer::extractFromLayer(const std::shared_ptr<Layer>& layer,
     int y2 = std::min(layer->height(), bounding.bottom() + 1);
 
     if (x2 <= x1 || y2 <= y1) {
-        spdlog::warn("[FloatingBuffer] Selection completely outside layer: clipped=({},{}) to ({},{})",
-                      x1, y1, x2, y2);
+        spdlog::warn(
+            "[FloatingBuffer] Selection completely outside layer: clipped=({},{}) to ({},{})",
+            x1,
+            y1,
+            x2,
+            y2);
         return false;
     }
 
@@ -195,8 +199,8 @@ std::vector<std::uint8_t> FloatingBuffer::getScaled(QSizeF scale) const
 
 QSize FloatingBuffer::getScaledSize(QSizeF scale) const
 {
-    return QSize(static_cast<int>(std::round(sourceRect_.width() * scale.width())),
-                 static_cast<int>(std::round(sourceRect_.height() * scale.height())));
+    return {static_cast<int>(std::round(sourceRect_.width() * scale.width())),
+            static_cast<int>(std::round(sourceRect_.height() * scale.height()))};
 }
 
 bool FloatingBuffer::isPixelSelected(int col, int row) const

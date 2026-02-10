@@ -12,6 +12,7 @@
 #include "core/selection_manager.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace gimp {
@@ -61,14 +62,14 @@ std::vector<QRectF> RectSelectTool::getHandleRects(float zoomLevel) const
     double midY = (top + bottom) / 2.0;
 
     // Order: TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left
-    handles.push_back(QRectF(left - halfSize, top - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(midX - halfSize, top - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(right - halfSize, top - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(right - halfSize, midY - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(right - halfSize, bottom - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(midX - halfSize, bottom - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(left - halfSize, bottom - halfSize, handleSize, handleSize));
-    handles.push_back(QRectF(left - halfSize, midY - halfSize, handleSize, handleSize));
+    handles.emplace_back(left - halfSize, top - halfSize, handleSize, handleSize);
+    handles.emplace_back(midX - halfSize, top - halfSize, handleSize, handleSize);
+    handles.emplace_back(right - halfSize, top - halfSize, handleSize, handleSize);
+    handles.emplace_back(right - halfSize, midY - halfSize, handleSize, handleSize);
+    handles.emplace_back(right - halfSize, bottom - halfSize, handleSize, handleSize);
+    handles.emplace_back(midX - halfSize, bottom - halfSize, handleSize, handleSize);
+    handles.emplace_back(left - halfSize, bottom - halfSize, handleSize, handleSize);
+    handles.emplace_back(left - halfSize, midY - halfSize, handleSize, handleSize);
 
     return handles;
 }
@@ -80,19 +81,19 @@ SelectionHandle RectSelectTool::hitTestHandle(const QPoint& pos, float zoomLevel
         return SelectionHandle::None;
     }
 
-    static const SelectionHandle handleTypes[] = {SelectionHandle::TopLeft,
-                                                  SelectionHandle::Top,
-                                                  SelectionHandle::TopRight,
-                                                  SelectionHandle::Right,
-                                                  SelectionHandle::BottomRight,
-                                                  SelectionHandle::Bottom,
-                                                  SelectionHandle::BottomLeft,
-                                                  SelectionHandle::Left};
+    static constexpr std::array<SelectionHandle, 8> kHandleTypes = {SelectionHandle::TopLeft,
+                                                                     SelectionHandle::Top,
+                                                                     SelectionHandle::TopRight,
+                                                                     SelectionHandle::Right,
+                                                                     SelectionHandle::BottomRight,
+                                                                     SelectionHandle::Bottom,
+                                                                     SelectionHandle::BottomLeft,
+                                                                     SelectionHandle::Left};
 
     QPointF posF(pos);
     for (size_t i = 0; i < handles.size(); ++i) {
         if (handles[i].contains(posF)) {
-            return handleTypes[i];
+            return kHandleTypes[i];
         }
     }
 
@@ -105,19 +106,19 @@ QPointF RectSelectTool::getAnchorForHandle(SelectionHandle handle) const
         case SelectionHandle::TopLeft:
             return currentBounds_.bottomRight();
         case SelectionHandle::Top:
-            return QPointF(currentBounds_.center().x(), currentBounds_.bottom());
+            return {currentBounds_.center().x(), currentBounds_.bottom()};
         case SelectionHandle::TopRight:
             return currentBounds_.bottomLeft();
         case SelectionHandle::Right:
-            return QPointF(currentBounds_.left(), currentBounds_.center().y());
+            return {currentBounds_.left(), currentBounds_.center().y()};
         case SelectionHandle::BottomRight:
             return currentBounds_.topLeft();
         case SelectionHandle::Bottom:
-            return QPointF(currentBounds_.center().x(), currentBounds_.top());
+            return {currentBounds_.center().x(), currentBounds_.top()};
         case SelectionHandle::BottomLeft:
             return currentBounds_.topRight();
         case SelectionHandle::Left:
-            return QPointF(currentBounds_.right(), currentBounds_.center().y());
+            return {currentBounds_.right(), currentBounds_.center().y()};
         default:
             return currentBounds_.center();
     }

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "core/command.h"
+#include "core/selection_manager.h"
 
 #include <QPainterPath>
 
@@ -65,6 +66,8 @@ class SelectionCommand : public Command {
     std::string description_;
     QPainterPath beforePath_;
     QPainterPath afterPath_;
+    SelectionType beforeType_ = SelectionType::Unknown;  ///< Selection type before.
+    SelectionType afterType_ = SelectionType::Unknown;   ///< Selection type after.
 };
 
 }  // namespace gimp

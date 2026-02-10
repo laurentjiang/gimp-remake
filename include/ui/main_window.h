@@ -28,6 +28,7 @@ class CommandPalette;
 class DebugHud;
 class Document;
 class HistoryPanel;
+class Layer;
 class LayersPanel;
 class LogBridge;
 class LogPanel;
@@ -110,6 +111,9 @@ class MainWindow : public QMainWindow {
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
     EventBus::SubscriptionId m_colorChangedSubscription = 0;
     EventBus::SubscriptionId m_mousePosSubscription = 0;
+    EventBus::SubscriptionId m_layerSelectionSubscription = 0;
+
+    std::size_t m_activeLayerIndex = 0;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

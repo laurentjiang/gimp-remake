@@ -50,4 +50,16 @@ void Tool::reset()
     state_ = ToolState::Idle;
 }
 
+bool Tool::onKeyPress(Qt::Key /*key*/, Qt::KeyboardModifiers /*modifiers*/)
+{
+    // Default: no key handling
+    return false;
+}
+
+bool Tool::onKeyRelease(Qt::Key /*key*/, Qt::KeyboardModifiers /*modifiers*/)
+{
+    // Default: no key handling
+    return false;
+}
+
 }  // namespace gimp

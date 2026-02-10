@@ -7,7 +7,6 @@
 
 #include "core/tools/free_select_tool.h"
 
-#include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
@@ -15,18 +14,6 @@
 #include <cmath>
 
 namespace gimp {
-
-SelectionMode FreeSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers,
-                                                   Qt::MouseButtons buttons)
-{
-    if ((modifiers & Qt::ControlModifier) != 0) {
-        if ((buttons & Qt::RightButton) != 0) {
-            return SelectionMode::Subtract;
-        }
-        return SelectionMode::Add;
-    }
-    return SelectionMode::Replace;
-}
 
 QPainterPath FreeSelectTool::buildPath(bool close) const
 {
@@ -52,7 +39,10 @@ void FreeSelectTool::beginStroke(const ToolInputEvent& event)
 {
     points_.clear();
     points_.emplace_back(event.canvasPos);
-    currentMode_ = resolveSelectionMode(event.modifiers, event.buttons);
+    currentMode_ = resolveSelectionMode(event.modifiers);
+
+    // Begin selection command to capture before state
+    beginSelectionCommand("Free Select");
 
     auto previewPath = buildPath(false);
     SelectionManager::instance().setPreview(previewPath, currentMode_);
@@ -83,12 +73,6 @@ void FreeSelectTool::continueStroke(const ToolInputEvent& event)
 
 void FreeSelectTool::endStroke(const ToolInputEvent& event)
 {
-    std::shared_ptr<SelectionCommand> cmd;
-    if (commandBus()) {
-        cmd = std::make_shared<SelectionCommand>("Free Selection");
-        cmd->captureBeforeState();
-    }
-
     // Add final point if different from last
     if (!points_.empty()) {
         const QPointF& lastPoint = points_.back();
@@ -101,19 +85,19 @@ void FreeSelectTool::endStroke(const ToolInputEvent& event)
     if (points_.size() >= 3) {
         auto path = buildPath(true);
         SelectionManager::instance().applySelection(path, currentMode_);
-    }
 
-    if (cmd) {
-        cmd->captureAfterState();
-        commandBus()->dispatch(cmd);
+        // Commit the selection command
+        commitSelectionCommand();
     }
+    pendingCommand_.reset();
+
     SelectionManager::instance().clearPreview();
     points_.clear();
 }
 
 void FreeSelectTool::cancelStroke()
 {
-    SelectionManager::instance().clearPreview();
+    cancelSelectionOperation();
     points_.clear();
 }
 

@@ -67,7 +67,8 @@ QImage toRgbaImage(const QImage& image)
 
 }  // namespace
 
-bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document)
+bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document,
+                                     const std::shared_ptr<Layer>& layer)
 {
     if (!document || document->layers().count() == 0) {
         return false;
@@ -93,9 +94,10 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document)
         return false;
     }
 
-    auto layer = document->layers()[0];
-    const int layerWidth = layer->width();
-    const auto& data = layer->data();
+    // Use provided layer or fall back to first layer
+    auto sourceLayer = layer ? layer : document->layers()[0];
+    const int layerWidth = sourceLayer->width();
+    const auto& data = sourceLayer->data();
 
     QImage image(regionWidth, regionHeight, QImage::Format_RGBA8888);
     image.fill(Qt::transparent);
@@ -130,9 +132,10 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document)
 }
 
 bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
+                                    const std::shared_ptr<Layer>& layer,
                                     CommandBus* commandBus)
 {
-    if (!copySelection(document)) {
+    if (!copySelection(document, layer)) {
         return false;
     }
 
@@ -140,7 +143,8 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
-    auto layer = document->layers()[0];
+    // Use provided layer or fall back to first layer
+    auto targetLayer = layer ? layer : document->layers()[0];
     const auto& selectionPath = SelectionManager::instance().selectionPath();
 
     int regionX = 0;
@@ -159,11 +163,11 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
     }
 
     auto cutCommand =
-        std::make_shared<DrawCommand>(layer, regionX, regionY, regionWidth, regionHeight);
+        std::make_shared<DrawCommand>(targetLayer, regionX, regionY, regionWidth, regionHeight);
     cutCommand->captureBeforeState();
 
-    auto& data = layer->data();
-    const int layerWidth = layer->width();
+    auto& data = targetLayer->data();
+    const int layerWidth = targetLayer->width();
 
     for (int y = 0; y < regionHeight; ++y) {
         const int srcY = regionY + y;

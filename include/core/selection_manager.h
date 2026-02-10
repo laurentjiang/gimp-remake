@@ -10,6 +10,9 @@
 #include "core/document.h"
 
 #include <QPainterPath>
+#include <QPoint>
+#include <QSizeF>
+#include <QTransform>
 
 #include <memory>
 
@@ -22,6 +25,15 @@ enum class SelectionMode {
     Replace,  ///< Replace existing selection.
     Add,      ///< Add to existing selection.
     Subtract  ///< Subtract from existing selection.
+};
+
+/**
+ * @brief Selection shape type for optimization hints.
+ */
+enum class SelectionType {
+    Unknown,    ///< Complex or combined selection.
+    Rectangle,  ///< Axis-aligned rectangle.
+    Ellipse     ///< Axis-aligned ellipse.
 };
 
 /**
@@ -66,6 +78,7 @@ class SelectionManager {
         selection_ = QPainterPath();
         preview_ = QPainterPath();
         previewMode_ = SelectionMode::Replace;
+        selectionType_ = SelectionType::Unknown;
         syncSelectionToDocument();
     }
 
@@ -83,6 +96,11 @@ class SelectionManager {
      * @brief Returns the committed selection path.
      */
     [[nodiscard]] const QPainterPath& selectionPath() const { return selection_; }
+
+    /**
+     * @brief Returns the selection type for optimization hints.
+     */
+    [[nodiscard]] SelectionType selectionType() const { return selectionType_; }
 
     /**
      * @brief Returns the preview selection path.
@@ -113,9 +131,31 @@ class SelectionManager {
     [[nodiscard]] SelectionMode previewMode() const { return previewMode_; }
 
     /**
-     * @brief Applies a path to the committed selection using the given mode.
+     * @brief Restores selection state directly (for undo/redo operations).
+     *
+     * Unlike applySelection(), this bypasses mode logic and directly sets the
+     * selection to the given path and type. Use this when restoring a previously
+     * captured state, not for interactive selection changes.
+     *
+     * @param path The selection path to restore.
+     * @param type The selection type hint.
      */
-    void applySelection(const QPainterPath& path, SelectionMode mode)
+    void restoreSelection(const QPainterPath& path, SelectionType type = SelectionType::Unknown)
+    {
+        selection_ = path;
+        selectionType_ = type;
+        syncSelectionToDocument();
+    }
+
+    /**
+     * @brief Applies a path to the committed selection using the given mode.
+     * @param path The selection path to apply.
+     * @param mode How to combine with existing selection.
+     * @param type Optional hint about the selection shape for optimization.
+     */
+    void applySelection(const QPainterPath& path,
+                        SelectionMode mode,
+                        SelectionType type = SelectionType::Unknown)
     {
         if (path.isEmpty()) {
             return;
@@ -124,15 +164,67 @@ class SelectionManager {
         switch (mode) {
             case SelectionMode::Replace:
                 selection_ = path;
+                selectionType_ = type;
                 break;
             case SelectionMode::Add:
                 selection_ = selection_.isEmpty() ? path : selection_.united(path);
+                selectionType_ = SelectionType::Unknown;  // Combined selection
                 break;
             case SelectionMode::Subtract:
                 selection_ = selection_.isEmpty() ? QPainterPath() : selection_.subtracted(path);
+                selectionType_ = SelectionType::Unknown;  // Combined selection
                 break;
         }
 
+        syncSelectionToDocument();
+    }
+
+    /**
+     * @brief Translates the current selection by the given offset.
+     *
+     * Used after moving selection contents to update the selection outline
+     * to follow the moved pixels.
+     *
+     * @param offset The translation offset in canvas coordinates.
+     */
+    void translateSelection(const QPoint& offset)
+    {
+        if (selection_.isEmpty() || (offset.x() == 0 && offset.y() == 0)) {
+            return;
+        }
+
+        selection_.translate(offset.x(), offset.y());
+        syncSelectionToDocument();
+    }
+
+    /**
+     * @brief Scales and translates the current selection.
+     *
+     * Used after scaling selection contents to update the selection outline
+     * to match the transformed pixels.
+     *
+     * @param scale The scale factors (width, height).
+     * @param offset The translation offset in canvas coordinates.
+     */
+    void scaleSelection(const QSizeF& scale, const QPoint& offset)
+    {
+        if (selection_.isEmpty()) {
+            return;
+        }
+
+        // Get the bounding rect center for scaling around the origin
+        QRectF bounds = selection_.boundingRect();
+        qreal cx = bounds.left();
+        qreal cy = bounds.top();
+
+        // Create transform: translate to origin, scale, translate back + offset
+        QTransform transform;
+        transform.translate(cx + offset.x(), cy + offset.y());
+        transform.scale(scale.width(), scale.height());
+        transform.translate(-cx, -cy);
+
+        selection_ = transform.map(selection_);
+        selectionType_ = SelectionType::Unknown;  // Shape may have changed
         syncSelectionToDocument();
     }
 
@@ -156,6 +248,34 @@ class SelectionManager {
         return preview_;
     }
 
+    /**
+     * @brief Clips the current selection to document bounds.
+     *
+     * Used after move/transform operations to ensure the selection path
+     * only covers pixels that actually exist within the document.
+     * This prevents color bleeding when re-selecting moved content.
+     *
+     * @param docWidth Document width in pixels.
+     * @param docHeight Document height in pixels.
+     */
+    void clipSelectionToDocument(int docWidth, int docHeight)
+    {
+        if (selection_.isEmpty() || docWidth <= 0 || docHeight <= 0) {
+            return;
+        }
+
+        QPainterPath docBounds;
+        docBounds.addRect(0, 0, docWidth, docHeight);
+        selection_ = selection_.intersected(docBounds);
+
+        // If selection is now empty, clear the type
+        if (selection_.isEmpty()) {
+            selectionType_ = SelectionType::Unknown;
+        }
+
+        syncSelectionToDocument();
+    }
+
   private:
     SelectionManager() = default;
 
@@ -169,6 +289,7 @@ class SelectionManager {
     QPainterPath selection_;
     QPainterPath preview_;
     SelectionMode previewMode_ = SelectionMode::Replace;
+    SelectionType selectionType_ = SelectionType::Unknown;
     std::weak_ptr<Document> document_;
 };
 

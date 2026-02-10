@@ -16,6 +16,7 @@ namespace gimp {
 
 class CommandBus;
 class Document;
+class Layer;
 
 /**
  * @brief Singleton clipboard manager for image data.
@@ -44,17 +45,22 @@ class ClipboardManager {
     /**
      * @brief Copies the current selection into the clipboard.
      * @param document The active document.
+     * @param layer The layer to copy from (if nullptr, copies from first layer).
      * @return True if copy succeeded.
      */
-    bool copySelection(const std::shared_ptr<Document>& document);
+    bool copySelection(const std::shared_ptr<Document>& document,
+                       const std::shared_ptr<Layer>& layer = nullptr);
 
     /**
      * @brief Cuts the current selection into the clipboard and clears pixels.
      * @param document The active document.
+     * @param layer The layer to cut from (if nullptr, cuts from first layer).
      * @param commandBus Command bus for undoable cut.
      * @return True if cut succeeded.
      */
-    bool cutSelection(const std::shared_ptr<Document>& document, CommandBus* commandBus);
+    bool cutSelection(const std::shared_ptr<Document>& document,
+                      const std::shared_ptr<Layer>& layer,
+                      CommandBus* commandBus);
 
     /**
      * @brief Pastes the clipboard image into the document at a position.

@@ -144,6 +144,23 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
+    // Subscribe to mouse position changes for paste operations
+    m_mousePosSubscription = EventBus::instance().subscribe<MousePositionChangedEvent>(
+        [this](const MousePositionChangedEvent& event) {
+            if (event.canvasX >= 0 && event.canvasY >= 0) {
+                m_lastCanvasPos = QPoint(event.canvasX, event.canvasY);
+                m_hasMousePos = true;
+            } else {
+                m_hasMousePos = false;
+            }
+        });
+
+    // Subscribe to layer selection changes
+    m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+        [this](const LayerSelectionChangedEvent& event) {
+            m_activeLayerIndex = event.layerIndex;
+        });
+
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -176,6 +193,7 @@ MainWindow::~MainWindow()
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
     EventBus::instance().unsubscribe(m_mousePosSubscription);
+    EventBus::instance().unsubscribe(m_layerSelectionSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -423,6 +441,19 @@ void MainWindow::positionDebugHud()
 
 void MainWindow::onUndo()
 {
+    // If there's an active floating buffer (mid-move), cancel it as the undo action
+    // Don't also undo the previous command - the cancel IS the undo
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->cancelFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Move cancelled", 2000);
+        return;  // Cancel was the undo, don't undo again
+    }
+
     if (m_historyManager && m_historyManager->undo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();
@@ -433,6 +464,16 @@ void MainWindow::onUndo()
 
 void MainWindow::onRedo()
 {
+    // If there's an active floating buffer, commit it before redo
+    // (redo should apply a committed command, not interfere with active move)
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
     if (m_historyManager && m_historyManager->redo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();
@@ -642,7 +683,13 @@ void MainWindow::onCut()
         return;
     }
 
-    if (ClipboardManager::instance().cutSelection(m_document, m_commandBus.get())) {
+    // Get the active layer (or fallback to first layer)
+    std::shared_ptr<Layer> activeLayer;
+    if (m_activeLayerIndex < m_document->layers().count()) {
+        activeLayer = m_document->layers()[m_activeLayerIndex];
+    }
+
+    if (ClipboardManager::instance().cutSelection(m_document, activeLayer, m_commandBus.get())) {
         if (m_canvasWidget) {
             m_canvasWidget->invalidateCache();
         }
@@ -658,7 +705,13 @@ void MainWindow::onCopy()
         return;
     }
 
-    if (ClipboardManager::instance().copySelection(m_document)) {
+    // Get the active layer (or fallback to first layer)
+    std::shared_ptr<Layer> activeLayer;
+    if (m_activeLayerIndex < m_document->layers().count()) {
+        activeLayer = m_document->layers()[m_activeLayerIndex];
+    }
+
+    if (ClipboardManager::instance().copySelection(m_document, activeLayer)) {
         statusBar()->showMessage("Copied selection", 1500);
     } else {
         statusBar()->showMessage("Nothing to copy", 1500);

@@ -61,6 +61,14 @@ class Document {
      */
     [[nodiscard]] virtual int height() const = 0;
 
+    /*! @brief Resizes the document canvas and all layers.
+     *  @param width New width in pixels.
+     *  @param height New height in pixels.
+     *  @param anchorX Normalized horizontal anchor (0.0 = left, 1.0 = right).
+     *  @param anchorY Normalized vertical anchor (0.0 = top, 1.0 = bottom).
+     */
+    virtual void resize(int width, int height, float anchorX, float anchorY) = 0;
+
     /*! @brief Sets the document selection path.
      *  @param path The selection path in canvas coordinates.
      */

@@ -91,6 +91,8 @@ class MainWindow : public QMainWindow {
     void onSelectAll();
     void onSelectNone();
     void onSelectInvert();
+    void onCanvasResize();
+    void onCropToSelection();
 
   private:
     void setupMenuBar();

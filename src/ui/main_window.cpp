@@ -8,6 +8,8 @@
 #include "ui/main_window.h"
 
 #include "core/command_bus.h"
+#include "core/commands/crop_command copy.h"
+#include "core/commands/resize_command.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/events.h"
@@ -29,6 +31,7 @@
 #include "core/tools/pencil_tool.h"
 #include "core/tools/rect_selection_tool.h"
 #include "render/skia_renderer.h"
+#include "ui/canvas_resize_dialog.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
 #include "ui/debug_hud.h"
@@ -49,10 +52,14 @@
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QRect>
 #include <QStatusBar>
 #include <QToolBar>
 
 #include <spdlog/spdlog.h>
+
+#include <algorithm>
+#include <cmath>
 
 namespace {
 
@@ -78,6 +85,31 @@ class SimpleDocument : public gimp::Document {
 
     [[nodiscard]] int width() const override { return m_width; }
     [[nodiscard]] int height() const override { return m_height; }
+
+    void resize(int width, int height, float anchorX, float anchorY) override
+    {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        if (width == m_width && height == m_height) {
+            return;
+        }
+
+        const float clampedX = std::clamp(anchorX, 0.0F, 1.0F);
+        const float clampedY = std::clamp(anchorY, 0.0F, 1.0F);
+        const int offsetX = static_cast<int>(std::round((width - m_width) * clampedX));
+        const int offsetY = static_cast<int>(std::round((height - m_height) * clampedY));
+
+        for (const auto& layer : m_layers) {
+            if (layer) {
+                layer->resize(width, height, offsetX, offsetY);
+            }
+        }
+
+        m_width = width;
+        m_height = height;
+    }
 
     void setSelectionPath(const QPainterPath& path) override { m_selection = path; }
     [[nodiscard]] QPainterPath selectionPath() const override { return m_selection; }
@@ -227,6 +259,10 @@ void MainWindow::setupMenuBar()
     layerMenu->addSeparator();
     layerMenu->addAction("&Merge Down", []() {});
     layerMenu->addAction("&Flatten Image", []() {});
+
+    auto* imageMenu = menuBar()->addMenu("&Image");
+    imageMenu->addAction("Canvas &Size...", this, &MainWindow::onCanvasResize);
+    imageMenu->addAction("&Crop to Selection", this, &MainWindow::onCropToSelection);
 
     auto* filtersMenu = menuBar()->addMenu("Filte&rs");
     filtersMenu->addAction("&Blur...", this, &MainWindow::onApplyBlur);
@@ -656,6 +692,81 @@ void MainWindow::onSelectInvert()
     EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
     m_canvasWidget->update();
     statusBar()->showMessage("Selection inverted", 1000);
+}
+
+void MainWindow::onCanvasResize()
+{
+    if (!m_document) {
+        return;
+    }
+
+    CanvasResizeDialog dialog(m_document->width(), m_document->height(), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    const int newWidth = dialog.canvasWidth();
+    const int newHeight = dialog.canvasHeight();
+
+    if (newWidth == m_document->width() && newHeight == m_document->height()) {
+        statusBar()->showMessage("Canvas size unchanged", 1500);
+        return;
+    }
+
+    auto cmd = std::make_shared<CanvasResizeCommand>(
+        m_document, newWidth, newHeight, dialog.anchorX(), dialog.anchorY());
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
+
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->invalidateCache();
+        m_canvasWidget->update();
+    }
+
+    statusBar()->showMessage(QString("Canvas resized to %1 x %2").arg(newWidth).arg(newHeight),
+                             2000);
+}
+
+void MainWindow::onCropToSelection()
+{
+    if (!m_document) {
+        return;
+    }
+
+    if (!SelectionManager::instance().hasSelection()) {
+        statusBar()->showMessage("No selection to crop", 2000);
+        return;
+    }
+
+    const QPainterPath selectionPath = SelectionManager::instance().selectionPath();
+    QRect cropBounds = selectionPath.boundingRect().toAlignedRect();
+    const QRect docBounds(0, 0, m_document->width(), m_document->height());
+    cropBounds = cropBounds.intersected(docBounds);
+
+    if (cropBounds.isEmpty()) {
+        statusBar()->showMessage("Selection is empty", 2000);
+        return;
+    }
+
+    if (cropBounds == docBounds) {
+        statusBar()->showMessage("Selection matches canvas", 1500);
+        return;
+    }
+
+    auto cmd = std::make_shared<CropCommand>(m_document, cropBounds);
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
+
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->invalidateCache();
+        m_canvasWidget->update();
+    }
+
+    statusBar()->showMessage(
+        QString("Canvas cropped to %1 x %2").arg(cropBounds.width()).arg(cropBounds.height()),
+        2000);
 }
 
 }  // namespace gimp

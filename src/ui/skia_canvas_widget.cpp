@@ -193,7 +193,10 @@ void SkiaCanvasWidget::updateCacheFromLayer()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        return;
+    }
     const int w = layer->width();
     const int h = layer->height();
 
@@ -848,7 +851,10 @@ void SkiaCanvasWidget::sampleColorAtPosition(const QPoint& screenPos)
     const int x = static_cast<int>(std::floor(canvasPos.x()));
     const int y = static_cast<int>(std::floor(canvasPos.y()));
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        return;
+    }
     const int width = layer->width();
     const int height = layer->height();
 

@@ -75,8 +75,11 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
-    // Use provided layer or fall back to first layer
-    auto sourceLayer = layer ? layer : document->layers()[0];
+    // Use provided layer or fall back to active layer
+    auto sourceLayer = layer ? layer : document->activeLayer();
+    if (!sourceLayer) {
+        return false;
+    }
     const int layerWidth = sourceLayer->width();
     const int layerHeight = sourceLayer->height();
     const auto& data = sourceLayer->data();
@@ -156,8 +159,11 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
-    // Use provided layer or fall back to first layer
-    auto targetLayer = layer ? layer : document->layers()[0];
+    // Use provided layer or fall back to active layer
+    auto targetLayer = layer ? layer : document->activeLayer();
+    if (!targetLayer) {
+        return false;
+    }
 
     int regionX = 0;
     int regionY = 0;

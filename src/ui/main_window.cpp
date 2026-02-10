@@ -185,6 +185,15 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
+    // Subscribe to layer selection changes to track active layer
+    m_layerSelectionSubscription =
+        EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+            [this](const LayerSelectionChangedEvent& event) {
+                if (m_document) {
+                    m_document->setActiveLayerIndex(event.layerIndex);
+                }
+            });
+
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -216,6 +225,7 @@ MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
+    EventBus::instance().unsubscribe(m_layerSelectionSubscription);
 }
 
 void MainWindow::setupMenuBar()

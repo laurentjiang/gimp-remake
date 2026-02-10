@@ -107,6 +107,7 @@ class MainWindow : public QMainWindow {
 
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
     EventBus::SubscriptionId m_colorChangedSubscription = 0;
+    EventBus::SubscriptionId m_layerSelectionSubscription = 0;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

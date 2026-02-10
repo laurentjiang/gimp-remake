@@ -111,7 +111,7 @@ if(WIN32)
 endif()
 
 find_package(unofficial-skia CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg OpenGL OpenGLWidgets REQUIRED)
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
@@ -121,6 +121,8 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Svg
+    Qt6::OpenGL
+    Qt6::OpenGLWidgets
     ${OpenCV_LIBS}
 )
 

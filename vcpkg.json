@@ -12,7 +12,8 @@
         "gui",
         "widgets",
         "png",
-        "jpeg"
+        "jpeg",
+        "opengl"
       ]
     },
     "qtsvg",

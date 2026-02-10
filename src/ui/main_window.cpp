@@ -160,13 +160,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         [this](const LayerSelectionChangedEvent& event) { m_activeLayerIndex = event.layerIndex; });
 
     // Subscribe to selection changes to update menu action states
+    // Only Cut requires a selection; Copy can copy entire layer when no selection
     m_selectionChangedSubscription = EventBus::instance().subscribe<SelectionChangedEvent>(
         [this](const SelectionChangedEvent& event) {
             if (m_cutAction) {
                 m_cutAction->setEnabled(event.hasSelection);
-            }
-            if (m_copyAction) {
-                m_copyAction->setEnabled(event.hasSelection);
             }
         });
 
@@ -225,9 +223,8 @@ void MainWindow::setupMenuBar()
     m_copyAction = editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
     m_pasteAction = editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
 
-    // Initially disable cut/copy (no selection), paste depends on clipboard
+    // Cut requires selection; Copy always works (copies entire layer if no selection)
     m_cutAction->setEnabled(false);
-    m_copyAction->setEnabled(false);
     m_pasteAction->setEnabled(ClipboardManager::instance().hasImage());
 
     auto* selectMenu = menuBar()->addMenu("&Select");

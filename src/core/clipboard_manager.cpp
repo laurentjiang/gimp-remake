@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 
 namespace gimp {
 
@@ -74,9 +75,20 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
+    // Use provided layer or fall back to first layer
+    auto sourceLayer = layer ? layer : document->layers()[0];
+    const int layerWidth = sourceLayer->width();
+    const int layerHeight = sourceLayer->height();
+    const auto& data = sourceLayer->data();
+
     const auto& selectionPath = SelectionManager::instance().selectionPath();
+
+    // If no selection, copy entire layer (GIMP behavior)
     if (selectionPath.isEmpty()) {
-        return false;
+        QImage image(layerWidth, layerHeight, QImage::Format_RGBA8888);
+        std::memcpy(image.bits(), data.data(), data.size());
+        setImageInternal(image);
+        return true;
     }
 
     int regionX = 0;
@@ -93,11 +105,6 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document,
                          regionHeight)) {
         return false;
     }
-
-    // Use provided layer or fall back to first layer
-    auto sourceLayer = layer ? layer : document->layers()[0];
-    const int layerWidth = sourceLayer->width();
-    const auto& data = sourceLayer->data();
 
     QImage image(regionWidth, regionHeight, QImage::Format_RGBA8888);
     image.fill(Qt::transparent);
@@ -135,17 +142,22 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
                                     const std::shared_ptr<Layer>& layer,
                                     CommandBus* commandBus)
 {
-    if (!copySelection(document, layer)) {
+    if (!document || document->layers().count() == 0) {
         return false;
     }
 
-    if (!document || document->layers().count() == 0) {
+    // Cut requires a selection (unlike Copy which copies entire layer)
+    const auto& selectionPath = SelectionManager::instance().selectionPath();
+    if (selectionPath.isEmpty()) {
+        return false;
+    }
+
+    if (!copySelection(document, layer)) {
         return false;
     }
 
     // Use provided layer or fall back to first layer
     auto targetLayer = layer ? layer : document->layers()[0];
-    const auto& selectionPath = SelectionManager::instance().selectionPath();
 
     int regionX = 0;
     int regionY = 0;

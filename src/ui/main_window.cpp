@@ -739,6 +739,15 @@ void MainWindow::onCut()
         return;
     }
 
+    // Commit any active floating buffer before cut
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
     if (ClipboardManager::instance().cutSelection(m_document, nullptr, m_commandBus.get())) {
         m_canvasWidget->update();
         statusBar()->showMessage("Cut to clipboard", 1000);
@@ -752,6 +761,15 @@ void MainWindow::onCopy()
     if (!m_document || m_document->layers().count() == 0) {
         statusBar()->showMessage("No layer to copy from", 2000);
         return;
+    }
+
+    // Commit any active floating buffer before copy
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
     }
 
     if (ClipboardManager::instance().copySelection(m_document, nullptr)) {

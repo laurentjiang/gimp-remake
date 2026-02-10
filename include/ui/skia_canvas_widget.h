@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QImage>
+#include <QPixmap>
 #include <QPointF>
 #include <QTimer>
 #include <QWidget>
@@ -113,6 +114,11 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Invalidates the cached render, triggering re-render on next paint. */
     void invalidateCache();
 
+    /*! @brief Clears the move override flag.
+     *  Used when an external action (like undo) cancels a pending move.
+     */
+    void clearMoveOverride() { m_moveOverride = false; }
+
   signals:
     /*! @brief Emitted when the viewport changes (pan or zoom).
      *  @param viewport The new viewport state.
@@ -214,6 +220,12 @@ class SkiaCanvasWidget : public QWidget {
     /*! @brief Updates marching ants animation for selections. */
     void advanceSelectionAnimation();
 
+    /*! @brief Helper to draw checkerboard pattern in a given rect.
+     *  @param painter The painter to draw with.
+     *  @param rect The rectangle to fill with checkerboard.
+     */
+    void drawCheckerboard(QPainter& painter, const QRectF& rect);
+
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
@@ -223,12 +235,15 @@ class SkiaCanvasWidget : public QWidget {
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;
-    bool m_isStroking = false;  ///< True during active brush stroke.
+    bool m_isStroking = false;    ///< True during active brush stroke.
+    bool m_moveOverride = false;  ///< True when temporarily using MoveTool for Ctrl+Alt drag.
     QPoint m_lastMousePos;
     QPoint m_panStartPos;
 
     QTimer m_selectionTimer;
     float m_marchingOffset = 0.0F;
+
+    QPixmap m_checkerboardTile;  ///< Cached checkerboard tile for transparency display.
 };
 
 }  // namespace gimp

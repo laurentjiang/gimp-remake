@@ -53,8 +53,8 @@ void GradientTool::beginStroke(const ToolInputEvent& event)
         return;
     }
 
-    auto layer = doc->layers()[0];
-    if (!layer) {
+    activeLayer_ = doc->activeLayer();
+    if (!activeLayer_) {
         return;
     }
 
@@ -65,7 +65,7 @@ void GradientTool::beginStroke(const ToolInputEvent& event)
     endY_ = event.canvasPos.y();
 
     // Capture before state
-    command_ = std::make_shared<DrawCommand>(layer, 0, 0, layer->width(), layer->height());
+    command_ = std::make_shared<DrawCommand>(activeLayer_, 0, 0, activeLayer_->width(), activeLayer_->height());
     command_->captureBeforeState();
 }
 
@@ -79,16 +79,17 @@ void GradientTool::continueStroke(const ToolInputEvent& event)
 void GradientTool::endStroke(const ToolInputEvent& event)
 {
     auto doc = document();
-    if (!doc || doc->layers().count() == 0 || !command_) {
+    if (!doc || !activeLayer_ || !command_) {
         beforeState_.clear();
         command_ = nullptr;
+        activeLayer_ = nullptr;
         return;
     }
 
-    auto layer = doc->layers()[0];
-    if (!layer || !commandBus_) {
+    if (!commandBus_) {
         beforeState_.clear();
         command_ = nullptr;
+        activeLayer_ = nullptr;
         return;
     }
 
@@ -108,9 +109,9 @@ void GradientTool::endStroke(const ToolInputEvent& event)
 
     // Apply gradient
     if (mode_ == GradientMode::Linear) {
-        applyLinearGradient(layer, foregroundColor, endColor);
+        applyLinearGradient(activeLayer_, foregroundColor, endColor);
     } else {
-        applyRadialGradient(layer, foregroundColor, endColor);
+        applyRadialGradient(activeLayer_, foregroundColor, endColor);
     }
 
     // Capture after state and dispatch command
@@ -119,12 +120,14 @@ void GradientTool::endStroke(const ToolInputEvent& event)
 
     beforeState_.clear();
     command_ = nullptr;
+    activeLayer_ = nullptr;
 }
 
 void GradientTool::cancelStroke()
 {
     beforeState_.clear();
     command_ = nullptr;
+    activeLayer_ = nullptr;
 }
 
 void GradientTool::applyLinearGradient(const std::shared_ptr<Layer>& layer,

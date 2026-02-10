@@ -56,6 +56,12 @@ class CommandPalette : public QDialog {
      *  @param command The command to register.
      */
     void registerCommand(const PaletteCommand& command);
+    /*! @brief Updates the action callback for a command id.
+     *  @param id Command id to update.
+     *  @param action Callback to execute.
+     *  @return True if the command was found and updated.
+     */
+    bool setCommandAction(const std::string& id, std::function<void()> action);
     /*! @brief Shows the command palette dialog. */
     void show();
 

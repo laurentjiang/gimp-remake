@@ -72,7 +72,6 @@ void ToastManager::showToast(const LogMessage& message)
 void ToastManager::clearAll()
 {
     for (auto* toast : m_toasts) {
-        toast->disconnect();
         toast->close();  // will delete because of WA_DeleteOnClose
     }
     m_toasts.clear();
@@ -123,8 +122,6 @@ void ToastManager::onLogMessageReady(const LogMessage& message)
 
 void ToastManager::onToastDismissed(ToastNotification* toast)
 {
-    // Disconnect all signals from this toast to avoid QObject warnings
-    toast->disconnect();
     removeToast(toast);
     emit toastDismissed(toast->message());
 }

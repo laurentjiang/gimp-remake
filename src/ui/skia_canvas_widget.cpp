@@ -165,6 +165,14 @@ void SkiaCanvasWidget::invalidateCache()
     update();
 }
 
+void SkiaCanvasWidget::setDocument(std::shared_ptr<Document> document)
+{
+    m_document = std::move(document);
+    m_cachedImage = QImage();
+    m_cacheValid = false;
+    update();
+}
+
 void SkiaCanvasWidget::renderIfNeeded()
 {
     if (m_cacheValid || !m_document || !m_renderer) {

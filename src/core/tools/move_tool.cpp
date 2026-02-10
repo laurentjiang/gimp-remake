@@ -207,6 +207,25 @@ void MoveTool::commitMove()
         return;
     }
 
+    // Validate that targetLayer_ is still in the document's layer stack
+    // (user may have deleted or changed layers during the move operation)
+    if (document_) {
+        const auto& layers = document_->layers();
+        bool layerValid = false;
+        for (const auto& layer : layers) {
+            if (layer == targetLayer_) {
+                layerValid = true;
+                break;
+            }
+        }
+        if (!layerValid) {
+            spdlog::warn("[MoveTool] Target layer no longer exists in document, cancelling move");
+            clearFloatingState();
+            modifierOverride_ = false;
+            return;
+        }
+    }
+
     // Determine effective copy mode: modifier override takes precedence over UI setting
     bool effectiveCopyMode = modifierOverride_ ? modifierCopyMode_ : (moveMode_ == MoveMode::Copy);
 

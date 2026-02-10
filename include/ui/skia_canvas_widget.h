@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "core/event_bus.h"
+
 #include <QImage>
 #include <QPixmap>
 #include <QPointF>
@@ -244,6 +246,10 @@ class SkiaCanvasWidget : public QWidget {
     float m_marchingOffset = 0.0F;
 
     QPixmap m_checkerboardTile;  ///< Cached checkerboard tile for transparency display.
+
+    // Event subscriptions for layer changes
+    EventBus::SubscriptionId m_layerStackSub = 0;      ///< Layer stack change subscription.
+    EventBus::SubscriptionId m_layerSelectionSub = 0;  ///< Layer selection change subscription.
 };
 
 }  // namespace gimp

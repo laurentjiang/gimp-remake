@@ -11,6 +11,8 @@
 #include "core/commands/draw_command.h"
 #include "core/commands/paste_command.h"
 #include "core/document.h"
+#include "core/event_bus.h"
+#include "core/events.h"
 #include "core/layer.h"
 #include "core/selection_manager.h"
 
@@ -276,6 +278,9 @@ bool ClipboardManager::pasteToDocument(const std::shared_ptr<Document>& document
     QPainterPath selectionRect;
     selectionRect.addRect(QRectF(destX, destY, pasteWidth, pasteHeight));
     SelectionManager::instance().applySelection(selectionRect, SelectionMode::Replace);
+
+    // Notify UI about new selection around pasted content
+    EventBus::instance().publish(SelectionChangedEvent{true, "paste"});
 
     return true;
 }

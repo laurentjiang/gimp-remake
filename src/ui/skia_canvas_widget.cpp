@@ -63,9 +63,19 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     connect(
         &m_selectionTimer, &QTimer::timeout, this, &SkiaCanvasWidget::advanceSelectionAnimation);
     m_selectionTimer.start();
+
+    // Subscribe to layer events to refresh canvas when layers change
+    m_layerStackSub = EventBus::instance().subscribe<LayerStackChangedEvent>(
+        [this](const LayerStackChangedEvent& /*event*/) { invalidateCache(); });
+    m_layerSelectionSub = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+        [this](const LayerSelectionChangedEvent& /*event*/) { invalidateCache(); });
 }
 
-SkiaCanvasWidget::~SkiaCanvasWidget() = default;
+SkiaCanvasWidget::~SkiaCanvasWidget()
+{
+    EventBus::instance().unsubscribe(m_layerStackSub);
+    EventBus::instance().unsubscribe(m_layerSelectionSub);
+}
 
 QPointF SkiaCanvasWidget::screenToCanvas(const QPoint& screenPos) const
 {
@@ -189,35 +199,27 @@ void SkiaCanvasWidget::renderIfNeeded()
 
 void SkiaCanvasWidget::updateCacheFromLayer()
 {
-    if (!m_document || m_document->layers().count() == 0) {
+    // Use full compositor to properly composite all visible layers.
+    // This ensures multi-layer documents render correctly during strokes.
+    if (!m_document || !m_renderer || m_document->layers().count() == 0) {
         return;
     }
 
-    auto layer = m_document->activeLayer();
-    if (!layer) {
+    m_renderer->render(*m_document);
+
+    auto skImage = m_renderer->get_result();
+    if (!skImage) {
         return;
     }
-    const int w = layer->width();
-    const int h = layer->height();
 
-    if (m_cachedImage.isNull() || m_cachedImage.width() != w || m_cachedImage.height() != h) {
-        m_cachedImage = QImage(w, h, QImage::Format_ARGB32_Premultiplied);
+    const SkImageInfo info = skImage->imageInfo();
+    if (m_cachedImage.isNull() || m_cachedImage.width() != info.width() ||
+        m_cachedImage.height() != info.height()) {
+        m_cachedImage = QImage(info.width(), info.height(), QImage::Format_ARGB32_Premultiplied);
     }
 
-    // Convert from RGBA (layer storage) to BGRA (QImage Format_ARGB32 on little-endian)
-    const auto& layerData = layer->data();
-    if (layerData.size() == static_cast<size_t>(w) * static_cast<size_t>(h) * 4U) {
-        std::uint8_t* dest = m_cachedImage.bits();
-        const std::uint8_t* src = layerData.data();
-        const size_t pixelCount = static_cast<size_t>(w) * static_cast<size_t>(h);
-
-        for (size_t i = 0; i < pixelCount; ++i) {
-            // RGBA -> BGRA: swap R and B channels
-            dest[i * 4 + 0] = src[i * 4 + 2];  // B <- B from src
-            dest[i * 4 + 1] = src[i * 4 + 1];  // G <- G
-            dest[i * 4 + 2] = src[i * 4 + 0];  // R <- R from src
-            dest[i * 4 + 3] = src[i * 4 + 3];  // A <- A
-        }
+    const SkPixmap pixmap(info, m_cachedImage.bits(), m_cachedImage.bytesPerLine());
+    if (skImage->readPixels(pixmap, 0, 0)) {
         m_cacheValid = true;
     }
 }

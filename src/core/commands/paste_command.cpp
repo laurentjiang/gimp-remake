@@ -8,6 +8,8 @@
 #include "core/commands/paste_command.h"
 
 #include "core/document.h"
+#include "core/event_bus.h"
+#include "core/events.h"
 #include "core/layer.h"
 
 #include <algorithm>
@@ -60,6 +62,11 @@ void PasteCommand::apply()
         document_->layers().insertLayer(insertIndex, layer_);
         document_->setActiveLayerIndex(insertIndex);
 
+        // Notify UI about layer stack and selection changes
+        EventBus::instance().publish(
+            LayerStackChangedEvent{LayerStackChangedEvent::Action::Added, layer_});
+        EventBus::instance().publish(LayerSelectionChangedEvent{nullptr, layer_, insertIndex});
+
         createdLayer_ = true;
         captured_ = false;
     }
@@ -87,6 +94,11 @@ void PasteCommand::undo()
 
     if (createdLayer_ && document_) {
         document_->removeLayer(layer_);
+
+        // Notify UI about layer removal
+        EventBus::instance().publish(
+            LayerStackChangedEvent{LayerStackChangedEvent::Action::Removed, layer_});
+
         layer_.reset();
         createdLayer_ = false;
         captured_ = false;

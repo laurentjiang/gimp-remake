@@ -57,6 +57,8 @@ class LayersPanel : public QWidget {
   private slots:
     void onItemSelectionChanged();
     void onItemClicked(QListWidgetItem* item);
+    void onItemDoubleClicked(QListWidgetItem* item);
+    void onItemChanged(QListWidgetItem* item);
     void onOpacityChanged(int value);
     void onAddLayerClicked();
     void onRemoveLayerClicked();
@@ -79,6 +81,7 @@ class LayersPanel : public QWidget {
 
     std::shared_ptr<Document> document_;
     EventBus::SubscriptionId stackChangedSub_ = 0;
+    bool isEditing_ = false;  ///< Track if an item is being edited.
 };
 
 }  // namespace gimp

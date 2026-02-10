@@ -64,6 +64,9 @@ void LayersPanel::setupUi()
     connect(
         layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
     connect(layerList_, &QListWidget::itemClicked, this, &LayersPanel::onItemClicked);
+    connect(
+        layerList_, &QListWidget::itemDoubleClicked, this, &LayersPanel::onItemDoubleClicked);
+    connect(layerList_, &QListWidget::itemChanged, this, &LayersPanel::onItemChanged);
     connect(opacitySlider_, &QSlider::valueChanged, this, &LayersPanel::onOpacityChanged);
 
     auto* buttonLayout = new QHBoxLayout();
@@ -131,6 +134,7 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
     }
 
     item->setText(text);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
 
     if (layer->visible()) {
         item->setIcon(QIcon(":/icons/eye-visible.svg"));
@@ -219,6 +223,64 @@ void LayersPanel::onItemClicked(QListWidgetItem* item)
                     LayerPropertyChangedEvent{layers[i], "visible"});
                 break;
             }
+        }
+    }
+}
+
+void LayersPanel::onItemDoubleClicked(QListWidgetItem* item)
+{
+    if (!item || !document_) {
+        return;
+    }
+
+    // Check if double-click was in the icon area - if so, ignore (handled by click)
+    QPoint clickPos = layerList_->mapFromGlobal(QCursor::pos());
+    QRect itemRect = layerList_->visualItemRect(item);
+    int iconWidth = 24;
+
+    if (clickPos.x() < itemRect.x() + iconWidth) {
+        // Double-click on icon - don't start editing
+        return;
+    }
+
+    // Get the layer and set item text to just the name for editing
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            isEditing_ = true;
+            item->setText(QString::fromStdString(layers[i]->name()));
+            layerList_->editItem(item);
+            break;
+        }
+    }
+}
+
+void LayersPanel::onItemChanged(QListWidgetItem* item)
+{
+    if (!isEditing_ || !item || !document_) {
+        return;
+    }
+
+    isEditing_ = false;
+
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            QString newName = item->text().trimmed();
+            if (!newName.isEmpty()) {
+                layers[i]->setName(newName.toStdString());
+            }
+            // Restore full display text with opacity info
+            updateLayerItem(item, layers[i]);
+            // NOLINTNEXTLINE(modernize-use-designated-initializers)
+            EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "name"});
+            break;
         }
     }
 }

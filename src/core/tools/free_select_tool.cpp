@@ -7,23 +7,13 @@
 
 #include "core/tools/free_select_tool.h"
 
+#include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/selection_manager.h"
 
 #include <cmath>
 
 namespace gimp {
-
-SelectionMode FreeSelectTool::resolveSelectionMode(Qt::KeyboardModifiers modifiers)
-{
-    if ((modifiers & Qt::ControlModifier) != 0) {
-        if ((modifiers & Qt::AltModifier) != 0) {
-            return SelectionMode::Subtract;
-        }
-        return SelectionMode::Add;
-    }
-    return SelectionMode::Replace;
-}
 
 QPainterPath FreeSelectTool::buildPath(bool close) const
 {
@@ -50,6 +40,9 @@ void FreeSelectTool::beginStroke(const ToolInputEvent& event)
     points_.clear();
     points_.emplace_back(event.canvasPos);
     currentMode_ = resolveSelectionMode(event.modifiers);
+
+    // Begin selection command to capture before state
+    beginSelectionCommand("Free Select");
 
     auto previewPath = buildPath(false);
     SelectionManager::instance().setPreview(previewPath, currentMode_);
@@ -92,7 +85,11 @@ void FreeSelectTool::endStroke(const ToolInputEvent& event)
     if (points_.size() >= 3) {
         auto path = buildPath(true);
         SelectionManager::instance().applySelection(path, currentMode_);
+
+        // Commit the selection command
+        commitSelectionCommand();
     }
+    pendingCommand_.reset();
 
     SelectionManager::instance().clearPreview();
     points_.clear();
@@ -100,7 +97,7 @@ void FreeSelectTool::endStroke(const ToolInputEvent& event)
 
 void FreeSelectTool::cancelStroke()
 {
-    SelectionManager::instance().clearPreview();
+    cancelSelectionOperation();
     points_.clear();
 }
 

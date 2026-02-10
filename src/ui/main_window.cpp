@@ -190,10 +190,11 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    editMenu->addSeparator();
-    editMenu->addAction("Cu&t", QKeySequence::Cut, []() {});
-    editMenu->addAction("&Copy", QKeySequence::Copy, []() {});
-    editMenu->addAction("&Paste", QKeySequence::Paste, []() {});
+    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
+    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
+    // active layer management, floating selection concept, and LayerStack
+    // operations (activeLayer, moveLayer, insertAt) to work correctly.
+    // See ClipboardManager for the implementation stub.
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -421,6 +422,19 @@ void MainWindow::positionDebugHud()
 
 void MainWindow::onUndo()
 {
+    // If there's an active floating buffer (mid-move), cancel it as the undo action
+    // Don't also undo the previous command - the cancel IS the undo
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->cancelFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+            m_canvasWidget->invalidateCache();
+        }
+        statusBar()->showMessage("Move cancelled", 2000);
+        return;  // Cancel was the undo, don't undo again
+    }
+
     if (m_historyManager && m_historyManager->undo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();
@@ -431,6 +445,16 @@ void MainWindow::onUndo()
 
 void MainWindow::onRedo()
 {
+    // If there's an active floating buffer, commit it before redo
+    // (redo should apply a committed command, not interfere with active move)
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
     if (m_historyManager && m_historyManager->redo()) {
         if (m_canvasWidget != nullptr) {
             m_canvasWidget->invalidateCache();

@@ -15,6 +15,9 @@
 #include "core/tool.h"
 #include "core/tool_factory.h"
 #include "core/tool_registry.h"
+#include "core/tools/ellipse_selection_tool.h"
+#include "core/tools/move_tool.h"
+#include "core/tools/rect_selection_tool.h"
 #include "render/skia_renderer.h"
 
 #include <QApplication>
@@ -22,6 +25,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPen>
 #include <QWheelEvent>
 
 #include <algorithm>
@@ -45,6 +49,15 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
     invalidateCache();
+
+    // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
+    constexpr int kTileSize = 8;
+    m_checkerboardTile = QPixmap(kTileSize * 2, kTileSize * 2);
+    QPainter tilePainter(&m_checkerboardTile);
+    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(204, 204, 204));
+    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(255, 255, 255));
+    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(255, 255, 255));
+    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(204, 204, 204));
 
     m_selectionTimer.setInterval(80);
     connect(
@@ -231,6 +244,10 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
                             m_viewport.panY,
                             static_cast<float>(m_cachedImage.width()) * m_viewport.zoomLevel,
                             static_cast<float>(m_cachedImage.height()) * m_viewport.zoomLevel);
+
+    // Draw checkerboard pattern for transparency visualization
+    drawCheckerboard(painter, targetRect);
+
     painter.drawImage(targetRect, m_cachedImage);
 
     if (m_viewport.zoomLevel >= 8.0F) {
@@ -251,13 +268,88 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
         }
     }
 
+    // Render floating buffer for selection move preview
+    // Always check MoveTool for active floating selection, regardless of current tool
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        QRect floatBounds = moveTool->floatingRect();
+        QPoint floatOffset = moveTool->floatingOffset();
+        QSizeF floatScale = moveTool->floatingScale();
+
+        if (!floatBounds.isEmpty()) {
+            // Clip to document bounds - floating buffer should appear behind gray background
+            painter.save();
+            painter.setClipRect(targetRect);
+
+            // Get scaled buffer if scaling, otherwise use original
+            std::vector<std::uint8_t> scaledBuf;
+            const std::uint8_t* bufData = nullptr;
+            int bufWidth = 0;
+            int bufHeight = 0;
+
+            if (moveTool->isScaling() || std::abs(floatScale.width() - 1.0) > 0.001 ||
+                std::abs(floatScale.height() - 1.0) > 0.001) {
+                scaledBuf = moveTool->getScaledBuffer();
+                QSize scaledSize = moveTool->getScaledSize();
+                bufData = scaledBuf.data();
+                bufWidth = scaledSize.width();
+                bufHeight = scaledSize.height();
+            } else {
+                const auto* floatBuf = moveTool->floatingBuffer();
+                if (floatBuf && !floatBuf->empty()) {
+                    bufData = floatBuf->data();
+                    bufWidth = floatBounds.width();
+                    bufHeight = floatBounds.height();
+                }
+            }
+
+            if (bufData && bufWidth > 0 && bufHeight > 0) {
+                // Create QImage from buffer (RGBA format)
+                QImage floatingImage(
+                    bufData, bufWidth, bufHeight, bufWidth * 4, QImage::Format_RGBA8888);
+
+                // Calculate destination rect with offset applied
+                float destX =
+                    m_viewport.panX +
+                    static_cast<float>(floatBounds.x() + floatOffset.x()) * m_viewport.zoomLevel;
+                float destY =
+                    m_viewport.panY +
+                    static_cast<float>(floatBounds.y() + floatOffset.y()) * m_viewport.zoomLevel;
+                float destW = static_cast<float>(bufWidth) * m_viewport.zoomLevel;
+                float destH = static_cast<float>(bufHeight) * m_viewport.zoomLevel;
+
+                QRectF floatingRect(destX, destY, destW, destH);
+                painter.drawImage(floatingRect, floatingImage);
+            }
+
+            painter.restore();
+        }
+    }
+
     const QPainterPath selectionPath = SelectionManager::instance().displayPath();
     if (!selectionPath.isEmpty()) {
         painter.save();
 
+        // Clip marching ants to document bounds - selection should appear behind gray background
+        painter.setClipRect(targetRect);
+
         QTransform transform;
         transform.translate(m_viewport.panX, m_viewport.panY);
         transform.scale(m_viewport.zoomLevel, m_viewport.zoomLevel);
+
+        // If moving/scaling selection contents, apply the transform
+        if (moveTool && moveTool->isMovingSelection()) {
+            QPoint moveOffset = moveTool->floatingOffset();
+            QSizeF scale = moveTool->floatingScale();
+            // Use full selection bounds (not clipped sourceRect) for marching ants
+            QRectF bounds = moveTool->selectionBounds();
+
+            // Transform: translate to position, scale from top-left
+            transform.translate(bounds.x() + moveOffset.x(), bounds.y() + moveOffset.y());
+            transform.scale(scale.width(), scale.height());
+            transform.translate(-bounds.x(), -bounds.y());
+        }
+
         painter.setTransform(transform, true);
         painter.setRenderHint(QPainter::Antialiasing, true);
 
@@ -286,6 +378,90 @@ void SkiaCanvasWidget::paintEvent(QPaintEvent* event)
 
         painter.restore();
     }
+
+    // Draw transform handles:
+    // - When MoveTool has floating buffer: use its getHandleRects() (for content transform)
+    // - When selection tool is in Adjusting phase: use its getHandleRects() (for outline resize)
+    std::vector<QRectF> handleRectsF;
+    if (moveTool && moveTool->isMovingSelection()) {
+        // MoveTool handles for floating buffer transform
+        for (const auto& r : moveTool->getHandleRects()) {
+            handleRectsF.emplace_back(r);
+        }
+    } else {
+        // Check if current tool is a selection tool in Adjusting phase
+        Tool* currentTool = activeTool();
+        if (auto* rectTool = dynamic_cast<RectSelectTool*>(currentTool)) {
+            if (rectTool->phase() == SelectionPhase::Adjusting) {
+                auto handles = rectTool->getHandleRects(m_viewport.zoomLevel);
+                handleRectsF.assign(handles.begin(), handles.end());
+            }
+        } else if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(currentTool)) {
+            if (ellipseTool->phase() == EllipseSelectionPhase::Adjusting) {
+                auto handles = ellipseTool->getHandleRects(m_viewport.zoomLevel);
+                handleRectsF.assign(handles.begin(), handles.end());
+            }
+        }
+    }
+
+    if (!handleRectsF.empty()) {
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing, false);
+
+        // Transform handle rects to screen coordinates
+        for (const auto& handleRect : handleRectsF) {
+            float screenX =
+                m_viewport.panX + static_cast<float>(handleRect.x()) * m_viewport.zoomLevel;
+            float screenY =
+                m_viewport.panY + static_cast<float>(handleRect.y()) * m_viewport.zoomLevel;
+            float screenW = static_cast<float>(handleRect.width()) * m_viewport.zoomLevel;
+            float screenH = static_cast<float>(handleRect.height()) * m_viewport.zoomLevel;
+
+            // Ensure minimum visible size
+            screenW = std::max(6.0F, screenW);
+            screenH = std::max(6.0F, screenH);
+
+            QRectF screenRect(screenX, screenY, screenW, screenH);
+
+            // Draw handle: white fill with black border
+            painter.setPen(QPen(Qt::black, 1));
+            painter.setBrush(Qt::white);
+            painter.drawRect(screenRect);
+        }
+
+        painter.restore();
+    }
+
+    const auto endTime = std::chrono::high_resolution_clock::now();
+    const std::chrono::duration<double, std::milli> frameDuration = endTime - startTime;
+    emit framePainted(frameDuration.count());
+}
+
+void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
+{
+    // Clip to the visible intersection of the canvas rect and widget
+    QRectF visibleRect = rect.intersected(QRectF(this->rect()));
+    if (visibleRect.isEmpty()) {
+        return;
+    }
+
+    // Save painter state
+    painter.save();
+    painter.setClipRect(visibleRect);
+
+    // Calculate tile size scaled by zoom
+    constexpr int kBaseTileSize = 8;
+    int scaledTileSize = std::max(
+        4, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 4 for visibility
+
+    // Scale the checkerboard tile to match zoom
+    QPixmap scaledTile =
+        m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
+
+    // Draw tiled checkerboard
+    painter.drawTiledPixmap(visibleRect.toRect(), scaledTile);
+
+    painter.restore();
 }
 
 void SkiaCanvasWidget::advanceSelectionAnimation()
@@ -379,6 +555,31 @@ void SkiaCanvasWidget::wheelEvent(QWheelEvent* event)
 
 void SkiaCanvasWidget::keyPressEvent(QKeyEvent* event)
 {
+    // Forward to MoveTool if there's an active floating selection (move override or active float)
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        if (moveTool->onKeyPress(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            // If floating buffer was committed, clear move override and refresh
+            if (!moveTool->isMovingSelection()) {
+                m_moveOverride = false;
+                invalidateCache();
+                emit canvasModified();
+            }
+            event->accept();
+            update();
+            return;
+        }
+    }
+
+    // Forward to active tool if in Active state
+    Tool* tool = activeTool();
+    if (tool && tool->state() == ToolState::Active) {
+        if (tool->onKeyPress(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            event->accept();
+            return;
+        }
+    }
+
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
         m_spaceHeld = true;
         if (!m_isPanning) {
@@ -413,6 +614,15 @@ void SkiaCanvasWidget::keyPressEvent(QKeyEvent* event)
 
 void SkiaCanvasWidget::keyReleaseEvent(QKeyEvent* event)
 {
+    // Forward to active tool if in Active state
+    Tool* tool = activeTool();
+    if (tool && tool->state() == ToolState::Active) {
+        if (tool->onKeyRelease(static_cast<Qt::Key>(event->key()), event->modifiers())) {
+            event->accept();
+            return;
+        }
+    }
+
     if (event->key() == Qt::Key_Space && !event->isAutoRepeat()) {
         m_spaceHeld = false;
         if (!m_isPanning) {
@@ -500,6 +710,99 @@ void SkiaCanvasWidget::dispatchToolEvent(QMouseEvent* event, bool isPress, bool 
     toolEvent.buttons = event->buttons();
     toolEvent.modifiers = event->modifiers();
     toolEvent.pressure = 1.0F;
+    toolEvent.zoomLevel = m_viewport.zoomLevel;
+
+    // If move override is active, route ALL events to MoveTool (including press for handles)
+    if (m_moveOverride) {
+        auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+        if (moveTool) {
+            bool handled = false;
+            if (isPress) {
+                m_isStroking = true;
+                handled = moveTool->onMousePress(toolEvent);
+                if (handled) {
+                    update();
+                }
+            } else if (isRelease) {
+                handled = moveTool->onMouseRelease(toolEvent);
+                m_isStroking = false;
+                // Only clear move override if the move actually committed
+                if (!moveTool->isMovingSelection()) {
+                    m_moveOverride = false;
+                }
+                if (handled) {
+                    invalidateCache();
+                    emit canvasModified();
+                }
+            } else {
+                handled = moveTool->onMouseMove(toolEvent);
+                if (handled || moveTool->isMovingSelection()) {
+                    update();
+                }
+            }
+            return;
+        }
+    }
+
+    // Check for Ctrl+Alt move override on press
+    if (isPress) {
+        // Auto-commit any pending move operation before starting new stroke,
+        // but only if clicking OUTSIDE the transformed selection bounds.
+        // Clicking inside the selection continues dragging; clicking on handles scales.
+        auto* pendingMoveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+        if (pendingMoveTool && pendingMoveTool->isMovingSelection()) {
+            QRectF txBounds = pendingMoveTool->transformedBounds();
+            bool insideBounds = txBounds.contains(QPointF(toolEvent.canvasPos));
+            bool onHandle = pendingMoveTool->hitTestHandle(
+                                toolEvent.canvasPos, toolEvent.zoomLevel) != TransformHandle::None;
+
+            // Only commit if clicking outside the selection AND not on a handle
+            if (!insideBounds && !onHandle) {
+                pendingMoveTool->commitFloatingBuffer();
+                invalidateCache();
+            }
+        }
+        m_moveOverride = false;  // Reset on new stroke
+
+        const bool ctrlAlt = (event->modifiers() & Qt::ControlModifier) != 0 &&
+                             (event->modifiers() & Qt::AltModifier) != 0;
+        const bool shiftAlt = (event->modifiers() & Qt::ShiftModifier) != 0 &&
+                              (event->modifiers() & Qt::AltModifier) != 0;
+        const std::string& activeToolId = ToolRegistry::instance().getActiveTool();
+        const bool isSelectionTool = activeToolId.find("select") != std::string::npos;
+
+        // Ctrl+Alt = cut-move, Shift+Alt = copy-move
+        if ((ctrlAlt || shiftAlt) && isSelectionTool &&
+            SelectionManager::instance().hasSelection()) {
+            const QPainterPath& selPath = SelectionManager::instance().selectionPath();
+            if (selPath.contains(QPointF(toolEvent.canvasPos))) {
+                // Click inside selection with modifier - delegate to MoveTool
+                auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+                if (moveTool) {
+                    // Reset the current selection tool to Idle so it doesn't have stale state
+                    // when we return to it later. The reset() method calls cancelStroke internally.
+                    if (auto* rectTool = dynamic_cast<RectSelectTool*>(tool)) {
+                        rectTool->resetToIdle();
+                    } else if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(tool)) {
+                        ellipseTool->resetToIdle();
+                    }
+
+                    // Reset MoveTool to ensure it's in Idle state before starting
+                    moveTool->reset();
+                    moveTool->setCopyMode(shiftAlt);  // Shift+Alt = copy mode
+                    m_moveOverride = true;
+                    m_isStroking = true;
+                    bool handled = moveTool->onMousePress(toolEvent);
+                    if (handled) {
+                        updateCacheFromLayer();
+                        update();
+                        emit canvasModified();
+                    }
+                    return;
+                }
+            }
+        }
+    }
 
     bool handled = false;
     if (isPress) {

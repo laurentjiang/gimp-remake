@@ -27,6 +27,7 @@ struct ToolInputEvent {
     Qt::MouseButtons buttons;         ///< Currently pressed mouse buttons.
     Qt::KeyboardModifiers modifiers;  ///< Active keyboard modifiers.
     float pressure = 1.0F;            ///< Pen pressure (0.0 to 1.0), 1.0 for mouse.
+    float zoomLevel = 1.0F;           ///< Current canvas zoom level.
 };
 
 /**
@@ -121,6 +122,22 @@ class Tool {
      * @brief Resets the tool to idle state, canceling any in-progress operation.
      */
     void reset();
+
+    /**
+     * @brief Called when a key is pressed while tool is active.
+     * @param key The key that was pressed.
+     * @param modifiers Active keyboard modifiers.
+     * @return True if the event was handled.
+     */
+    virtual bool onKeyPress(Qt::Key key, Qt::KeyboardModifiers modifiers);
+
+    /**
+     * @brief Called when a key is released while tool is active.
+     * @param key The key that was released.
+     * @param modifiers Active keyboard modifiers.
+     * @return True if the event was handled.
+     */
+    virtual bool onKeyRelease(Qt::Key key, Qt::KeyboardModifiers modifiers);
 
   protected:
     /*! @brief Called when transitioning from Idle to Active.

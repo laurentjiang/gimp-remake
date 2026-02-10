@@ -187,20 +187,18 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         });
 
     // Subscribe to layer selection changes to track active layer
-    m_layerSelectionSubscription =
-        EventBus::instance().subscribe<LayerSelectionChangedEvent>(
-            [this](const LayerSelectionChangedEvent& event) {
-                if (m_document) {
-                    m_document->setActiveLayerIndex(event.layerIndex);
-                }
-            });
+    m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+        [this](const LayerSelectionChangedEvent& event) {
+            if (m_document) {
+                m_document->setActiveLayerIndex(event.layerIndex);
+            }
+        });
 
     // Subscribe to mouse position changes for cursor-aware paste
-    m_mousePositionSubscription =
-        EventBus::instance().subscribe<MousePositionChangedEvent>(
-            [this](const MousePositionChangedEvent& event) {
-                m_lastCanvasMousePos = QPoint(event.canvasX, event.canvasY);
-            });
+    m_mousePositionSubscription = EventBus::instance().subscribe<MousePositionChangedEvent>(
+        [this](const MousePositionChangedEvent& event) {
+            m_lastCanvasMousePos = QPoint(event.canvasX, event.canvasY);
+        });
 
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);

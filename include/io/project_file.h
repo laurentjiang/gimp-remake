@@ -145,11 +145,11 @@ class ProjectFile : public Document {
     [[nodiscard]] QPainterPath selectionPath() const override { return selection_; }
 
   private:
-    int m_width;                           ///< Canvas width.
-    int m_height;                          ///< Canvas height.
-    std::size_t m_activeLayerIndex = 0;    ///< Index of the active layer.
-    gimp::LayerStack m_layers;             ///< Layer stack.
-    QPainterPath selection_;               ///< Stored selection path.
+    int m_width;                         ///< Canvas width.
+    int m_height;                        ///< Canvas height.
+    std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
+    gimp::LayerStack m_layers;           ///< Layer stack.
+    QPainterPath selection_;             ///< Stored selection path.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

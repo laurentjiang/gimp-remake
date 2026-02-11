@@ -59,9 +59,7 @@ namespace {
 
 class SimpleDocument : public gimp::Document {
   public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h)
-    {
-    }
+    SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
 
     void resetLayerCounter() { m_layerCounter = 0; }
 

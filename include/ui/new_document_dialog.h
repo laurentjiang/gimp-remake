@@ -33,11 +33,11 @@ enum class BackgroundFill {
  * @brief Settings selected in the New Document dialog.
  */
 struct NewDocumentSettings {
-  int width = 800;  ///< Document width in pixels.
-  int height = 600;  ///< Document height in pixels.
-  double dpi = 72.0;  ///< Resolution in DPI.
-  BackgroundFill backgroundFill = BackgroundFill::White;  ///< Background fill option.
-  std::uint32_t backgroundColor = 0xFFFFFFFF;  ///< Background color in RGBA.
+    int width = 800;                                        ///< Document width in pixels.
+    int height = 600;                                       ///< Document height in pixels.
+    double dpi = 72.0;                                      ///< Resolution in DPI.
+    BackgroundFill backgroundFill = BackgroundFill::White;  ///< Background fill option.
+    std::uint32_t backgroundColor = 0xFFFFFFFF;             ///< Background color in RGBA.
 };
 
 /**
@@ -94,15 +94,15 @@ class NewDocumentDialog : public QDialog {
     static std::vector<QSize>& recentSizesStorage();
 
     std::uint32_t backgroundColor_ = 0xFFFFFFFF;  ///< Background color in RGBA.
-    bool updatingSize_ = false;  ///< Guards against recursive size updates.
+    bool updatingSize_ = false;                   ///< Guards against recursive size updates.
 
-    QComboBox* presetCombo_ = nullptr;  ///< Preset size selector.
-    QComboBox* recentCombo_ = nullptr;  ///< Recent size selector.
-    QSpinBox* widthSpin_ = nullptr;  ///< Width input.
-    QSpinBox* heightSpin_ = nullptr;  ///< Height input.
-    QDoubleSpinBox* dpiSpin_ = nullptr;  ///< DPI input.
+    QComboBox* presetCombo_ = nullptr;      ///< Preset size selector.
+    QComboBox* recentCombo_ = nullptr;      ///< Recent size selector.
+    QSpinBox* widthSpin_ = nullptr;         ///< Width input.
+    QSpinBox* heightSpin_ = nullptr;        ///< Height input.
+    QDoubleSpinBox* dpiSpin_ = nullptr;     ///< DPI input.
     QComboBox* backgroundCombo_ = nullptr;  ///< Background fill selector.
-    QFrame* backgroundSwatch_ = nullptr;  ///< Background color preview.
+    QFrame* backgroundSwatch_ = nullptr;    ///< Background color preview.
 };
 
 }  // namespace gimp

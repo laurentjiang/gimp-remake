@@ -26,9 +26,9 @@ class ProjectFile : public Document {
   public:
     /*!
      * @brief Constructs a new project with the given dimensions.
-    * @param w Canvas width in pixels.
-    * @param h Canvas height in pixels.
-    * @param dpi Resolution in DPI.
+     * @param w Canvas width in pixels.
+     * @param h Canvas height in pixels.
+     * @param dpi Resolution in DPI.
      */
     ProjectFile(int w, int h, double dpi = 72.0) : m_width(w), m_height(h), m_dpi(dpi) {}
 
@@ -162,9 +162,9 @@ class ProjectFile : public Document {
     [[nodiscard]] QPainterPath selectionPath() const override { return selection_; }
 
   private:
-    int m_width;                ///< Canvas width.
-    int m_height;               ///< Canvas height.
-    double m_dpi;               ///< Resolution in DPI.
+    int m_width;                         ///< Canvas width.
+    int m_height;                        ///< Canvas height.
+    double m_dpi;                        ///< Resolution in DPI.
     std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
     int m_layerCounter = 0;              ///< Counter for auto-incrementing layer names.
     gimp::LayerStack m_layers;           ///< Layer stack.

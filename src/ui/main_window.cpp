@@ -442,6 +442,7 @@ void MainWindow::createDocument(const NewDocumentSettings& settings)
     const int width = settings.width;
     const int height = settings.height;
     m_document = std::make_shared<ProjectFile>(width, height, settings.dpi);
+    auto simpleDoc = std::make_shared<SimpleDocument>(width, height);
 
     auto bg = simpleDoc->addLayer();
     bg->setName("Background");
@@ -457,12 +458,9 @@ void MainWindow::createDocument(const NewDocumentSettings& settings)
         default:
             fillColor = 0xFFFFFFFF;
             break;
+    }
     simpleDoc->resetLayerCounter();  // Next layer will be "Layer 1"
     m_document = simpleDoc;
-    auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
-    for (int i = 0; i < 800 * 600; ++i) {
-        pixels[i] = 0xFFFFFFFF;
-    }
 
     auto* pixels = reinterpret_cast<std::uint32_t*>(bg->data().data());
     const std::size_t pixelCount =
@@ -943,6 +941,8 @@ void MainWindow::onSaveProjectAs()
 
     m_projectPath = filePath;
     onSaveProject();
+}
+
 void MainWindow::onCut()
 {
     if (!m_document || m_document->layers().count() == 0) {

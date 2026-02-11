@@ -12,8 +12,8 @@
 #include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QHBoxLayout>
-#include <QVariant>
 #include <QVBoxLayout>
+#include <QVariant>
 
 #include <algorithm>
 
@@ -38,7 +38,8 @@ QString sizeLabel(const QSize& size)
 }  // namespace
 
 NewDocumentDialog::NewDocumentDialog(std::uint32_t backgroundColor, QWidget* parent)
-    : QDialog(parent), backgroundColor_(backgroundColor)
+    : QDialog(parent),
+      backgroundColor_(backgroundColor)
 {
     setWindowTitle("New Project");
     setModal(true);
@@ -47,6 +48,8 @@ NewDocumentDialog::NewDocumentDialog(std::uint32_t backgroundColor, QWidget* par
     populatePresets();
     populateRecent();
     updateBackgroundSwatch();
+
+    setMinimumSize(300, 250);
 }
 
 NewDocumentSettings NewDocumentDialog::settings() const
@@ -205,10 +208,18 @@ void NewDocumentDialog::setupUi()
 
     mainLayout->addWidget(buttonBox);
 
-    connect(presetCombo_, &QComboBox::currentIndexChanged, this, &NewDocumentDialog::onPresetChanged);
-    connect(recentCombo_, &QComboBox::currentIndexChanged, this, &NewDocumentDialog::onRecentChanged);
-    connect(widthSpin_, QOverload<int>::of(&QSpinBox::valueChanged), this, &NewDocumentDialog::onSizeEdited);
-    connect(heightSpin_, QOverload<int>::of(&QSpinBox::valueChanged), this, &NewDocumentDialog::onSizeEdited);
+    connect(
+        presetCombo_, &QComboBox::currentIndexChanged, this, &NewDocumentDialog::onPresetChanged);
+    connect(
+        recentCombo_, &QComboBox::currentIndexChanged, this, &NewDocumentDialog::onRecentChanged);
+    connect(widthSpin_,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            this,
+            &NewDocumentDialog::onSizeEdited);
+    connect(heightSpin_,
+            QOverload<int>::of(&QSpinBox::valueChanged),
+            this,
+            &NewDocumentDialog::onSizeEdited);
 }
 
 void NewDocumentDialog::populatePresets()

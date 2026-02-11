@@ -185,8 +185,6 @@ void SkiaCanvasWidget::invalidateCache()
 void SkiaCanvasWidget::setDocument(std::shared_ptr<Document> document)
 {
     m_document = std::move(document);
-    m_cachedImage = QImage();
-    m_cacheValid = false;
     update();
 }
 

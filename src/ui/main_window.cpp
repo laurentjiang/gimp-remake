@@ -42,6 +42,7 @@
 #include "ui/layers_panel.h"
 #include "ui/log_bridge.h"
 #include "ui/log_panel.h"
+#include "ui/new_document_dialog.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
 #include "ui/theme.h"
@@ -68,6 +69,25 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+
+namespace {
+
+constexpr int kDefaultWidth = 800;
+constexpr int kDefaultHeight = 600;
+constexpr double kDefaultDpi = 72.0;
+
+gimp::NewDocumentSettings defaultDocumentSettings()
+{
+    gimp::NewDocumentSettings settings;
+    settings.width = kDefaultWidth;
+    settings.height = kDefaultHeight;
+    settings.dpi = kDefaultDpi;
+    settings.backgroundFill = gimp::BackgroundFill::White;
+    settings.backgroundColor = 0xFFFFFFFF;
+    return settings;
+}
+
+}  // namespace
 
 namespace gimp {
 
@@ -153,11 +173,19 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setupMenuBar();
     setupDockWidgets();
     setupShortcuts();
-    createDocument();
+    createDocument(defaultDocumentSettings());
 
     if (m_commandPalette) {
         m_commandPalette->setHistoryManager(m_historyManager.get());
-        m_commandPalette->setCommandAction("file.new", [this]() { createDocument(); });
+        m_commandPalette->setCommandAction("file.new", [this]() { onNewProject(); });
+        m_commandPalette->setCommandAction("file.open", [this]() { onOpenProject(); });
+        m_commandPalette->setCommandAction("file.save", [this]() { onSaveProject(); });
+        m_commandPalette->setCommandAction("file.save_as", [this]() { onSaveProjectAs(); });
+    }
+
+    if (m_commandPalette) {
+        m_commandPalette->setHistoryManager(m_historyManager.get());
+        m_commandPalette->setCommandAction("file.new", [this]() { onNewProject(); });
         m_commandPalette->setCommandAction("file.open", [this]() { onOpenProject(); });
         m_commandPalette->setCommandAction("file.save", [this]() { onSaveProject(); });
         m_commandPalette->setCommandAction("file.save_as", [this]() { onSaveProjectAs(); });
@@ -177,7 +205,7 @@ MainWindow::~MainWindow()
 void MainWindow::setupMenuBar()
 {
     auto* fileMenu = menuBar()->addMenu("&File");
-    fileMenu->addAction("&New Project", QKeySequence::New, this, &MainWindow::createDocument);
+    fileMenu->addAction("&New Project", QKeySequence::New, this, &MainWindow::onNewProject);
     fileMenu->addAction("&Open Project...", QKeySequence::Open, this, &MainWindow::onOpenProject);
     fileMenu->addSeparator();
     fileMenu->addAction("&Save Project", QKeySequence::Save, this, &MainWindow::onSaveProject);
@@ -292,6 +320,11 @@ void MainWindow::setupDockWidgets()
     m_historyPanel = new HistoryPanel(this);
     m_colorChooserPanel = new ColorChooserPanel(this);
 
+    connect(m_colorChooserPanel,
+            &ColorChooserPanel::backgroundColorChanged,
+            this,
+            [](std::uint32_t color) { ToolFactory::instance().setBackgroundColor(color); });
+
     m_rightTabWidget = new QTabWidget(this);
     m_rightTabWidget->addTab(m_colorChooserPanel, "Colors");
     m_rightTabWidget->addTab(m_layersPanel, "Layers");
@@ -339,18 +372,34 @@ void MainWindow::setupShortcuts()
             &MainWindow::onResetColors);
 }
 
-void MainWindow::createDocument()
+void MainWindow::createDocument(const NewDocumentSettings& settings)
 {
-    auto projectFile = std::make_shared<ProjectFile>(800, 600);
+    const int width = settings.width;
+    const int height = settings.height;
+    auto projectFile = std::make_shared<ProjectFile>(width, height, settings.dpi);
 
     auto bg = projectFile->addLayer();
     bg->setName("Background");
+    std::uint32_t fillColor = 0xFFFFFFFF;
+    switch (settings.backgroundFill) {
+        case BackgroundFill::Transparent:
+            fillColor = 0x00000000;
+            break;
+        case BackgroundFill::BackgroundColor:
+            fillColor = settings.backgroundColor;
+            break;
+        case BackgroundFill::White:
+        default:
+            fillColor = 0xFFFFFFFF;
+            break;
+    }
     projectFile->resetLayerCounter();  // Next layer will be "Layer 1"
     m_document = projectFile;
-    auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
-    for (int i = 0; i < 800 * 600; ++i) {
-        pixels[i] = 0xFFFFFFFF;
-    }
+
+    auto* pixels = reinterpret_cast<std::uint32_t*>(bg->data().data());
+    const std::size_t pixelCount =
+        static_cast<std::size_t>(width) * static_cast<std::size_t>(height);
+    std::fill(pixels, pixels + pixelCount, fillColor);
 
     // Configure ToolFactory with document and command bus
     auto& factory = ToolFactory::instance();
@@ -388,6 +437,18 @@ void MainWindow::createDocument()
 
     m_projectPath.clear();
     statusBar()->showMessage("New project created", 2000);
+}
+
+void MainWindow::onNewProject()
+{
+    NewDocumentDialog dialog(ToolFactory::instance().backgroundColor(), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    const auto settings = dialog.settings();
+    createDocument(settings);
+    NewDocumentDialog::addRecentSize(QSize(settings.width, settings.height));
 }
 
 void MainWindow::set_document(std::shared_ptr<Document> document)
@@ -700,7 +761,8 @@ std::shared_ptr<ProjectFile> MainWindow::buildProjectSnapshot() const
         return existingProject;
     }
 
-    auto snapshot = std::make_shared<ProjectFile>(m_document->width(), m_document->height());
+    auto snapshot =
+        std::make_shared<ProjectFile>(m_document->width(), m_document->height(), kDefaultDpi);
     snapshot->setSelectionPath(m_document->selectionPath());
 
     const auto& layers = m_document->layers();

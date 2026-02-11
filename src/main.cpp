@@ -12,8 +12,8 @@
 #include <QApplication>
 #include <QDir>
 #include <QFileInfo>
-#include <QLockFile>
 #include <QIcon>
+#include <QLockFile>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>

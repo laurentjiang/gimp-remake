@@ -9,16 +9,15 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QSettings>
-
 #include <QSet>
+#include <QSettings>
 
 namespace gimp {
 
 namespace {
 constexpr const char* kSettingsOrganization = "GimpRemake";
 constexpr const char* kSettingsApplication = "GimpRemake";
-}
+}  // namespace
 
 RecentFilesManager::RecentFilesManager()
 {

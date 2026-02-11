@@ -7,6 +7,8 @@
 
 #include "io/io_manager.h"
 
+#include "io/binary_project_reader.h"
+#include "io/binary_project_writer.h"
 #include "io/utility.h"
 
 #include <QPainterPath>
@@ -15,6 +17,7 @@
 #include <nlohmann/json.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -89,7 +92,64 @@ QPainterPath deserializeSelectionPath(const json& elements)
     return path;
 }
 
+// Magic bytes for binary format detection
+constexpr uint32_t kBinaryMagic = 0x504D4947;  // "GIMP" in little-endian
+
+bool isBinaryFormat(const std::filesystem::path& path)
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file) {
+        return false;
+    }
+
+    uint32_t magic = 0;
+    file.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+    return magic == kBinaryMagic;
+}
+
 }  // namespace
+
+error::Result<void> IOManager::saveProject(const Document& doc, const std::filesystem::path& path)
+{
+    return BinaryProjectWriter::write(doc, path);
+}
+
+error::Result<std::shared_ptr<ProjectFile>> IOManager::loadProject(
+    const std::filesystem::path& path)
+{
+    if (!std::filesystem::exists(path)) {
+        return error::ErrorInfo(error::ErrorCode::IOFileNotFound,
+                                "File not found: " + path.string());
+    }
+
+    // Check if it's binary format by reading magic header
+    if (isBinaryFormat(path)) {
+        return BinaryProjectReader::read(path);
+    }
+
+    // Fall back to legacy JSON import
+    try {
+        ProjectFile project = importProject(path.string());
+        auto result = std::make_shared<ProjectFile>(project.width(), project.height());
+        result->setFilePath(path);
+        result->setSelectionPath(project.selectionPath());
+
+        // Copy layers
+        for (int i = 0; i < project.layers().count(); ++i) {
+            const auto& srcLayer = project.layers()[i];
+            auto dstLayer = result->addLayer();
+            dstLayer->setName(srcLayer->name());
+            dstLayer->setVisible(srcLayer->visible());
+            dstLayer->setOpacity(srcLayer->opacity());
+            dstLayer->setBlendMode(srcLayer->blendMode());
+            std::memcpy(dstLayer->data().data(), srcLayer->data().data(), srcLayer->data().size());
+        }
+
+        return result;
+    } catch (const std::exception& e) {
+        return error::ErrorInfo(error::ErrorCode::IOCorruptedFile, e.what());
+    }
+}
 
 ProjectFile IOManager::importProject(const std::string& filePath)
 {

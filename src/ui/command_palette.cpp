@@ -22,13 +22,13 @@ CommandPalette::CommandPalette(QWidget* parent)
     setupUi();
 
     // NOLINTBEGIN(modernize-use-designated-initializers)
-    registerCommand({"file.new", "New Image", "File", "Ctrl+N", []() {
+    registerCommand({"file.new", "New Project", "File", "Ctrl+N", []() {
                      }});
-    registerCommand({"file.open", "Open Image", "File", "Ctrl+O", []() {
+    registerCommand({"file.open", "Open Project", "File", "Ctrl+O", []() {
                      }});
-    registerCommand({"file.save", "Save", "File", "Ctrl+S", []() {
+    registerCommand({"file.save", "Save Project", "File", "Ctrl+S", []() {
                      }});
-    registerCommand({"file.save_as", "Save As...", "File", "Ctrl+Shift+S", []() {
+    registerCommand({"file.save_as", "Save Project As...", "File", "Ctrl+Shift+S", []() {
                      }});
     registerCommand({"file.export", "Export As...", "File", "Ctrl+E", []() {
                      }});
@@ -132,6 +132,18 @@ void CommandPalette::setupUi()
 void CommandPalette::registerCommand(const PaletteCommand& command)
 {
     commands_.push_back(command);
+}
+
+bool CommandPalette::setCommandAction(const std::string& id, std::function<void()> action)
+{
+    for (auto& command : commands_) {
+        if (command.id == id) {
+            command.action = std::move(action);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void CommandPalette::show()

@@ -10,9 +10,17 @@
 #include "ui/main_window.h"
 
 #include <QApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QIcon>
+#include <QLockFile>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
+#include <QSettings>
+#include <QSplashScreen>
 #include <QSurfaceFormat>
+#include <QThread>
 
 #include <spdlog/spdlog.h>
 
@@ -74,15 +82,63 @@ int runApplication(int argc, char** argv)
     format.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(format);
 
-    const QApplication app(argc, argv);
+    QApplication app(argc, argv);
     QApplication::setWindowIcon(QIcon(":/icons/gomp.png"));
+    QApplication::setApplicationName("Gimp Remake");
+    QApplication::setApplicationVersion("0.4.0");
+    QApplication::setOrganizationName("GimpRemake");
+    QApplication::setOrganizationDomain("gimpremake.org");
+
+    // Portable mode detection
+    // If gimp-remake.ini exists in the application directory, use it for settings
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString portableIni = QDir(appDir).filePath("gimp-remake.ini");
+    if (QFileInfo::exists(portableIni)) {
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, appDir);
+        spdlog::info("Portable mode detected. Using local settings.");
+    }
+
+    // Single instance check
+    QLockFile lockFile(QDir::temp().absoluteFilePath("gimp_remake.lock"));
+    if (!lockFile.tryLock(100)) {
+        QMessageBox::warning(nullptr,
+                             "Gimp Remake",
+                             "The application is already running.\n"
+                             "Only one instance is allowed.");
+        return 0;
+    }
+
+    // Simple splash screen
+    QPixmap splashPix(480, 320);
+    splashPix.fill(QColor(50, 50, 50));
+    {
+        QPainter painter(&splashPix);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(Qt::white);
+        painter.setFont(QFont("Segoe UI", 24, QFont::Bold));
+        painter.drawText(splashPix.rect().adjusted(0, -20, 0, 0), Qt::AlignCenter, "GIMP Remake");
+
+        painter.setFont(QFont("Segoe UI", 12));
+        painter.setPen(QColor(200, 200, 200));
+        painter.drawText(
+            splashPix.rect().adjusted(0, 40, 0, 0), Qt::AlignCenter, "Initializing...");
+    }
+
+    QSplashScreen splash(splashPix);
+    splash.show();
+    QApplication::processEvents();
 
     gimp::MainWindow window;
 
     // Log after MainWindow construction so QtForwardingSink is registered
     spdlog::info("Application starting up...");
 
+    // Simulate init delay for splash visibility
+    QThread::sleep(1);
+
     window.show();
+    splash.finish(&window);
 
     return QApplication::exec();
 }

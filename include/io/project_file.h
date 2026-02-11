@@ -190,12 +190,12 @@ class ProjectFile : public Document {
     [[nodiscard]] std::optional<std::filesystem::path> filePath() const { return m_filePath; }
 
   private:
-    int m_width;                                      ///< Canvas width.
-    int m_height;                                     ///< Canvas height.
-    std::size_t m_activeLayerIndex = 0;               ///< Index of the active layer.
-    int m_layerCounter = 0;                           ///< Counter for auto-incrementing layer names.
-    gimp::LayerStack m_layers;                        ///< Layer stack.
-    QPainterPath selection_;                          ///< Stored selection path.
+    int m_width;                         ///< Canvas width.
+    int m_height;                        ///< Canvas height.
+    std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
+    int m_layerCounter = 0;              ///< Counter for auto-incrementing layer names.
+    gimp::LayerStack m_layers;           ///< Layer stack.
+    QPainterPath selection_;             ///< Stored selection path.
     std::optional<std::filesystem::path> m_filePath;  ///< Associated file path.
 
     /*! @brief Placeholder TileStore that does nothing. */

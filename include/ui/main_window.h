@@ -98,6 +98,8 @@ class MainWindow : public QMainWindow {
     void onOpenProject();
     void onSaveProject();
     void onSaveProjectAs();
+    void onCanvasResize();
+    void onCropToSelection();
     void onCut();
     void onCopy();
     void onPaste();

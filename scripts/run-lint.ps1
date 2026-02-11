@@ -3,6 +3,16 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = Resolve-Path (Join-Path $scriptDir "..")
 $buildDir = Join-Path $rootDir "build"
 
+# Dynamic parallelism: use ~75% of logical processors, min 2, max 16
+# This balances speed vs memory usage (clang-tidy is memory-intensive)
+$cpuCount = [Environment]::ProcessorCount
+$parallelJobs = [Math]::Max(2, [Math]::Min(16, [Math]::Floor($cpuCount * 0.75)))
+
+# Allow override via environment variable (useful for CI tuning)
+if ($env:LINT_PARALLEL_JOBS) {
+    $parallelJobs = [int]$env:LINT_PARALLEL_JOBS
+}
+
 # Locate clang-tidy (try common names)
 $clangTidy = Get-Command clang-tidy -ErrorAction SilentlyContinue
 if (-not $clangTidy) {
@@ -16,6 +26,7 @@ if (-not $clangTidy) {
 Write-Host "Using clang-tidy: $($clangTidy.Path)"
 $version = & $clangTidy.Path --version 2>&1 | Select-Object -First 2
 Write-Host $version
+Write-Host "Parallel jobs: $parallelJobs (CPUs: $cpuCount)"
 
 # Detect VCPKG_ROOT from GitHub Actions environment if not set
 if (-not $env:VCPKG_ROOT -and $env:VCPKG_INSTALLATION_ROOT) {
@@ -41,30 +52,33 @@ if ($sources) {
     Write-Host "Running clang-tidy on $($sources.Count) files..."
     
     $clangTidyPath = $clangTidy.Path
-    $failures = @()
-    $index = 0
+    $totalFiles = $sources.Count
     
-    foreach ($file in $sources) {
-        $index++
-        Write-Host "[$index/$($sources.Count)] $($file.Name)" -NoNewline
-        
-        $output = & $clangTidyPath -p $buildDir --quiet $file.FullName 2>&1
+    # Run clang-tidy in parallel using ForEach-Object -Parallel (PowerShell 7+)
+    $results = $sources | ForEach-Object -Parallel {
+        $file = $_
+        $output = & $using:clangTidyPath -p $using:buildDir --quiet $file.FullName 2>&1
         
         # Filter warning count noise but keep everything else
         $filtered = $output | Where-Object { $_ -notmatch "^\d+ warnings? generated\.$" }
         $outputStr = ($filtered | Out-String).Trim()
         
-        if ($outputStr -match "warning:|error:") {
-            Write-Host " - ISSUES FOUND" -ForegroundColor Red
-            $failures += [PSCustomObject]@{
-                File = $file.Name
-                FullName = $file.FullName
-                Output = $outputStr
-            }
-        } else {
-            Write-Host " - OK" -ForegroundColor Green
+        $hasIssues = $outputStr -match "warning:|error:"
+        
+        [PSCustomObject]@{
+            File = $file.Name
+            FullName = $file.FullName
+            Output = $outputStr
+            HasIssues = $hasIssues
         }
-    }
+    } -ThrottleLimit $parallelJobs
+    
+    # Separate successes and failures
+    $failures = $results | Where-Object { $_.HasIssues }
+    $successes = $results | Where-Object { -not $_.HasIssues }
+    
+    # Display summary
+    Write-Host "`nResults: $($successes.Count) OK, $($failures.Count) with issues" -ForegroundColor $(if ($failures.Count -eq 0) { "Green" } else { "Yellow" })
     
     # Display all failures at the end
     if ($failures.Count -gt 0) {

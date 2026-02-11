@@ -47,8 +47,26 @@ void LayersPanel::setupUi()
     layerList_->setDragDropMode(QAbstractItemView::InternalMove);
     mainLayout_->addWidget(layerList_);
 
+    // Opacity slider
+    auto* opacityLayout = new QHBoxLayout();
+    opacityLayout->setSpacing(4);
+    opacityLabel_ = new QLabel("Opacity: 100%", this);
+    opacityLabel_->setFixedWidth(85);
+    opacityLayout->addWidget(opacityLabel_);
+
+    opacitySlider_ = new QSlider(Qt::Horizontal, this);
+    opacitySlider_->setRange(0, 100);
+    opacitySlider_->setValue(100);
+    opacitySlider_->setToolTip("Layer opacity");
+    opacityLayout->addWidget(opacitySlider_);
+    mainLayout_->addLayout(opacityLayout);
+
     connect(
         layerList_, &QListWidget::itemSelectionChanged, this, &LayersPanel::onItemSelectionChanged);
+    connect(layerList_, &QListWidget::itemClicked, this, &LayersPanel::onItemClicked);
+    connect(layerList_, &QListWidget::itemDoubleClicked, this, &LayersPanel::onItemDoubleClicked);
+    connect(layerList_, &QListWidget::itemChanged, this, &LayersPanel::onItemChanged);
+    connect(opacitySlider_, &QSlider::valueChanged, this, &LayersPanel::onOpacityChanged);
 
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(2);
@@ -115,6 +133,7 @@ void LayersPanel::updateLayerItem(QListWidgetItem* item, const std::shared_ptr<L
     }
 
     item->setText(text);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
 
     if (layer->visible()) {
         item->setIcon(QIcon(":/icons/eye-visible.svg"));
@@ -141,6 +160,124 @@ void LayersPanel::onItemSelectionChanged()
             // NOLINTNEXTLINE(modernize-use-designated-initializers)
             EventBus::instance().publish(LayerSelectionChangedEvent{nullptr, layers[i], i});
             emit layerSelected(layers[i]);
+
+            // Update opacity slider to match selected layer
+            int opacityPercent = static_cast<int>(layers[i]->opacity() * 100.0F);
+            opacitySlider_->blockSignals(true);
+            opacitySlider_->setValue(opacityPercent);
+            opacitySlider_->blockSignals(false);
+            opacityLabel_->setText(QString("Opacity: %1%").arg(opacityPercent));
+            break;
+        }
+    }
+}
+
+void LayersPanel::onOpacityChanged(int value)
+{
+    auto items = layerList_->selectedItems();
+    if (items.isEmpty() || !document_) {
+        return;
+    }
+
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(items.first()->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            layers[i]->setOpacity(static_cast<float>(value) / 100.0F);
+            updateLayerItem(items.first(), layers[i]);
+            opacityLabel_->setText(QString("Opacity: %1%").arg(value));
+            // NOLINTNEXTLINE(modernize-use-designated-initializers)
+            EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "opacity"});
+            break;
+        }
+    }
+}
+
+void LayersPanel::onItemClicked(QListWidgetItem* item)
+{
+    if (!item || !document_) {
+        return;
+    }
+
+    // Check if click was in the icon area (first ~24 pixels)
+    // We can detect this by checking the mouse position relative to the item rect
+    QPoint clickPos = layerList_->mapFromGlobal(QCursor::pos());
+    QRect itemRect = layerList_->visualItemRect(item);
+    int iconWidth = 24;  // Approximate icon width
+
+    if (clickPos.x() < itemRect.x() + iconWidth) {
+        // Click was on the visibility icon - toggle visibility
+        // NOLINTNEXTLINE(performance-no-int-to-ptr)
+        auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+        const auto& layers = document_->layers();
+        for (std::size_t i = 0; i < layers.count(); ++i) {
+            if (layers[i].get() == rawPtr) {
+                layers[i]->setVisible(!layers[i]->visible());
+                updateLayerItem(item, layers[i]);
+                // NOLINTNEXTLINE(modernize-use-designated-initializers)
+                EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "visible"});
+                break;
+            }
+        }
+    }
+}
+
+void LayersPanel::onItemDoubleClicked(QListWidgetItem* item)
+{
+    if (!item || !document_) {
+        return;
+    }
+
+    // Check if double-click was in the icon area - if so, ignore (handled by click)
+    QPoint clickPos = layerList_->mapFromGlobal(QCursor::pos());
+    QRect itemRect = layerList_->visualItemRect(item);
+    int iconWidth = 24;
+
+    if (clickPos.x() < itemRect.x() + iconWidth) {
+        // Double-click on icon - don't start editing
+        return;
+    }
+
+    // Get the layer and set item text to just the name for editing
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            isEditing_ = true;
+            item->setText(QString::fromStdString(layers[i]->name()));
+            layerList_->editItem(item);
+            break;
+        }
+    }
+}
+
+void LayersPanel::onItemChanged(QListWidgetItem* item)
+{
+    if (!isEditing_ || !item || !document_) {
+        return;
+    }
+
+    isEditing_ = false;
+
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
+    auto* rawPtr = reinterpret_cast<Layer*>(item->data(Qt::UserRole).value<quintptr>());
+
+    const auto& layers = document_->layers();
+    for (std::size_t i = 0; i < layers.count(); ++i) {
+        if (layers[i].get() == rawPtr) {
+            QString newName = item->text().trimmed();
+            if (!newName.isEmpty()) {
+                layers[i]->setName(newName.toStdString());
+            }
+            // Restore full display text with opacity info
+            updateLayerItem(item, layers[i]);
+            // NOLINTNEXTLINE(modernize-use-designated-initializers)
+            EventBus::instance().publish(LayerPropertyChangedEvent{layers[i], "name"});
             break;
         }
     }
@@ -192,12 +329,22 @@ void LayersPanel::onMoveUpClicked()
 
     const int row = layerList_->row(items.first());
     if (row > 0) {
+        // UI shows layers in reverse order (top of stack at top of list)
         const std::size_t fromIndex =
             document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex + 1;
-        // TODO(layers): Wire to LayerStack::move_layer when available
-        static_cast<void>(toIndex);
-        refreshLayerList();
+
+        auto layer = document_->layers()[fromIndex];
+        if (document_->layers().moveLayer(fromIndex, toIndex)) {
+            EventBus::instance().publish(
+                LayerStackChangedEvent{LayerStackChangedEvent::Action::Reordered, layer});
+            refreshLayerList();
+
+            // Re-select the moved layer (it's now at row - 1)
+            if (row - 1 >= 0 && row - 1 < layerList_->count()) {
+                layerList_->setCurrentRow(row - 1);
+            }
+        }
     }
 }
 
@@ -210,12 +357,22 @@ void LayersPanel::onMoveDownClicked()
 
     const int row = layerList_->row(items.first());
     if (row < layerList_->count() - 1) {
+        // UI shows layers in reverse order (top of stack at top of list)
         const std::size_t fromIndex =
             document_->layers().count() - 1 - static_cast<std::size_t>(row);
         const std::size_t toIndex = fromIndex - 1;
-        // TODO(layers): Wire to LayerStack::move_layer when available
-        static_cast<void>(toIndex);
-        refreshLayerList();
+
+        auto layer = document_->layers()[fromIndex];
+        if (document_->layers().moveLayer(fromIndex, toIndex)) {
+            EventBus::instance().publish(
+                LayerStackChangedEvent{LayerStackChangedEvent::Action::Reordered, layer});
+            refreshLayerList();
+
+            // Re-select the moved layer (it's now at row + 1)
+            if (row + 1 < layerList_->count()) {
+                layerList_->setCurrentRow(row + 1);
+            }
+        }
     }
 }
 

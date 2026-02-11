@@ -11,6 +11,8 @@
 #include "core/commands/draw_command.h"
 #include "core/commands/paste_command.h"
 #include "core/document.h"
+#include "core/event_bus.h"
+#include "core/events.h"
 #include "core/layer.h"
 #include "core/selection_manager.h"
 
@@ -75,8 +77,11 @@ bool ClipboardManager::copySelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
-    // Use provided layer or fall back to first layer
-    auto sourceLayer = layer ? layer : document->layers()[0];
+    // Use provided layer or fall back to active layer
+    auto sourceLayer = layer ? layer : document->activeLayer();
+    if (!sourceLayer) {
+        return false;
+    }
     const int layerWidth = sourceLayer->width();
     const int layerHeight = sourceLayer->height();
     const auto& data = sourceLayer->data();
@@ -156,8 +161,11 @@ bool ClipboardManager::cutSelection(const std::shared_ptr<Document>& document,
         return false;
     }
 
-    // Use provided layer or fall back to first layer
-    auto targetLayer = layer ? layer : document->layers()[0];
+    // Use provided layer or fall back to active layer
+    auto targetLayer = layer ? layer : document->activeLayer();
+    if (!targetLayer) {
+        return false;
+    }
 
     int regionX = 0;
     int regionY = 0;
@@ -270,6 +278,9 @@ bool ClipboardManager::pasteToDocument(const std::shared_ptr<Document>& document
     QPainterPath selectionRect;
     selectionRect.addRect(QRectF(destX, destY, pasteWidth, pasteHeight));
     SelectionManager::instance().applySelection(selectionRect, SelectionMode::Replace);
+
+    // Notify UI about new selection around pasted content
+    EventBus::instance().publish(SelectionChangedEvent{true, "paste"});
 
     return true;
 }

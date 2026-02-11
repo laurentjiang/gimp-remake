@@ -11,6 +11,7 @@
 
 #include <QApplication>
 #include <QMessageBox>
+#include <QSurfaceFormat>
 
 #include <spdlog/spdlog.h>
 
@@ -64,6 +65,14 @@ void setupErrorRecoveryHandlers()
  */
 int runApplication(int argc, char** argv)
 {
+    // Configure OpenGL surface format for Skia GPU rendering
+    QSurfaceFormat format;
+    format.setDepthBufferSize(0);    // Skia 2D doesn't need depth buffer, saves VRAM
+    format.setStencilBufferSize(8);  // REQUIRED: Skia uses stencil for clipping/masking
+    format.setVersion(3, 3);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    QSurfaceFormat::setDefaultFormat(format);
+
     const QApplication app(argc, argv);
 
     gimp::MainWindow window;

@@ -7,6 +7,7 @@
 
 #include "ui/main_window.h"
 
+#include "core/clipboard_manager.h"
 #include "core/command_bus.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
@@ -60,19 +61,63 @@ class SimpleDocument : public gimp::Document {
   public:
     SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
 
+    void resetLayerCounter() { m_layerCounter = 0; }
+
     std::shared_ptr<gimp::Layer> addLayer() override
     {
         auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
+        layer->setName("Layer " + std::to_string(++m_layerCounter));
         m_layers.addLayer(layer);
         return layer;
     }
 
     void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
+        // Find index of layer being removed to adjust active index
+        std::size_t removedIndex = m_layers.count();  // invalid sentinel
+        for (std::size_t i = 0; i < m_layers.count(); ++i) {
+            if (m_layers[i] == layer) {
+                removedIndex = i;
+                break;
+            }
+        }
+
         m_layers.removeLayer(layer);
+
+        // Adjust active layer index if needed
+        if (!m_layers.empty()) {
+            if (m_activeLayerIndex >= m_layers.count()) {
+                m_activeLayerIndex = m_layers.count() - 1;
+            } else if (removedIndex < m_activeLayerIndex) {
+                --m_activeLayerIndex;
+            }
+        } else {
+            m_activeLayerIndex = 0;
+        }
     }
 
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
+
+    gimp::LayerStack& layers() override { return m_layers; }
+
+    [[nodiscard]] std::shared_ptr<gimp::Layer> activeLayer() const override
+    {
+        if (m_layers.empty()) {
+            return nullptr;
+        }
+        return m_layers[m_activeLayerIndex];
+    }
+
+    [[nodiscard]] std::size_t activeLayerIndex() const override { return m_activeLayerIndex; }
+
+    void setActiveLayerIndex(std::size_t index) override
+    {
+        if (m_layers.empty()) {
+            m_activeLayerIndex = 0;
+            return;
+        }
+        m_activeLayerIndex = std::min(index, m_layers.count() - 1);
+    }
 
     gimp::TileStore& tileStore() override { return m_dummyTileStore; }
 
@@ -85,6 +130,8 @@ class SimpleDocument : public gimp::Document {
   private:
     int m_width;
     int m_height;
+    std::size_t m_activeLayerIndex{0};
+    int m_layerCounter{0};  ///< Counter for auto-incrementing layer names.
     gimp::LayerStack m_layers;
     QPainterPath m_selection;
 
@@ -143,6 +190,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
+    // Subscribe to layer selection changes to track active layer
+    m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+        [this](const LayerSelectionChangedEvent& event) {
+            if (m_document) {
+                m_document->setActiveLayerIndex(event.layerIndex);
+            }
+        });
+
+    // Subscribe to mouse position changes for cursor-aware paste
+    m_mousePositionSubscription = EventBus::instance().subscribe<MousePositionChangedEvent>(
+        [this](const MousePositionChangedEvent& event) {
+            m_lastCanvasMousePos = QPoint(event.canvasX, event.canvasY);
+        });
+
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -174,6 +235,8 @@ MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
+    EventBus::instance().unsubscribe(m_layerSelectionSubscription);
+    EventBus::instance().unsubscribe(m_mousePositionSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -190,11 +253,10 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
-    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
-    // active layer management, floating selection concept, and LayerStack
-    // operations (activeLayer, moveLayer, insertAt) to work correctly.
-    // See ClipboardManager for the implementation stub.
+    editMenu->addSeparator();
+    editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
+    editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
+    editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -339,10 +401,12 @@ void MainWindow::setupShortcuts()
 
 void MainWindow::createDocument()
 {
-    m_document = std::make_shared<SimpleDocument>(800, 600);
+    auto simpleDoc = std::make_shared<SimpleDocument>(800, 600);
 
-    auto bg = m_document->addLayer();
+    auto bg = simpleDoc->addLayer();
     bg->setName("Background");
+    simpleDoc->resetLayerCounter();  // Next layer will be "Layer 1"
+    m_document = simpleDoc;
     auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;
@@ -541,7 +605,11 @@ void MainWindow::onApplyBlur()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     BlurFilter filter;
     filter.setRadius(static_cast<float>(radius));
 
@@ -568,7 +636,11 @@ void MainWindow::onApplySharpen()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     SharpenFilter filter;
     filter.setAmount(static_cast<float>(amount));
 
@@ -656,6 +728,74 @@ void MainWindow::onSelectInvert()
     EventBus::instance().publish(SelectionChangedEvent{hasSelection, "menu"});
     m_canvasWidget->update();
     statusBar()->showMessage("Selection inverted", 1000);
+}
+
+void MainWindow::onCut()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to cut from", 2000);
+        return;
+    }
+
+    // Commit any active floating buffer before cut
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
+    if (ClipboardManager::instance().cutSelection(m_document, nullptr, m_commandBus.get())) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Cut to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to cut (no selection)", 2000);
+    }
+}
+
+void MainWindow::onCopy()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to copy from", 2000);
+        return;
+    }
+
+    // Commit any active floating buffer before copy
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
+    if (ClipboardManager::instance().copySelection(m_document, nullptr)) {
+        statusBar()->showMessage("Copied to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Failed to copy", 2000);
+    }
+}
+
+void MainWindow::onPaste()
+{
+    if (!m_document) {
+        statusBar()->showMessage("No document to paste into", 2000);
+        return;
+    }
+
+    // Use cursor position if available, otherwise center on canvas
+    bool useCursor = (m_lastCanvasMousePos.x() >= 0 && m_lastCanvasMousePos.y() >= 0 &&
+                      m_lastCanvasMousePos.x() < m_document->width() &&
+                      m_lastCanvasMousePos.y() < m_document->height());
+
+    if (ClipboardManager::instance().pasteToDocument(
+            m_document, m_commandBus.get(), m_lastCanvasMousePos, useCursor)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Pasted from clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to paste", 2000);
+    }
 }
 
 }  // namespace gimp

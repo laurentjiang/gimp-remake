@@ -68,6 +68,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
 namespace {
 
@@ -85,116 +86,6 @@ gimp::NewDocumentSettings defaultDocumentSettings()
     settings.backgroundColor = 0xFFFFFFFF;
     return settings;
 }
-
-class SimpleDocument : public gimp::Document {
-  public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
-
-    void resetLayerCounter() { m_layerCounter = 0; }
-
-    std::shared_ptr<gimp::Layer> addLayer() override
-    {
-        auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
-        layer->setName("Layer " + std::to_string(++m_layerCounter));
-        m_layers.addLayer(layer);
-        return layer;
-    }
-
-    void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
-    {
-        // Find index of layer being removed to adjust active index
-        std::size_t removedIndex = m_layers.count();  // invalid sentinel
-        for (std::size_t i = 0; i < m_layers.count(); ++i) {
-            if (m_layers[i] == layer) {
-                removedIndex = i;
-                break;
-            }
-        }
-
-        m_layers.removeLayer(layer);
-
-        // Adjust active layer index if needed
-        if (!m_layers.empty()) {
-            if (m_activeLayerIndex >= m_layers.count()) {
-                m_activeLayerIndex = m_layers.count() - 1;
-            } else if (removedIndex < m_activeLayerIndex) {
-                --m_activeLayerIndex;
-            }
-        } else {
-            m_activeLayerIndex = 0;
-        }
-    }
-
-    [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
-
-    gimp::LayerStack& layers() override { return m_layers; }
-
-    [[nodiscard]] std::shared_ptr<gimp::Layer> activeLayer() const override
-    {
-        if (m_layers.empty()) {
-            return nullptr;
-        }
-        return m_layers[m_activeLayerIndex];
-    }
-
-    [[nodiscard]] std::size_t activeLayerIndex() const override { return m_activeLayerIndex; }
-
-    void setActiveLayerIndex(std::size_t index) override
-    {
-        if (m_layers.empty()) {
-            m_activeLayerIndex = 0;
-            return;
-        }
-        m_activeLayerIndex = std::min(index, m_layers.count() - 1);
-    }
-
-    gimp::TileStore& tileStore() override { return m_dummyTileStore; }
-
-    [[nodiscard]] int width() const override { return m_width; }
-    [[nodiscard]] int height() const override { return m_height; }
-
-    void resize(int width, int height, float anchorX, float anchorY) override
-    {
-        if (width <= 0 || height <= 0) {
-            return;
-        }
-
-        if (width == m_width && height == m_height) {
-            return;
-        }
-
-        const float clampedX = std::clamp(anchorX, 0.0F, 1.0F);
-        const float clampedY = std::clamp(anchorY, 0.0F, 1.0F);
-        const int offsetX =
-            static_cast<int>(std::round(static_cast<float>(width - m_width) * clampedX));
-        const int offsetY =
-            static_cast<int>(std::round(static_cast<float>(height - m_height) * clampedY));
-
-        for (const auto& layer : m_layers) {
-            if (layer) {
-                layer->resize(width, height, offsetX, offsetY);
-            }
-        }
-
-        m_width = width;
-        m_height = height;
-    }
-
-    void setSelectionPath(const QPainterPath& path) override { m_selection = path; }
-    [[nodiscard]] QPainterPath selectionPath() const override { return m_selection; }
-
-  private:
-    int m_width;
-    int m_height;
-    std::size_t m_activeLayerIndex{0};
-    int m_layerCounter{0};  ///< Counter for auto-incrementing layer names.
-    gimp::LayerStack m_layers;
-    QPainterPath m_selection;
-
-    class DummyTileStore : public gimp::TileStore {
-        void invalidate(const gimp::Rect&) override {}
-    } m_dummyTileStore;
-};
 
 }  // namespace
 
@@ -283,6 +174,14 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     setupDockWidgets();
     setupShortcuts();
     createDocument(defaultDocumentSettings());
+
+    if (m_commandPalette) {
+        m_commandPalette->setHistoryManager(m_historyManager.get());
+        m_commandPalette->setCommandAction("file.new", [this]() { onNewProject(); });
+        m_commandPalette->setCommandAction("file.open", [this]() { onOpenProject(); });
+        m_commandPalette->setCommandAction("file.save", [this]() { onSaveProject(); });
+        m_commandPalette->setCommandAction("file.save_as", [this]() { onSaveProjectAs(); });
+    }
 
     if (m_commandPalette) {
         m_commandPalette->setHistoryManager(m_historyManager.get());
@@ -477,10 +376,9 @@ void MainWindow::createDocument(const NewDocumentSettings& settings)
 {
     const int width = settings.width;
     const int height = settings.height;
-    m_document = std::make_shared<ProjectFile>(width, height, settings.dpi);
-    auto simpleDoc = std::make_shared<SimpleDocument>(width, height);
+    auto projectFile = std::make_shared<ProjectFile>(width, height, settings.dpi);
 
-    auto bg = simpleDoc->addLayer();
+    auto bg = projectFile->addLayer();
     bg->setName("Background");
     std::uint32_t fillColor = 0xFFFFFFFF;
     switch (settings.backgroundFill) {
@@ -495,8 +393,8 @@ void MainWindow::createDocument(const NewDocumentSettings& settings)
             fillColor = 0xFFFFFFFF;
             break;
     }
-    simpleDoc->resetLayerCounter();  // Next layer will be "Layer 1"
-    m_document = simpleDoc;
+    projectFile->resetLayerCounter();  // Next layer will be "Layer 1"
+    m_document = projectFile;
 
     auto* pixels = reinterpret_cast<std::uint32_t*>(bg->data().data());
     const std::size_t pixelCount =
@@ -909,28 +807,28 @@ void MainWindow::onOpenProject()
     }
 
     IOManager ioManager;
-    try {
-        auto imported =
-            std::make_shared<ProjectFile>(ioManager.importProject(filePath.toStdString()));
-        set_document(imported);
-        if (m_canvasWidget) {
-            m_canvasWidget->fitInView();
-        }
-
-        if (m_historyManager) {
-            m_historyManager->clear();
-        }
-        if (m_historyPanel) {
-            m_historyPanel->clear();
-        }
-
-        m_projectPath = filePath;
-        statusBar()->showMessage("Project loaded", 2000);
-    } catch (const std::exception& ex) {
-        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOCorruptedFile,
-                                                       ex.what());
+    auto result = ioManager.loadProject(std::filesystem::path(filePath.toStdString()));
+    if (!result.IsOk()) {
+        error::ErrorHandler::GetInstance().ReportError(result.Error().GetCode(),
+                                                       result.Error().GetMessage());
         statusBar()->showMessage("Failed to open project", 3000);
+        return;
     }
+
+    set_document(result.Value());
+    if (m_canvasWidget) {
+        m_canvasWidget->fitInView();
+    }
+
+    if (m_historyManager) {
+        m_historyManager->clear();
+    }
+    if (m_historyPanel) {
+        m_historyPanel->clear();
+    }
+
+    m_projectPath = filePath;
+    statusBar()->showMessage("Project loaded", 2000);
 }
 
 void MainWindow::onSaveProject()
@@ -952,9 +850,11 @@ void MainWindow::onSaveProject()
     }
 
     IOManager ioManager;
-    if (!ioManager.exportProject(*snapshot, m_projectPath.toStdString())) {
-        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOWriteError,
-                                                       m_projectPath.toStdString());
+    auto result =
+        ioManager.saveProject(*snapshot, std::filesystem::path(m_projectPath.toStdString()));
+    if (!result.IsOk()) {
+        error::ErrorHandler::GetInstance().ReportError(result.Error().GetCode(),
+                                                       result.Error().GetMessage());
         statusBar()->showMessage("Failed to save project", 3000);
         return;
     }
@@ -965,7 +865,7 @@ void MainWindow::onSaveProject()
 void MainWindow::onSaveProjectAs()
 {
     QString filePath = QFileDialog::getSaveFileName(
-        this, "Save Project", m_projectPath, "GIMP Project (*.gimp *.json)");
+        this, "Save Project", m_projectPath, "GIMP Project (*.gimp);;JSON Project (*.json)");
     if (filePath.isEmpty()) {
         return;
     }

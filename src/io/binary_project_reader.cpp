@@ -9,12 +9,12 @@
 
 #include "core/layer.h"
 
-#include <lz4.h>
-
 #include <array>
 #include <cstring>
 #include <fstream>
 #include <vector>
+
+#include <lz4.h>
 
 namespace gimp {
 
@@ -53,11 +53,10 @@ std::vector<uint8_t> decompressLZ4(const std::vector<char>& compressed, size_t u
 {
     std::vector<uint8_t> decompressed(uncompressedSize);
 
-    const int result = LZ4_decompress_safe(
-        compressed.data(),
-        reinterpret_cast<char*>(decompressed.data()),
-        static_cast<int>(compressed.size()),
-        static_cast<int>(uncompressedSize));
+    const int result = LZ4_decompress_safe(compressed.data(),
+                                           reinterpret_cast<char*>(decompressed.data()),
+                                           static_cast<int>(compressed.size()),
+                                           static_cast<int>(uncompressedSize));
 
     if (result < 0) {
         decompressed.clear();  // Signal decompression failure
@@ -120,7 +119,8 @@ std::shared_ptr<Layer> deserializeLayer(const std::vector<uint8_t>& data)
     }
 
     // Create layer and copy pixel data
-    auto layer = std::make_shared<Layer>(static_cast<int>(layerWidth), static_cast<int>(layerHeight));
+    auto layer =
+        std::make_shared<Layer>(static_cast<int>(layerWidth), static_cast<int>(layerHeight));
     layer->setName(name);
     layer->setVisible(visible);
     layer->setOpacity(opacity);
@@ -161,20 +161,20 @@ QPainterPath deserializeSelection(const std::vector<uint8_t>& data)
         offset += sizeof(y);
 
         switch (elemType) {
-        case QPainterPath::MoveToElement:
-            path.moveTo(static_cast<qreal>(x), static_cast<qreal>(y));
-            break;
-        case QPainterPath::LineToElement:
-            path.lineTo(static_cast<qreal>(x), static_cast<qreal>(y));
-            break;
-        case QPainterPath::CurveToElement:
-            // For curves, we need control points which follow
-            // This is a simplified implementation - full curves would need more data
-            path.lineTo(static_cast<qreal>(x), static_cast<qreal>(y));
-            break;
-        case QPainterPath::CurveToDataElement:
-            // Skip curve data elements as they're handled with CurveToElement
-            break;
+            case QPainterPath::MoveToElement:
+                path.moveTo(static_cast<qreal>(x), static_cast<qreal>(y));
+                break;
+            case QPainterPath::LineToElement:
+                path.lineTo(static_cast<qreal>(x), static_cast<qreal>(y));
+                break;
+            case QPainterPath::CurveToElement:
+                // For curves, we need control points which follow
+                // This is a simplified implementation - full curves would need more data
+                path.lineTo(static_cast<qreal>(x), static_cast<qreal>(y));
+                break;
+            case QPainterPath::CurveToDataElement:
+                // Skip curve data elements as they're handled with CurveToElement
+                break;
         }
     }
 
@@ -244,9 +244,9 @@ error::Result<std::shared_ptr<ProjectFile>> BinaryProjectReader::read(
         file.read(compressed.data(), static_cast<std::streamsize>(chunk.compressedSize));
 
         if (!file.good()) {
-            return error::ErrorInfo(error::ErrorCode::IOReadError,
-                                    "Failed to read chunk data at offset " +
-                                        std::to_string(chunk.offset));
+            return error::ErrorInfo(
+                error::ErrorCode::IOReadError,
+                "Failed to read chunk data at offset " + std::to_string(chunk.offset));
         }
 
         std::vector<uint8_t> decompressed = decompressLZ4(compressed, chunk.uncompressedSize);
@@ -273,8 +273,7 @@ error::Result<std::shared_ptr<ProjectFile>> BinaryProjectReader::read(
             if (layer->width() == docLayer->width() && layer->height() == docLayer->height()) {
                 std::memcpy(docLayer->data().data(), layer->data().data(), layer->data().size());
             }
-        }
-        else if (chunk.type == kChunkTypeSelection) {
+        } else if (chunk.type == kChunkTypeSelection) {
             QPainterPath selection = deserializeSelection(decompressed);
             document->setSelectionPath(selection);
         }

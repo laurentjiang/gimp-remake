@@ -7,8 +7,9 @@
 
 #pragma once
 
-#include "error_handling/error_result.h"
 #include "io/project_file.h"
+
+#include "error_handling/error_result.h"
 
 #include <filesystem>
 #include <memory>
@@ -32,7 +33,7 @@ class BinaryProjectReader {
     static error::Result<std::shared_ptr<ProjectFile>> read(const std::filesystem::path& path);
 
   private:
-    static constexpr uint32_t kMagic = 0x504D4947;       // "GIMP" in little-endian
+    static constexpr uint32_t kMagic = 0x504D4947;  // "GIMP" in little-endian
     static constexpr uint32_t kSupportedVersion = 1;
 };
 

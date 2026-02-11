@@ -296,3 +296,93 @@ if(GIMP_REMAKE_BUILD_TESTS)
 
     add_test(NAME unit_tests COMMAND unit_tests)
 endif()
+
+# --- Packaging & Distribution ---
+
+# Ensure we build a GUI application on Windows (no console)
+if(WIN32)
+    set_target_properties(gimp-remake PROPERTIES WIN32_EXECUTABLE ON)
+endif()
+
+# Installation Layout
+install(TARGETS gimp-remake
+    RUNTIME DESTINATION bin
+    BUNDLE DESTINATION .
+)
+
+install(DIRECTORY resources/
+    DESTINATION bin/resources
+)
+
+# Bundle Dependencies (Windows)
+if(WIN32)
+    # 1. Deploy Qt Dependencies using windeployqt
+    find_package(Qt6Core REQUIRED)
+    get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(_qt_bin_dir "${_qmake_executable}" DIRECTORY)
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS "${_qt_bin_dir}")
+
+    if(WINDEPLOYQT_EXECUTABLE)
+        # Run windeployqt after installation to populate the bin folder
+        install(CODE "
+            message(STATUS \"Running windeployqt...\")
+            execute_process(
+                COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
+                        --dir \"\${CMAKE_INSTALL_PREFIX}/bin\"
+                        --no-translations
+                        --compiler-runtime
+                        --verbose 0
+                        \"\${CMAKE_INSTALL_PREFIX}/bin/gimp-remake.exe\"
+                RESULT_VARIABLE _deploy_res
+            )
+            if(NOT _deploy_res EQUAL 0)
+                message(WARNING \"windeployqt failed with code \${_deploy_res}\")
+            endif()
+        ")
+    else()
+        message(WARNING "windeployqt not found! Qt DLLs will not be bundled.")
+    endif()
+
+    # 2. Bundle vcpkg/other DLLs (OpenCV, Skia, spdlog)
+    # Copy all DLLs from the build directory to the install bin directory
+    install(CODE "
+        file(GLOB _app_dlls \"$<TARGET_FILE_DIR:gimp-remake>/*.dll\")
+        if(_app_dlls)
+            file(INSTALL \${_app_dlls} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endif()
+    ")
+endif()
+
+# CPack Configuration
+set(CPACK_PACKAGE_NAME "GimpRemake")
+set(CPACK_PACKAGE_VENDOR "Gimp Remake Team")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional Image Manipulation Program Remake")
+set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/gimp-remake/gimp-remake")
+set(CPACK_PACKAGE_CONTACT "maintainer@gimp-remake.org")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "GimpRemake")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS;ZIP")
+    set(CPACK_NSIS_DISPLAY_NAME "Gimp Remake")
+    set(CPACK_NSIS_PACKAGE_NAME "Gimp Remake")
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+
+    # File Associations (.gimp-remake)
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "
+        WriteRegStr HKCR '.gimp-remake' '' 'GimpRemake.Project'
+        WriteRegStr HKCR 'GimpRemake.Project' '' 'Gimp Remake Project File'
+        WriteRegStr HKCR 'GimpRemake.Project\\\\DefaultIcon' '' '$INSTDIR\\\\bin\\\\gimp-remake.exe,0'
+        WriteRegStr HKCR 'GimpRemake.Project\\\\shell\\\\open\\\\command' '' '$INSTDIR\\\\bin\\\\gimp-remake.exe \\\"%1\\\"'
+    ")
+    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
+        DeleteRegKey HKCR '.gimp-remake'
+        DeleteRegKey HKCR 'GimpRemake.Project'
+    ")
+endif()
+
+include(CPack)

@@ -193,7 +193,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
         m_commandPalette->setCommandAction("file.save_as", [this]() { onSaveProjectAs(); });
     }
 
-    statusBar()->showMessage("Ready");;
+    statusBar()->showMessage("Ready");
+    ;
 }
 
 MainWindow::~MainWindow()

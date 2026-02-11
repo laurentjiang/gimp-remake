@@ -60,47 +60,6 @@
 
 #include <spdlog/spdlog.h>
 
-namespace {
-
-class SimpleDocument : public gimp::Document {
-  public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h) {}
-
-    std::shared_ptr<gimp::Layer> addLayer() override
-    {
-        auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
-        m_layers.addLayer(layer);
-        return layer;
-    }
-
-    void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
-    {
-        m_layers.removeLayer(layer);
-    }
-
-    [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
-
-    gimp::TileStore& tileStore() override { return m_dummyTileStore; }
-
-    [[nodiscard]] int width() const override { return m_width; }
-    [[nodiscard]] int height() const override { return m_height; }
-
-    void setSelectionPath(const QPainterPath& path) override { m_selection = path; }
-    [[nodiscard]] QPainterPath selectionPath() const override { return m_selection; }
-
-  private:
-    int m_width;
-    int m_height;
-    gimp::LayerStack m_layers;
-    QPainterPath m_selection;
-
-    class DummyTileStore : public gimp::TileStore {
-        void invalidate(const gimp::Rect&) override {}
-    } m_dummyTileStore;
-};
-
-}  // namespace
-
 namespace gimp {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)

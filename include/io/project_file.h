@@ -11,7 +11,9 @@
 
 #include <QPainterPath>
 
+#include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace gimp {
@@ -83,11 +85,22 @@ class ProjectFile : public Document {
      */
     [[nodiscard]] QPainterPath selectionPath() const override { return selection_; }
 
+    /*! @brief Sets the file path associated with this project.
+     *  @param path The file path.
+     */
+    void setFilePath(const std::filesystem::path& path) { m_filePath = path; }
+
+    /*! @brief Returns the file path associated with this project.
+     *  @return Optional file path (empty if never saved).
+     */
+    [[nodiscard]] std::optional<std::filesystem::path> filePath() const { return m_filePath; }
+
   private:
-    int m_width;                ///< Canvas width.
-    int m_height;               ///< Canvas height.
-    gimp::LayerStack m_layers;  ///< Layer stack.
-    QPainterPath selection_;    ///< Stored selection path.
+    int m_width;                                      ///< Canvas width.
+    int m_height;                                     ///< Canvas height.
+    gimp::LayerStack m_layers;                        ///< Layer stack.
+    QPainterPath selection_;                          ///< Stored selection path.
+    std::optional<std::filesystem::path> m_filePath;  ///< Associated file path.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

@@ -113,6 +113,7 @@ endif()
 find_package(unofficial-skia CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(lz4 CONFIG REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
     spdlog::spdlog 
@@ -121,6 +122,7 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Svg
+    lz4::lz4
     ${OpenCV_LIBS}
 )
 
@@ -265,6 +267,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::Gui
         Qt6::Widgets
         spdlog::spdlog
+        lz4::lz4
         ${OpenCV_LIBS}
     )
     

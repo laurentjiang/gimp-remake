@@ -29,6 +29,7 @@
       ]
     },
     "nlohmann-json",
-    "spdlog"
+    "spdlog",
+    "lz4"
   ]
 }

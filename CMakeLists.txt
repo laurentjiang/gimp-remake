@@ -42,6 +42,7 @@ add_executable(gimp-remake
     "src/ui/new_document_dialog.cpp"
     "src/ui/toast_notification.cpp"
     "src/ui/toast_manager.cpp"
+    "src/ui/recent_files_manager.cpp"
     "src/history/history_stack.cpp"
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"

@@ -28,6 +28,7 @@ class ColorChooserPanel;
 class CommandPalette;
 class DebugHud;
 class Document;
+struct NewDocumentSettings;
 class ProjectFile;
 class HistoryPanel;
 class Layer;
@@ -93,6 +94,7 @@ class MainWindow : public QMainWindow {
     void onSelectAll();
     void onSelectNone();
     void onSelectInvert();
+    void onNewProject();
     void onOpenProject();
     void onSaveProject();
     void onSaveProjectAs();
@@ -102,7 +104,7 @@ class MainWindow : public QMainWindow {
     void setupToolbar();
     void setupDockWidgets();
     void setupShortcuts();
-    void createDocument();
+    void createDocument(const NewDocumentSettings& settings);
     void positionDebugHud();
     std::shared_ptr<ProjectFile> buildProjectSnapshot() const;
 

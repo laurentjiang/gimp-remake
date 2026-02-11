@@ -38,6 +38,7 @@ add_executable(gimp-remake
     "src/ui/log_sink.cpp"
     "src/ui/log_bridge.cpp"
     "src/ui/log_panel.cpp"
+    "src/ui/new_document_dialog.cpp"
     "src/ui/toast_notification.cpp"
     "src/ui/toast_manager.cpp"
     "src/history/history_stack.cpp"
@@ -90,6 +91,7 @@ add_executable(gimp-remake
     "include/ui/shortcut_manager.h"
     "include/ui/log_bridge.h"
     "include/ui/log_panel.h"
+    "include/ui/new_document_dialog.h"
     "include/ui/toast_notification.h"
     "include/ui/toast_manager.h"
 )

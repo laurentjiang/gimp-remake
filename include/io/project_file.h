@@ -29,7 +29,7 @@ class ProjectFile : public Document {
      * @param w Canvas width in pixels.
      * @param h Canvas height in pixels.
      */
-    ProjectFile(int w, int h) : m_width(w), m_height(h) {}
+    ProjectFile(int w, int h, double dpi = 72.0) : m_width(w), m_height(h), m_dpi(dpi) {}
 
     ~ProjectFile() override = default;
 
@@ -73,6 +73,16 @@ class ProjectFile : public Document {
      */
     [[nodiscard]] int height() const override { return m_height; }
 
+    /*! @brief Returns the document resolution in DPI.
+     *  @return Resolution in DPI.
+     */
+    [[nodiscard]] double dpi() const { return m_dpi; }
+
+    /*! @brief Sets the document resolution in DPI.
+     *  @param dpi Resolution in DPI.
+     */
+    void setDpi(double dpi) { m_dpi = dpi; }
+
     /*! @brief Sets the document selection path.
      *  @param path The selection path in canvas coordinates.
      */
@@ -86,6 +96,7 @@ class ProjectFile : public Document {
   private:
     int m_width;                ///< Canvas width.
     int m_height;               ///< Canvas height.
+    double m_dpi;               ///< Resolution in DPI.
     gimp::LayerStack m_layers;  ///< Layer stack.
     QPainterPath selection_;    ///< Stored selection path.
 

@@ -59,7 +59,7 @@ namespace {
 
 class SimpleDocument : public gimp::Document {
   public:
-    SimpleDocument(int w, int h) : m_width(w), m_height(h), m_activeLayerIndex(0), m_layerCounter(0)
+    SimpleDocument(int w, int h) : m_width(w), m_height(h)
     {
     }
 
@@ -132,8 +132,8 @@ class SimpleDocument : public gimp::Document {
   private:
     int m_width;
     int m_height;
-    std::size_t m_activeLayerIndex;
-    int m_layerCounter;  ///< Counter for auto-incrementing layer names.
+    std::size_t m_activeLayerIndex{0};
+    int m_layerCounter{0};  ///< Counter for auto-incrementing layer names.
     gimp::LayerStack m_layers;
     QPainterPath m_selection;
 

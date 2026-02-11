@@ -143,8 +143,10 @@ class SimpleDocument : public gimp::Document {
 
         const float clampedX = std::clamp(anchorX, 0.0F, 1.0F);
         const float clampedY = std::clamp(anchorY, 0.0F, 1.0F);
-        const int offsetX = static_cast<int>(std::round((width - m_width) * clampedX));
-        const int offsetY = static_cast<int>(std::round((height - m_height) * clampedY));
+        const int offsetX =
+            static_cast<int>(std::round(static_cast<float>(width - m_width) * clampedX));
+        const int offsetY =
+            static_cast<int>(std::round(static_cast<float>(height - m_height) * clampedY));
 
         for (const auto& layer : m_layers) {
             if (layer) {

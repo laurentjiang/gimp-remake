@@ -107,7 +107,7 @@ QPainterPath CropCommand::buildAfterSelection() const
 {
     // Crop to selection: the canvas now matches the selection bounds exactly
     // No selection should remain after crop
-    return QPainterPath();
+    return {};
 }
 
 QPoint CropCommand::computeOffset() const

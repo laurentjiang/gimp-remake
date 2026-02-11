@@ -111,7 +111,7 @@ void CanvasResizeCommand::restoreSelection(const QPainterPath& path,
 QPainterPath CanvasResizeCommand::buildAfterSelection() const
 {
     if (beforeSelection_.isEmpty()) {
-        return QPainterPath();
+        return {};
     }
 
     const QPoint offset = computeOffset();

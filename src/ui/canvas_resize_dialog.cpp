@@ -14,6 +14,8 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+#include <array>
+
 namespace gimp {
 
 namespace {
@@ -21,10 +23,12 @@ constexpr int kAnchorGridSize = 3;
 constexpr int kAnchorButtonSize = 32;
 constexpr int kMaxCanvasSize = 100000;
 
-const char* kAnchorLabels[kAnchorGridSize][kAnchorGridSize] = {
-    {"TL", "TC", "TR"},
-    {"CL", "CC", "CR"},
-    {"BL", "BC", "BR"},
+constexpr std::array<std::array<const char*, kAnchorGridSize>, kAnchorGridSize> kAnchorLabels = {
+    {
+     {{"TL", "TC", "TR"}},
+     {{"CL", "CC", "CR"}},
+     {{"BL", "BC", "BR"}},
+     }
 };
 }  // namespace
 

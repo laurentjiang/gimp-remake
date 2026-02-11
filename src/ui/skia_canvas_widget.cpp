@@ -484,9 +484,11 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
         for (int x = startX; x < endX; x += tileSize) {
             // Calculate tile indices relative to canvas origin
             int tileX =
-                static_cast<int>(std::floor(static_cast<float>(x) / tileSize)) - canvasOffsetX;
+                static_cast<int>(std::floor(static_cast<float>(x) / static_cast<float>(tileSize))) -
+                canvasOffsetX;
             int tileY =
-                static_cast<int>(std::floor(static_cast<float>(y) / tileSize)) - canvasOffsetY;
+                static_cast<int>(std::floor(static_cast<float>(y) / static_cast<float>(tileSize))) -
+                canvasOffsetY;
             bool isDark = ((tileX + tileY) % 2) == 0;
 
             painter.fillRect(x, y, tileSize, tileSize, isDark ? darkGray : lightGray);

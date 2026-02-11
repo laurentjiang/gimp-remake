@@ -834,6 +834,15 @@ void MainWindow::onCropToSelection()
     // Clear selection after crop - the canvas now matches the selection bounds
     SelectionManager::instance().clear();
 
+    // Reset selection tools to clear stale local state (phase, currentBounds)
+    auto& factory = ToolFactory::instance();
+    if (auto* rectTool = dynamic_cast<RectSelectTool*>(factory.getTool("select_rect"))) {
+        rectTool->resetToIdle();
+    }
+    if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(factory.getTool("select_ellipse"))) {
+        ellipseTool->resetToIdle();
+    }
+
     if (m_canvasWidget != nullptr) {
         m_canvasWidget->invalidateCache();
         m_canvasWidget->update();

@@ -32,8 +32,9 @@ class ProjectFile : public Document {
      * @brief Constructs a new project with the given dimensions.
      * @param w Canvas width in pixels.
      * @param h Canvas height in pixels.
+     * @param dpi Resolution in DPI.
      */
-    ProjectFile(int w, int h) : m_width(w), m_height(h) {}
+    ProjectFile(int w, int h, double dpi = 72.0) : m_width(w), m_height(h), m_dpi(dpi) {}
 
     ~ProjectFile() override = default;
 
@@ -144,6 +145,15 @@ class ProjectFile : public Document {
      */
     [[nodiscard]] int height() const override { return m_height; }
 
+    /*! @brief Returns the document resolution in DPI.
+     *  @return Resolution in DPI.
+     */
+    [[nodiscard]] double dpi() const { return m_dpi; }
+
+    /*! @brief Sets the document resolution in DPI.
+     *  @param dpi Resolution in DPI.
+     */
+    void setDpi(double dpi) { m_dpi = dpi; }
     void resize(int width, int height, float anchorX, float anchorY) override
     {
         if (width <= 0 || height <= 0) {
@@ -192,6 +202,7 @@ class ProjectFile : public Document {
   private:
     int m_width;                         ///< Canvas width.
     int m_height;                        ///< Canvas height.
+    double m_dpi;                        ///< Resolution in DPI.
     std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
     int m_layerCounter = 0;              ///< Counter for auto-incrementing layer names.
     gimp::LayerStack m_layers;           ///< Layer stack.

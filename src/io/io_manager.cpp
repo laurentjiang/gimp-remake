@@ -164,8 +164,9 @@ ProjectFile IOManager::importProject(const std::string& filePath)
 
     const int width = projectJson.at("width").get<int>();
     const int height = projectJson.at("height").get<int>();
+    const double dpi = projectJson.value("dpi", 72.0);
 
-    ProjectFile project(width, height);
+    ProjectFile project(width, height, dpi);
 
     // Import layers
     if (projectJson.contains("layers")) {
@@ -214,6 +215,7 @@ bool IOManager::exportProject(const ProjectFile& project, const std::string& fil
         projectJson["version"] = 1;
         projectJson["width"] = project.width();
         projectJson["height"] = project.height();
+        projectJson["dpi"] = project.dpi();
 
         json layersJson = json::array();
 

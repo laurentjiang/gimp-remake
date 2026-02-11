@@ -977,6 +977,8 @@ void MainWindow::onSaveProjectAs()
 
     m_projectPath = filePath;
     onSaveProject();
+}
+
 void MainWindow::onCanvasResize()
 {
     if (!m_document) {

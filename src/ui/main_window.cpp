@@ -60,6 +60,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
+
 namespace gimp {
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
@@ -707,28 +709,28 @@ void MainWindow::onOpenProject()
     }
 
     IOManager ioManager;
-    try {
-        auto imported =
-            std::make_shared<ProjectFile>(ioManager.importProject(filePath.toStdString()));
-        set_document(imported);
-        if (m_canvasWidget) {
-            m_canvasWidget->fitInView();
-        }
-
-        if (m_historyManager) {
-            m_historyManager->clear();
-        }
-        if (m_historyPanel) {
-            m_historyPanel->clear();
-        }
-
-        m_projectPath = filePath;
-        statusBar()->showMessage("Project loaded", 2000);
-    } catch (const std::exception& ex) {
-        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOCorruptedFile,
-                                                       ex.what());
+    auto result = ioManager.loadProject(std::filesystem::path(filePath.toStdString()));
+    if (!result.IsOk()) {
+        error::ErrorHandler::GetInstance().ReportError(result.Error().GetCode(),
+                                                       result.Error().GetMessage());
         statusBar()->showMessage("Failed to open project", 3000);
+        return;
     }
+
+    set_document(result.Value());
+    if (m_canvasWidget) {
+        m_canvasWidget->fitInView();
+    }
+
+    if (m_historyManager) {
+        m_historyManager->clear();
+    }
+    if (m_historyPanel) {
+        m_historyPanel->clear();
+    }
+
+    m_projectPath = filePath;
+    statusBar()->showMessage("Project loaded", 2000);
 }
 
 void MainWindow::onSaveProject()
@@ -750,9 +752,11 @@ void MainWindow::onSaveProject()
     }
 
     IOManager ioManager;
-    if (!ioManager.exportProject(*snapshot, m_projectPath.toStdString())) {
-        error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOWriteError,
-                                                       m_projectPath.toStdString());
+    auto result =
+        ioManager.saveProject(*snapshot, std::filesystem::path(m_projectPath.toStdString()));
+    if (!result.IsOk()) {
+        error::ErrorHandler::GetInstance().ReportError(result.Error().GetCode(),
+                                                       result.Error().GetMessage());
         statusBar()->showMessage("Failed to save project", 3000);
         return;
     }
@@ -763,7 +767,7 @@ void MainWindow::onSaveProject()
 void MainWindow::onSaveProjectAs()
 {
     QString filePath = QFileDialog::getSaveFileName(
-        this, "Save Project", m_projectPath, "GIMP Project (*.gimp *.json)");
+        this, "Save Project", m_projectPath, "GIMP Project (*.gimp);;JSON Project (*.json)");
     if (filePath.isEmpty()) {
         return;
     }

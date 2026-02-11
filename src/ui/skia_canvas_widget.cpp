@@ -475,9 +475,9 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
     int scaledTileSize = std::max(
         4, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 4 for visibility
 
-    // Scale the checkerboard tile to match zoom
-    QPixmap scaledTile =
-        m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
+    // Scale the checkerboard tile to match zoom (use FastTransformation to preserve hard edges)
+    QPixmap scaledTile = m_checkerboardTile.scaled(
+        scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio, Qt::FastTransformation);
 
     // Draw tiled pixmap from the canvas origin (rect.topLeft()) so pattern aligns with canvas
     // The clip rect ensures we only paint within the visible area

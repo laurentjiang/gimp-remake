@@ -91,6 +91,10 @@ void CanvasResizeDialog::setupUi()
             button->setText(kAnchorLabels[row][col]);
             button->setCheckable(true);
             button->setFixedSize(kAnchorButtonSize, kAnchorButtonSize);
+            button->setStyleSheet(
+                "QToolButton { background: #3c3c3c; border: 1px solid #555; }"
+                "QToolButton:checked { background: #0078d4; border: 1px solid #005a9e; }"
+                "QToolButton:hover { background: #4a4a4a; }");
             anchorGroup_->addButton(button, row * kAnchorGridSize + col);
             anchorGrid->addWidget(button, row, col);
 

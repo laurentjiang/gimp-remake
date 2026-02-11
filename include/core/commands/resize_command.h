@@ -26,60 +26,60 @@ class Layer;
  * @brief Command to resize the canvas while preserving content.
  */
 class CanvasResizeCommand : public Command {
-	public:
-		/**
-		 * @brief Constructs a canvas resize command.
-		 * @param document Target document.
-		 * @param width New canvas width in pixels.
-		 * @param height New canvas height in pixels.
-		 * @param anchorX Normalized horizontal anchor (0.0 = left, 1.0 = right).
-		 * @param anchorY Normalized vertical anchor (0.0 = top, 1.0 = bottom).
-		 */
-		CanvasResizeCommand(std::shared_ptr<Document> document,
-												int width,
-												int height,
-												float anchorX,
-												float anchorY);
+  public:
+    /**
+     * @brief Constructs a canvas resize command.
+     * @param document Target document.
+     * @param width New canvas width in pixels.
+     * @param height New canvas height in pixels.
+     * @param anchorX Normalized horizontal anchor (0.0 = left, 1.0 = right).
+     * @param anchorY Normalized vertical anchor (0.0 = top, 1.0 = bottom).
+     */
+    CanvasResizeCommand(std::shared_ptr<Document> document,
+                        int width,
+                        int height,
+                        float anchorX,
+                        float anchorY);
 
-		~CanvasResizeCommand() override = default;
+    ~CanvasResizeCommand() override = default;
 
-		/**
-		 * @brief Applies the resize operation.
-		 */
-		void apply() override;
+    /**
+     * @brief Applies the resize operation.
+     */
+    void apply() override;
 
-		/**
-		 * @brief Undoes the resize operation.
-		 */
-		void undo() override;
+    /**
+     * @brief Undoes the resize operation.
+     */
+    void undo() override;
 
-	private:
-		struct LayerSnapshot {
-				std::shared_ptr<Layer> layer;
-				std::vector<std::uint8_t> data;
-		};
+  private:
+    struct LayerSnapshot {
+        std::shared_ptr<Layer> layer;
+        std::vector<std::uint8_t> data;
+    };
 
-		void captureBeforeState();
-		void restoreBeforeLayers();
-		void restoreSelection(const QPainterPath& path, SelectionType type, const char* source);
-		[[nodiscard]] QPainterPath buildAfterSelection() const;
-		[[nodiscard]] QPoint computeOffset() const;
+    void captureBeforeState();
+    void restoreBeforeLayers();
+    void restoreSelection(const QPainterPath& path, SelectionType type, const char* source);
+    [[nodiscard]] QPainterPath buildAfterSelection() const;
+    [[nodiscard]] QPoint computeOffset() const;
 
-		std::shared_ptr<Document> document_;
-		int targetWidth_ = 0;
-		int targetHeight_ = 0;
-		float anchorX_ = 0.5F;
-		float anchorY_ = 0.5F;
-		bool captured_ = false;
+    std::shared_ptr<Document> document_;
+    int targetWidth_ = 0;
+    int targetHeight_ = 0;
+    float anchorX_ = 0.5F;
+    float anchorY_ = 0.5F;
+    bool captured_ = false;
 
-		int beforeWidth_ = 0;
-		int beforeHeight_ = 0;
-		std::vector<LayerSnapshot> beforeLayers_;
+    int beforeWidth_ = 0;
+    int beforeHeight_ = 0;
+    std::vector<LayerSnapshot> beforeLayers_;
 
-		QPainterPath beforeSelection_;
-		SelectionType beforeSelectionType_ = SelectionType::Unknown;
-		QPainterPath afterSelection_;
-		SelectionType afterSelectionType_ = SelectionType::Unknown;
+    QPainterPath beforeSelection_;
+    SelectionType beforeSelectionType_ = SelectionType::Unknown;
+    QPainterPath afterSelection_;
+    SelectionType afterSelectionType_ = SelectionType::Unknown;
 };
 
 }  // namespace gimp

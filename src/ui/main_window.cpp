@@ -831,6 +831,9 @@ void MainWindow::onCropToSelection()
         m_commandBus->dispatch(cmd);
     }
 
+    // Clear selection after crop - the canvas now matches the selection bounds
+    SelectionManager::instance().clear();
+
     if (m_canvasWidget != nullptr) {
         m_canvasWidget->invalidateCache();
         m_canvasWidget->update();

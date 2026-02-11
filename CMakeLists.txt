@@ -72,7 +72,7 @@ add_executable(gimp-remake
     "src/core/commands/draw_command.cpp"
     "src/core/commands/move_command.cpp"
     "src/core/commands/resize_command.cpp"
-    "src/core/commands/crop_command copy.cpp"
+    "src/core/commands/crop_command.cpp"
     "src/core/commands/selection_command.cpp"
     "src/core/commands/paste_command.cpp"
     "src/render/skia_renderer.cpp"

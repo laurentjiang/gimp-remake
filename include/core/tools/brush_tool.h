@@ -123,7 +123,8 @@ class BrushTool : public Tool, public ToolOptions {
     std::unique_ptr<SoftBrush> brush_;
     BrushDynamics dynamics_;
     std::vector<StrokePoint> strokePoints_;
-    std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
+    std::vector<uint8_t> beforeState_;    ///< Layer data before stroke for undo.
+    std::shared_ptr<Layer> activeLayer_;  ///< Layer being drawn on during stroke.
     int brushSize_ = 20;
     float hardness_ = 0.5F;
     float opacity_ = 1.0F;

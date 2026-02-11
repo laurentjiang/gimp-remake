@@ -77,6 +77,7 @@ add_executable(gimp-remake
     "src/core/commands/paste_command.cpp"
     "src/render/skia_renderer.cpp"
     "src/render/skia_compositor.cpp"
+    "src/render/gpu_context.cpp"
     "resources/resources.qrc"
     # Headers with Q_OBJECT (required for AUTOMOC when headers are in separate include/ dir)
     "include/ui/main_window.h"
@@ -114,7 +115,7 @@ if(WIN32)
 endif()
 
 find_package(unofficial-skia CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg OpenGL OpenGLWidgets REQUIRED)
 find_package(OpenCV REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
@@ -124,6 +125,8 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Svg
+    Qt6::OpenGL
+    Qt6::OpenGLWidgets
     ${OpenCV_LIBS}
 )
 
@@ -267,6 +270,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
         spdlog::spdlog
         ${OpenCV_LIBS}
     )

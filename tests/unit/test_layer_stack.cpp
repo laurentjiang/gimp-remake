@@ -220,3 +220,103 @@ TEST_CASE("LayerStack reverse iteration", "[layer_stack][unit]")
     REQUIRE(names[1] == "Second");
     REQUIRE(names[2] == "First");
 }
+
+// =============================================================================
+// Active Layer Tracking Tests (using ProjectFile as Document implementation)
+// =============================================================================
+
+#include "io/project_file.h"
+
+TEST_CASE("ProjectFile activeLayerIndex returns 0 on empty document", "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+
+    REQUIRE(project.activeLayerIndex() == 0);
+}
+
+TEST_CASE("ProjectFile activeLayer returns nullptr on empty document", "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+
+    REQUIRE(project.activeLayer() == nullptr);
+}
+
+TEST_CASE("ProjectFile activeLayerIndex defaults to first layer", "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+    project.addLayer();
+    project.addLayer();
+
+    REQUIRE(project.activeLayerIndex() == 0);
+    REQUIRE(project.activeLayer() == project.layers()[0]);
+}
+
+TEST_CASE("ProjectFile setActiveLayerIndex changes active layer", "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+    project.addLayer();
+    auto layer2 = project.addLayer();
+    auto layer3 = project.addLayer();
+
+    project.setActiveLayerIndex(1);
+
+    REQUIRE(project.activeLayerIndex() == 1);
+    REQUIRE(project.activeLayer() == layer2);
+
+    project.setActiveLayerIndex(2);
+
+    REQUIRE(project.activeLayerIndex() == 2);
+    REQUIRE(project.activeLayer() == layer3);
+}
+
+TEST_CASE("ProjectFile setActiveLayerIndex clamps to valid range", "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+    project.addLayer();
+    project.addLayer();
+
+    // Try to set to invalid index (too high)
+    project.setActiveLayerIndex(100);
+
+    // Should clamp to last valid index
+    REQUIRE(project.activeLayerIndex() == 1);
+}
+
+TEST_CASE("ProjectFile removeLayer adjusts active index when removing active layer",
+          "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+    auto layer1 = project.addLayer();
+    project.addLayer();
+    auto layer3 = project.addLayer();
+
+    // Set active to last layer (index 2)
+    project.setActiveLayerIndex(2);
+    REQUIRE(project.activeLayer() == layer3);
+
+    // Remove the active layer
+    project.removeLayer(layer3);
+
+    // Active index should be clamped to new last valid index
+    REQUIRE(project.activeLayerIndex() == 1);
+}
+
+TEST_CASE("ProjectFile removeLayer adjusts index when removing layer before active",
+          "[active_layer][unit]")
+{
+    gimp::ProjectFile project(100, 100);
+    auto layer1 = project.addLayer();
+    auto layer2 = project.addLayer();
+    auto layer3 = project.addLayer();
+
+    // Set active to last layer (index 2)
+    project.setActiveLayerIndex(2);
+    REQUIRE(project.activeLayer() == layer3);
+
+    // Remove first layer (before active)
+    project.removeLayer(layer1);
+
+    // Active index should decrease by 1, but still point to layer3
+    REQUIRE(project.activeLayerIndex() == 1);
+    REQUIRE(project.activeLayer() == layer3);
+}

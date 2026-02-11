@@ -152,6 +152,7 @@ class GradientTool : public Tool, public ToolOptions {
 
     std::vector<std::uint8_t> beforeState_;
     std::shared_ptr<DrawCommand> command_;
+    std::shared_ptr<Layer> activeLayer_;  ///< Layer being drawn on during stroke.
 };
 
 }  // namespace gimp

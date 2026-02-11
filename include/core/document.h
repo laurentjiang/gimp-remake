@@ -41,10 +41,30 @@ class Document {
      */
     virtual void removeLayer(const std::shared_ptr<Layer>& layer) = 0;
 
-    /*! @brief Returns the layer stack.
-     *  @return Reference to the document's layer stack.
+    /*! @brief Returns the layer stack (const).
+     *  @return Const reference to the document's layer stack.
      */
     [[nodiscard]] virtual const LayerStack& layers() const = 0;
+
+    /*! @brief Returns the layer stack (mutable).
+     *  @return Mutable reference to the document's layer stack.
+     */
+    virtual LayerStack& layers() = 0;
+
+    /*! @brief Returns the currently active layer.
+     *  @return Shared pointer to the active layer, or nullptr if no layers.
+     */
+    [[nodiscard]] virtual std::shared_ptr<Layer> activeLayer() const = 0;
+
+    /*! @brief Returns the index of the currently active layer.
+     *  @return Index in the layer stack (0-based).
+     */
+    [[nodiscard]] virtual std::size_t activeLayerIndex() const = 0;
+
+    /*! @brief Sets the active layer by index.
+     *  @param index The layer index to make active (clamped to valid range).
+     */
+    virtual void setActiveLayerIndex(std::size_t index) = 0;
 
     /*! @brief Returns the tile store for dirty region tracking.
      *  @return Reference to the tile store.

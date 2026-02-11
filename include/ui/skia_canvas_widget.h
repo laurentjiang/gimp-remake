@@ -8,11 +8,13 @@
 
 #pragma once
 
-#include <QImage>
+#include "core/event_bus.h"
+#include "render/gpu_context.h"
+
+#include <QOpenGLWidget>
 #include <QPixmap>
 #include <QPointF>
 #include <QTimer>
-#include <QWidget>
 
 #include <memory>
 
@@ -46,7 +48,7 @@ struct ViewportState {
  * - Coordinate transformation between screen and canvas space
  * - Cursor management based on active tool and state
  */
-class SkiaCanvasWidget : public QWidget {
+class SkiaCanvasWidget : public QOpenGLWidget {
     Q_OBJECT
 
   public:
@@ -134,10 +136,19 @@ class SkiaCanvasWidget : public QWidget {
     void framePainted(double frameTimeMs);
 
   protected:
-    /*! @brief Paints the rendered document with viewport transformations.
-     *  @param event The paint event.
+    /*! @brief Initializes the OpenGL context and creates the GPU context.
      */
-    void paintEvent(QPaintEvent* event) override;
+    void initializeGL() override;
+
+    /*! @brief Handles widget resize.
+     *  @param w New width.
+     *  @param h New height.
+     */
+    void resizeGL(int w, int h) override;
+
+    /*! @brief Paints the rendered document using GPU acceleration.
+     */
+    void paintGL() override;
 
     /*! @brief Handles mouse button press events.
      *  @param event The mouse event.
@@ -209,14 +220,6 @@ class SkiaCanvasWidget : public QWidget {
      */
     void sampleColorAtPosition(const QPoint& screenPos);
 
-    /*! @brief Re-renders the document if the cache is invalid. */
-    void renderIfNeeded();
-
-    /*! @brief Updates a region of the cache directly from layer data.
-     *  Faster than full re-render for interactive painting.
-     */
-    void updateCacheFromLayer();
-
     /*! @brief Updates marching ants animation for selections. */
     void advanceSelectionAnimation();
 
@@ -230,8 +233,7 @@ class SkiaCanvasWidget : public QWidget {
     std::shared_ptr<SkiaRenderer> m_renderer;
     ViewportState m_viewport;
 
-    QImage m_cachedImage;       ///< Cached rendered document image.
-    bool m_cacheValid = false;  ///< Whether the cached image is valid.
+    std::unique_ptr<IGpuContext> m_gpuContext;  ///< GPU context for Skia rendering.
 
     bool m_isPanning = false;
     bool m_spaceHeld = false;
@@ -244,6 +246,11 @@ class SkiaCanvasWidget : public QWidget {
     float m_marchingOffset = 0.0F;
 
     QPixmap m_checkerboardTile;  ///< Cached checkerboard tile for transparency display.
+
+    // Event subscriptions for layer changes
+    EventBus::SubscriptionId m_layerStackSub = 0;      ///< Layer stack change subscription.
+    EventBus::SubscriptionId m_layerSelectionSub = 0;  ///< Layer selection change subscription.
+    EventBus::SubscriptionId m_layerPropertySub = 0;   ///< Layer property change subscription.
 };
 
 }  // namespace gimp

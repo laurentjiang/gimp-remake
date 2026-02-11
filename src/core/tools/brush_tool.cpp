@@ -87,11 +87,11 @@ void BrushTool::renderSegment(int fromX,
                               int toY,
                               float toPressure)
 {
-    if (!document_ || document_->layers().count() == 0) {
+    if (!activeLayer_) {
         return;
     }
 
-    auto layer = document_->layers()[0];
+    auto layer = activeLayer_;
     auto* pixelData = layer->data().data();
     int layerWidth = layer->width();
     int layerHeight = layer->height();
@@ -115,14 +115,18 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
 {
     strokePoints_.clear();
     beforeState_.clear();
+    activeLayer_ = nullptr;
     dynamics_.beginStroke();
 
     if (!document_ || document_->layers().count() == 0) {
         return;
     }
 
-    auto layer = document_->layers()[0];
-    beforeState_ = layer->data();
+    activeLayer_ = document_->activeLayer();
+    if (!activeLayer_) {
+        return;
+    }
+    beforeState_ = activeLayer_->data();
 
     // Compute initial pressure from dynamics
     DynamicsInput dynInput =
@@ -131,9 +135,9 @@ void BrushTool::beginStroke(const ToolInputEvent& event)
 
     strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), effectivePressure});
 
-    auto* pixelData = layer->data().data();
-    int layerWidth = layer->width();
-    int layerHeight = layer->height();
+    auto* pixelData = activeLayer_->data().data();
+    int layerWidth = activeLayer_->width();
+    int layerHeight = activeLayer_->height();
 
     std::uint32_t color = ToolFactory::instance().foregroundColor();
     std::uint8_t colorAlpha = static_cast<std::uint8_t>(color & 0xFF);
@@ -189,7 +193,7 @@ std::shared_ptr<DrawCommand> BrushTool::buildDrawCommand(int minX, int maxX, int
     int width = maxX - minX + 1;
     int height = maxY - minY + 1;
 
-    return std::make_shared<DrawCommand>(document_->layers()[0], minX, minY, width, height);
+    return std::make_shared<DrawCommand>(activeLayer_, minX, minY, width, height);
 }
 
 void BrushTool::endStroke(const ToolInputEvent& event)
@@ -210,25 +214,26 @@ void BrushTool::endStroke(const ToolInputEvent& event)
         strokePoints_.push_back({newX, newY, effectivePressure});
     }
 
-    if (!document_ || !commandBus_) {
+    if (!document_ || !commandBus_ || !activeLayer_) {
         strokePoints_.clear();
         beforeState_.clear();
+        activeLayer_ = nullptr;
         return;
     }
 
     auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
     if (!drawCmd) {
         beforeState_.clear();
+        activeLayer_ = nullptr;
         return;
     }
 
-    auto layer = document_->layers()[0];
-    std::vector<uint8_t> afterState = layer->data();
+    std::vector<uint8_t> afterState = activeLayer_->data();
 
-    layer->data() = beforeState_;
+    activeLayer_->data() = beforeState_;
     drawCmd->captureBeforeState();
 
-    layer->data() = afterState;
+    activeLayer_->data() = afterState;
     drawCmd->captureAfterState();
 
     commandBus_->dispatch(drawCmd);
@@ -237,6 +242,7 @@ void BrushTool::endStroke(const ToolInputEvent& event)
 
     strokePoints_.clear();
     beforeState_.clear();
+    activeLayer_ = nullptr;
 }
 
 void BrushTool::cancelStroke()

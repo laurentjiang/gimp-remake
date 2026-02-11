@@ -10,6 +10,7 @@
 #include "ui/main_window.h"
 
 #include <QApplication>
+#include <QIcon>
 #include <QMessageBox>
 #include <QSurfaceFormat>
 
@@ -74,6 +75,7 @@ int runApplication(int argc, char** argv)
     QSurfaceFormat::setDefaultFormat(format);
 
     const QApplication app(argc, argv);
+    QApplication::setWindowIcon(QIcon(":/icons/gomp.png"));
 
     gimp::MainWindow window;
 

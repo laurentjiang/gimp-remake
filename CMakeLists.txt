@@ -44,6 +44,7 @@ add_executable(gimp-remake
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
     "src/io/binary_project_writer.cpp"
+    "src/io/binary_project_reader.cpp"
     "src/error_handling/error_handler.cpp"
     "src/core/command_bus.cpp"
     "src/core/clipboard_manager.cpp"
@@ -250,6 +251,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/render/skia_compositor.cpp"
         "src/io/io_manager.cpp"
         "src/io/binary_project_writer.cpp"
+        "src/io/binary_project_reader.cpp"
         "src/ui/color_chooser_panel.cpp"
         # Headers with Q_OBJECT for AUTOMOC
         "include/ui/skia_canvas_widget.h"

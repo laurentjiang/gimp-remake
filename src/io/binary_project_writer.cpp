@@ -9,11 +9,11 @@
 
 #include "core/layer.h"
 
-#include <lz4.h>
-
 #include <cstring>
 #include <fstream>
 #include <vector>
+
+#include <lz4.h>
 
 namespace gimp {
 
@@ -49,11 +49,10 @@ std::vector<char> compressLZ4(const std::vector<uint8_t>& data)
     const int maxDstSize = LZ4_compressBound(static_cast<int>(data.size()));
     std::vector<char> compressed(static_cast<size_t>(maxDstSize));
 
-    const int compressedSize = LZ4_compress_default(
-        reinterpret_cast<const char*>(data.data()),
-        compressed.data(),
-        static_cast<int>(data.size()),
-        maxDstSize);
+    const int compressedSize = LZ4_compress_default(reinterpret_cast<const char*>(data.data()),
+                                                    compressed.data(),
+                                                    static_cast<int>(data.size()),
+                                                    maxDstSize);
 
     compressed.resize(static_cast<size_t>(compressedSize));
     return compressed;

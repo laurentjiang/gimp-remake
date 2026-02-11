@@ -75,7 +75,7 @@ int runApplication(int argc, char** argv)
     QSurfaceFormat::setDefaultFormat(format);
 
     const QApplication app(argc, argv);
-    app.setWindowIcon(QIcon(":/icons/gomp.png"));
+    QApplication::setWindowIcon(QIcon(":/icons/gomp.png"));
 
     gimp::MainWindow window;
 

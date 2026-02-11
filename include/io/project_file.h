@@ -26,8 +26,9 @@ class ProjectFile : public Document {
   public:
     /*!
      * @brief Constructs a new project with the given dimensions.
-     * @param w Canvas width in pixels.
-     * @param h Canvas height in pixels.
+    * @param w Canvas width in pixels.
+    * @param h Canvas height in pixels.
+    * @param dpi Resolution in DPI.
      */
     ProjectFile(int w, int h, double dpi = 72.0) : m_width(w), m_height(h), m_dpi(dpi) {}
 

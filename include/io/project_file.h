@@ -38,9 +38,18 @@ class ProjectFile : public Document {
      * @brief Adds a new layer to the project.
      * @return Shared pointer to the newly created layer.
      */
-    std::shared_ptr<gimp::Layer> addLayer() override
+    std::shared_ptr<gimp::Layer> addLayer() override { return addLayer(m_width, m_height); }
+
+    /*!
+     * @brief Adds a new layer with custom dimensions.
+     * @param width Layer width in pixels.
+     * @param height Layer height in pixels.
+     * @return Shared pointer to the newly created layer.
+     */
+    std::shared_ptr<gimp::Layer> addLayer(int width, int height)
     {
-        auto layer = std::make_shared<gimp::Layer>(m_width, m_height);
+        auto layer = std::make_shared<gimp::Layer>(width, height);
+        layer->setName("Layer " + std::to_string(++m_layerCounter));
         m_layers.addLayer(layer);
         return layer;
     }
@@ -51,13 +60,71 @@ class ProjectFile : public Document {
      */
     void removeLayer(const std::shared_ptr<gimp::Layer>& layer) override
     {
+        // Find index of layer being removed to adjust active index
+        std::size_t removedIndex = m_layers.count();  // invalid sentinel
+        for (std::size_t i = 0; i < m_layers.count(); ++i) {
+            if (m_layers[i] == layer) {
+                removedIndex = i;
+                break;
+            }
+        }
+
         m_layers.removeLayer(layer);
+
+        // Adjust active layer index if needed
+        if (!m_layers.empty()) {
+            if (m_activeLayerIndex >= m_layers.count()) {
+                m_activeLayerIndex = m_layers.count() - 1;
+            } else if (removedIndex < m_activeLayerIndex) {
+                --m_activeLayerIndex;
+            }
+        } else {
+            m_activeLayerIndex = 0;
+        }
     }
 
-    /*! @brief Returns the layer stack.
+    /*! @brief Returns the layer stack (const).
      *  @return Const reference to the layer stack.
      */
     [[nodiscard]] const gimp::LayerStack& layers() const override { return m_layers; }
+
+    /*! @brief Returns the layer stack (mutable).
+     *  @return Mutable reference to the layer stack.
+     */
+    gimp::LayerStack& layers() override { return m_layers; }
+
+    /*! @brief Returns the currently active layer.
+     *  @return Shared pointer to the active layer, or nullptr if no layers.
+     */
+    [[nodiscard]] std::shared_ptr<gimp::Layer> activeLayer() const override
+    {
+        if (m_layers.empty()) {
+            return nullptr;
+        }
+        return m_layers[m_activeLayerIndex];
+    }
+
+    /*! @brief Returns the index of the currently active layer.
+     *  @return Index in the layer stack (0-based).
+     */
+    [[nodiscard]] std::size_t activeLayerIndex() const override { return m_activeLayerIndex; }
+
+    /*! @brief Sets the active layer by index.
+     *  @param index The layer index to make active (clamped to valid range).
+     */
+    void setActiveLayerIndex(std::size_t index) override
+    {
+        if (m_layers.empty()) {
+            m_activeLayerIndex = 0;
+            return;
+        }
+        m_activeLayerIndex = std::min(index, m_layers.count() - 1);
+    }
+
+    /*! @brief Resets the layer counter to 0.
+     *  Use after creating the background layer so next layer is "Layer 1".
+     */
+    void resetLayerCounter() { m_layerCounter = 0; }
 
     /*! @brief Returns the tile store for dirty region tracking.
      *  @return Reference to the tile store.
@@ -98,8 +165,10 @@ class ProjectFile : public Document {
     int m_width;                ///< Canvas width.
     int m_height;               ///< Canvas height.
     double m_dpi;               ///< Resolution in DPI.
-    gimp::LayerStack m_layers;  ///< Layer stack.
-    QPainterPath selection_;    ///< Stored selection path.
+    std::size_t m_activeLayerIndex = 0;  ///< Index of the active layer.
+    int m_layerCounter = 0;              ///< Counter for auto-incrementing layer names.
+    gimp::LayerStack m_layers;           ///< Layer stack.
+    QPainterPath selection_;             ///< Stored selection path.
 
     /*! @brief Placeholder TileStore that does nothing. */
     class DummyTileStore : public TileStore {

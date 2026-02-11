@@ -98,6 +98,9 @@ class MainWindow : public QMainWindow {
     void onOpenProject();
     void onSaveProject();
     void onSaveProjectAs();
+    void onCut();
+    void onCopy();
+    void onPaste();
 
   private:
     void setupMenuBar();
@@ -115,6 +118,10 @@ class MainWindow : public QMainWindow {
 
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
     EventBus::SubscriptionId m_colorChangedSubscription = 0;
+    EventBus::SubscriptionId m_layerSelectionSubscription = 0;
+    EventBus::SubscriptionId m_mousePositionSubscription = 0;
+
+    QPoint m_lastCanvasMousePos;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

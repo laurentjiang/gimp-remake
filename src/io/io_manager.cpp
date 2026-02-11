@@ -111,22 +111,31 @@ ProjectFile IOManager::importProject(const std::string& filePath)
     // Import layers
     if (projectJson.contains("layers")) {
         for (const auto& layerJson : projectJson.at("layers")) {
-            // addLayer() creates a new layer with default settings
-            auto layer = project.addLayer();
+            const int layerWidth = layerJson.value("width", width);
+            const int layerHeight = layerJson.value("height", height);
 
-            // Restore layer properties from JSON
-            layer->setName(layerJson.at("name").get<std::string>());
-            layer->setVisible(layerJson.at("visible").get<bool>());
-            layer->setOpacity(layerJson.at("opacity").get<float>());
-            layer->setBlendMode(
-                string_to_blend_mode(layerJson.at("blend_mode").get<std::string>()));
+            auto layer = project.addLayer(layerWidth, layerHeight);
 
-            // Restore layer data
-            const std::vector<uint8_t> layerData = layerJson.at("data").get<std::vector<uint8_t>>();
-            if (layerData.size() == layer->data().size()) {
-                layer->data() = layerData;
-            } else {
-                throw std::runtime_error("Layer data size mismatch during import");
+            // Restore layer properties from JSON, falling back to defaults
+            if (layerJson.contains("name")) {
+                layer->setName(layerJson.at("name").get<std::string>());
+            }
+            layer->setVisible(layerJson.value("visible", true));
+            layer->setOpacity(layerJson.value("opacity", 1.0F));
+            if (layerJson.contains("blend_mode")) {
+                layer->setBlendMode(
+                    string_to_blend_mode(layerJson.at("blend_mode").get<std::string>()));
+            }
+
+            // Restore layer data when present
+            if (layerJson.contains("data")) {
+                const std::vector<uint8_t> layerData =
+                    layerJson.at("data").get<std::vector<uint8_t>>();
+                if (layerData.size() == layer->data().size()) {
+                    layer->data() = layerData;
+                } else {
+                    throw std::runtime_error("Layer data size mismatch during import");
+                }
             }
         }
     }
@@ -143,6 +152,7 @@ bool IOManager::exportProject(const ProjectFile& project, const std::string& fil
     try {
         json projectJson;
 
+        projectJson["version"] = 1;
         projectJson["width"] = project.width();
         projectJson["height"] = project.height();
         projectJson["dpi"] = project.dpi();

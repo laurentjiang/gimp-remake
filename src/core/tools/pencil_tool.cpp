@@ -72,14 +72,13 @@ void PencilTool::renderSegment(int fromX,
                                int toY,
                                float toPressure)
 {
-    if (!document_ || document_->layers().count() == 0) {
+    if (!activeLayer_) {
         return;
     }
 
-    auto layer = document_->layers()[0];
-    auto* pixelData = layer->data().data();
-    int layerWidth = layer->width();
-    int layerHeight = layer->height();
+    auto* pixelData = activeLayer_->data().data();
+    int layerWidth = activeLayer_->width();
+    int layerHeight = activeLayer_->height();
 
     SolidBrush brush;
     std::uint32_t color = ToolFactory::instance().foregroundColor();
@@ -98,21 +97,25 @@ void PencilTool::beginStroke(const ToolInputEvent& event)
 {
     strokePoints_.clear();
     beforeState_.clear();
+    activeLayer_ = nullptr;
 
     if (!document_ || document_->layers().count() == 0) {
         return;
     }
 
     // Capture the layer state before we start drawing
-    auto layer = document_->layers()[0];
-    beforeState_ = layer->data();
+    activeLayer_ = document_->activeLayer();
+    if (!activeLayer_) {
+        return;
+    }
+    beforeState_ = activeLayer_->data();
 
     // Add first point and render it
     strokePoints_.push_back({event.canvasPos.x(), event.canvasPos.y(), event.pressure});
 
-    auto* pixelData = layer->data().data();
-    int layerWidth = layer->width();
-    int layerHeight = layer->height();
+    auto* pixelData = activeLayer_->data().data();
+    int layerWidth = activeLayer_->width();
+    int layerHeight = activeLayer_->height();
 
     SolidBrush brush;
     std::uint32_t color = ToolFactory::instance().foregroundColor();
@@ -162,7 +165,7 @@ std::shared_ptr<DrawCommand> PencilTool::buildDrawCommand(int minX, int maxX, in
     int width = maxX - minX + 1;
     int height = maxY - minY + 1;
 
-    return std::make_shared<DrawCommand>(document_->layers()[0], minX, minY, width, height);
+    return std::make_shared<DrawCommand>(activeLayer_, minX, minY, width, height);
 }
 
 void PencilTool::endStroke(const ToolInputEvent& event)
@@ -182,9 +185,10 @@ void PencilTool::endStroke(const ToolInputEvent& event)
         strokePoints_.push_back({newX, newY, event.pressure});
     }
 
-    if (!document_ || !commandBus_) {
+    if (!document_ || !commandBus_ || !activeLayer_) {
         strokePoints_.clear();
         beforeState_.clear();
+        activeLayer_ = nullptr;
         return;
     }
 
@@ -192,20 +196,20 @@ void PencilTool::endStroke(const ToolInputEvent& event)
     auto drawCmd = buildDrawCommand(INT_MAX, INT_MIN, INT_MAX, INT_MIN);
     if (!drawCmd) {
         beforeState_.clear();
+        activeLayer_ = nullptr;
         return;
     }
 
     // The layer now has the "after" state (with the stroke)
     // We need to swap in the "before" state, capture it, then swap back
-    auto layer = document_->layers()[0];
-    std::vector<uint8_t> afterState = layer->data();
+    std::vector<uint8_t> afterState = activeLayer_->data();
 
     // Temporarily restore before state
-    layer->data() = beforeState_;
+    activeLayer_->data() = beforeState_;
     drawCmd->captureBeforeState();
 
     // Restore after state (the drawn stroke)
-    layer->data() = afterState;
+    activeLayer_->data() = afterState;
     drawCmd->captureAfterState();
 
     commandBus_->dispatch(drawCmd);
@@ -215,6 +219,7 @@ void PencilTool::endStroke(const ToolInputEvent& event)
 
     strokePoints_.clear();
     beforeState_.clear();
+    activeLayer_ = nullptr;
 }
 
 void PencilTool::cancelStroke()

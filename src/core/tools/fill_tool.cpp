@@ -69,14 +69,13 @@ bool FillTool::colorMatches(std::uint32_t pixelColor, std::uint32_t targetColor)
 
 void FillTool::floodFill(int startX, int startY, std::uint32_t fillColor)
 {
-    if (!document_ || document_->layers().count() == 0) {
+    if (!activeLayer_) {
         return;
     }
 
-    auto layer = document_->layers()[0];
-    std::vector<uint8_t>& data = layer->data();
-    int width = layer->width();
-    int height = layer->height();
+    std::vector<uint8_t>& data = activeLayer_->data();
+    int width = activeLayer_->width();
+    int height = activeLayer_->height();
 
     if (startX < 0 || startX >= width || startY < 0 || startY >= height) {
         return;
@@ -159,6 +158,7 @@ void FillTool::floodFill(int startX, int startY, std::uint32_t fillColor)
 void FillTool::beginStroke(const ToolInputEvent& event)
 {
     beforeState_.clear();
+    activeLayer_ = nullptr;
     fillPending_ = false;
 
     // Only fill on left mouse button
@@ -171,8 +171,11 @@ void FillTool::beginStroke(const ToolInputEvent& event)
     }
 
     // Capture the layer state before the fill
-    auto layer = document_->layers()[0];
-    beforeState_ = layer->data();
+    activeLayer_ = document_->activeLayer();
+    if (!activeLayer_) {
+        return;
+    }
+    beforeState_ = activeLayer_->data();
 
     // Perform the flood fill
     std::uint32_t fillColor = ToolFactory::instance().foregroundColor();
@@ -188,33 +191,34 @@ void FillTool::continueStroke(const ToolInputEvent& /*event*/)
 
 void FillTool::endStroke(const ToolInputEvent& /*event*/)
 {
-    if (!fillPending_ || beforeState_.empty()) {
+    if (!fillPending_ || beforeState_.empty() || !activeLayer_) {
         beforeState_.clear();
+        activeLayer_ = nullptr;
         fillPending_ = false;
         return;
     }
 
     if (!document_ || !commandBus_) {
         beforeState_.clear();
+        activeLayer_ = nullptr;
         fillPending_ = false;
         return;
     }
 
-    auto layer = document_->layers()[0];
-    int width = layer->width();
-    int height = layer->height();
+    int width = activeLayer_->width();
+    int height = activeLayer_->height();
 
     // Create command for the entire layer (fill could affect any region)
-    auto drawCmd = std::make_shared<DrawCommand>(layer, 0, 0, width, height);
+    auto drawCmd = std::make_shared<DrawCommand>(activeLayer_, 0, 0, width, height);
 
     // The layer now has the "after" state (with the fill)
     // Swap in the "before" state, capture it, then swap back
-    std::vector<uint8_t> afterState = layer->data();
+    std::vector<uint8_t> afterState = activeLayer_->data();
 
-    layer->data() = beforeState_;
+    activeLayer_->data() = beforeState_;
     drawCmd->captureBeforeState();
 
-    layer->data() = afterState;
+    activeLayer_->data() = afterState;
     drawCmd->captureAfterState();
 
     commandBus_->dispatch(drawCmd);
@@ -223,16 +227,18 @@ void FillTool::endStroke(const ToolInputEvent& /*event*/)
     ToolFactory::instance().markForegroundColorUsed();
 
     beforeState_.clear();
+    activeLayer_ = nullptr;
     fillPending_ = false;
 }
 
 void FillTool::cancelStroke()
 {
-    if (!beforeState_.empty() && document_ && document_->layers().count() > 0) {
+    if (!beforeState_.empty() && activeLayer_) {
         // Restore original state
-        document_->layers()[0]->data() = beforeState_;
+        activeLayer_->data() = beforeState_;
     }
     beforeState_.clear();
+    activeLayer_ = nullptr;
     fillPending_ = false;
 }
 

@@ -29,7 +29,10 @@ std::optional<std::uint32_t> ColorPickerTool::sampleColorAt(int x, int y) const
         return std::nullopt;
     }
 
-    auto layer = document_->layers()[0];
+    auto layer = document_->activeLayer();
+    if (!layer) {
+        return std::nullopt;
+    }
     const int width = layer->width();
     const int height = layer->height();
 

@@ -138,13 +138,35 @@ jobs:
             echo "branch_coverage=N/A" >> $env:GITHUB_OUTPUT
           }
 
+      - name: Collect Redistributable Files
+        shell: pwsh
+        run: |
+          # Create distribution folder
+          New-Item -ItemType Directory -Force -Path dist
+          
+          # Copy main executable
+          Copy-Item build/gimp-remake.exe dist/
+          
+          # Copy Qt plugins
+          Copy-Item -Path build/platforms -Destination dist/ -Recurse -Force
+          if (Test-Path build/iconengines) { Copy-Item -Path build/iconengines -Destination dist/ -Recurse -Force }
+          if (Test-Path build/imageformats) { Copy-Item -Path build/imageformats -Destination dist/ -Recurse -Force }
+          if (Test-Path build/styles) { Copy-Item -Path build/styles -Destination dist/ -Recurse -Force }
+          
+          # Copy all DLLs from vcpkg (Qt, Skia, etc.)
+          Get-ChildItem -Path build/vcpkg_installed/x64-windows*/bin/*.dll -ErrorAction SilentlyContinue | ForEach-Object {
+            Copy-Item $_.FullName dist/ -Force
+          }
+          
+          # List what we're packaging
+          Write-Host "Distribution contents:"
+          Get-ChildItem -Path dist -Recurse | ForEach-Object { Write-Host $_.FullName }
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: gimp-remake-windows-${{ github.sha }}
-          path: |
-            build/gimp-remake.exe
-            build/platforms/
+          path: dist/
           retention-days: 14
 
       - name: Upload Test Results

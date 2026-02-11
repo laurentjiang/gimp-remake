@@ -32,6 +32,7 @@ add_executable(gimp-remake
     "src/ui/history_panel.cpp"
     "src/ui/color_chooser_panel.cpp"
     "src/ui/command_palette.cpp"
+    "src/ui/canvas_resize_dialog.cpp"
     "src/ui/debug_hud.cpp"
     "src/ui/shortcut_manager.cpp"
     "src/ui/log_message.cpp"
@@ -72,10 +73,13 @@ add_executable(gimp-remake
     "src/core/commands/fill_color_command.cpp"
     "src/core/commands/draw_command.cpp"
     "src/core/commands/move_command.cpp"
+    "src/core/commands/resize_command.cpp"
+    "src/core/commands/crop_command.cpp"
     "src/core/commands/selection_command.cpp"
     "src/core/commands/paste_command.cpp"
     "src/render/skia_renderer.cpp"
     "src/render/skia_compositor.cpp"
+    "src/render/gpu_context.cpp"
     "resources/resources.qrc"
     # Headers with Q_OBJECT (required for AUTOMOC when headers are in separate include/ dir)
     "include/ui/main_window.h"
@@ -113,7 +117,7 @@ if(WIN32)
 endif()
 
 find_package(unofficial-skia CONFIG REQUIRED)
-find_package(Qt6 COMPONENTS Core Gui Widgets Svg REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Svg OpenGL OpenGLWidgets REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
 
@@ -124,6 +128,8 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Svg
+    Qt6::OpenGL
+    Qt6::OpenGLWidgets
     lz4::lz4
     ${OpenCV_LIBS}
 )
@@ -270,6 +276,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::Core
         Qt6::Gui
         Qt6::Widgets
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
         spdlog::spdlog
         lz4::lz4
         ${OpenCV_LIBS}

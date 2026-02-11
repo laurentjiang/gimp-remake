@@ -7,7 +7,10 @@
 
 #include "ui/main_window.h"
 
+#include "core/clipboard_manager.h"
 #include "core/command_bus.h"
+#include "core/commands/crop_command.h"
+#include "core/commands/resize_command.h"
 #include "core/commands/selection_command.h"
 #include "core/document.h"
 #include "core/events.h"
@@ -31,6 +34,7 @@
 #include "io/io_manager.h"
 #include "io/project_file.h"
 #include "render/skia_renderer.h"
+#include "ui/canvas_resize_dialog.h"
 #include "ui/color_chooser_panel.h"
 #include "ui/command_palette.h"
 #include "ui/debug_hud.h"
@@ -55,11 +59,14 @@
 #include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QRect>
 #include <QStatusBar>
 #include <QToolBar>
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 namespace gimp {
@@ -110,6 +117,20 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
             ToolFactory::instance().setForegroundColor(rgba);
         });
 
+    // Subscribe to layer selection changes to track active layer
+    m_layerSelectionSubscription = EventBus::instance().subscribe<LayerSelectionChangedEvent>(
+        [this](const LayerSelectionChangedEvent& event) {
+            if (m_document) {
+                m_document->setActiveLayerIndex(event.layerIndex);
+            }
+        });
+
+    // Subscribe to mouse position changes for cursor-aware paste
+    m_mousePositionSubscription = EventBus::instance().subscribe<MousePositionChangedEvent>(
+        [this](const MousePositionChangedEvent& event) {
+            m_lastCanvasMousePos = QPoint(event.canvasX, event.canvasY);
+        });
+
     // Create log bridge and panel
     m_logBridge = new LogBridge(this);
     m_logPanel = new LogPanel(this);
@@ -149,6 +170,8 @@ MainWindow::~MainWindow()
 {
     EventBus::instance().unsubscribe(m_toolChangedSubscription);
     EventBus::instance().unsubscribe(m_colorChangedSubscription);
+    EventBus::instance().unsubscribe(m_layerSelectionSubscription);
+    EventBus::instance().unsubscribe(m_mousePositionSubscription);
 }
 
 void MainWindow::setupMenuBar()
@@ -166,11 +189,10 @@ void MainWindow::setupMenuBar()
     auto* editMenu = menuBar()->addMenu("&Edit");
     editMenu->addAction("&Undo", QKeySequence::Undo, this, &MainWindow::onUndo);
     editMenu->addAction("&Redo", QKeySequence::Redo, this, &MainWindow::onRedo);
-    // TODO(clipboard): Re-enable Cut/Copy/Paste after merging branch
-    // 9-multi-layer-image-project-file-handling. Clipboard requires proper
-    // active layer management, floating selection concept, and LayerStack
-    // operations (activeLayer, moveLayer, insertAt) to work correctly.
-    // See ClipboardManager for the implementation stub.
+    editMenu->addSeparator();
+    editMenu->addAction("Cu&t", QKeySequence::Cut, this, &MainWindow::onCut);
+    editMenu->addAction("&Copy", QKeySequence::Copy, this, &MainWindow::onCopy);
+    editMenu->addAction("&Paste", QKeySequence::Paste, this, &MainWindow::onPaste);
 
     auto* selectMenu = menuBar()->addMenu("&Select");
     selectMenu->addAction("&All", QKeySequence::SelectAll, this, &MainWindow::onSelectAll);
@@ -203,6 +225,10 @@ void MainWindow::setupMenuBar()
     layerMenu->addSeparator();
     layerMenu->addAction("&Merge Down", []() {});
     layerMenu->addAction("&Flatten Image", []() {});
+
+    auto* imageMenu = menuBar()->addMenu("&Image");
+    imageMenu->addAction("Canvas &Size...", this, &MainWindow::onCanvasResize);
+    imageMenu->addAction("&Crop to Selection", this, &MainWindow::onCropToSelection);
 
     auto* filtersMenu = menuBar()->addMenu("Filte&rs");
     filtersMenu->addAction("&Blur...", this, &MainWindow::onApplyBlur);
@@ -315,10 +341,12 @@ void MainWindow::setupShortcuts()
 
 void MainWindow::createDocument()
 {
-    m_document = std::make_shared<ProjectFile>(800, 600);
+    auto projectFile = std::make_shared<ProjectFile>(800, 600);
 
-    auto bg = m_document->addLayer();
+    auto bg = projectFile->addLayer();
     bg->setName("Background");
+    projectFile->resetLayerCounter();  // Next layer will be "Layer 1"
+    m_document = projectFile;
     auto* pixels = reinterpret_cast<uint32_t*>(bg->data().data());
     for (int i = 0; i < 800 * 600; ++i) {
         pixels[i] = 0xFFFFFFFF;
@@ -536,7 +564,11 @@ void MainWindow::onApplyBlur()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     BlurFilter filter;
     filter.setRadius(static_cast<float>(radius));
 
@@ -563,7 +595,11 @@ void MainWindow::onApplySharpen()
         return;
     }
 
-    auto layer = m_document->layers()[0];
+    auto layer = m_document->activeLayer();
+    if (!layer) {
+        statusBar()->showMessage("No active layer", 2000);
+        return;
+    }
     SharpenFilter filter;
     filter.setAmount(static_cast<float>(amount));
 
@@ -779,6 +815,161 @@ void MainWindow::onSaveProjectAs()
 
     m_projectPath = filePath;
     onSaveProject();
+}
+
+void MainWindow::onCanvasResize()
+{
+    if (!m_document) {
+        return;
+    }
+
+    CanvasResizeDialog dialog(m_document->width(), m_document->height(), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    const int newWidth = dialog.canvasWidth();
+    const int newHeight = dialog.canvasHeight();
+
+    if (newWidth == m_document->width() && newHeight == m_document->height()) {
+        statusBar()->showMessage("Canvas size unchanged", 1500);
+        return;
+    }
+
+    auto cmd = std::make_shared<CanvasResizeCommand>(
+        m_document, newWidth, newHeight, dialog.anchorX(), dialog.anchorY());
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
+
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->invalidateCache();
+        m_canvasWidget->update();
+    }
+
+    statusBar()->showMessage(QString("Canvas resized to %1 x %2").arg(newWidth).arg(newHeight),
+                             2000);
+}
+
+void MainWindow::onCropToSelection()
+{
+    if (!m_document) {
+        return;
+    }
+
+    if (!SelectionManager::instance().hasSelection()) {
+        statusBar()->showMessage("No selection to crop", 2000);
+        return;
+    }
+
+    const QPainterPath selectionPath = SelectionManager::instance().selectionPath();
+    QRect cropBounds = selectionPath.boundingRect().toAlignedRect();
+    const QRect docBounds(0, 0, m_document->width(), m_document->height());
+    cropBounds = cropBounds.intersected(docBounds);
+
+    if (cropBounds.isEmpty()) {
+        statusBar()->showMessage("Selection is empty", 2000);
+        return;
+    }
+
+    if (cropBounds == docBounds) {
+        statusBar()->showMessage("Selection matches canvas", 1500);
+        return;
+    }
+
+    auto cmd = std::make_shared<CropCommand>(m_document, cropBounds);
+    if (m_commandBus) {
+        m_commandBus->dispatch(cmd);
+    }
+
+    // Clear selection after crop - the canvas now matches the selection bounds
+    SelectionManager::instance().clear();
+
+    // Reset selection tools to clear stale local state (phase, currentBounds)
+    auto& factory = ToolFactory::instance();
+    if (auto* rectTool = dynamic_cast<RectSelectTool*>(factory.getTool("select_rect"))) {
+        rectTool->resetToIdle();
+    }
+    if (auto* ellipseTool = dynamic_cast<EllipseSelectTool*>(factory.getTool("select_ellipse"))) {
+        ellipseTool->resetToIdle();
+    }
+
+    if (m_canvasWidget != nullptr) {
+        m_canvasWidget->invalidateCache();
+        m_canvasWidget->update();
+    }
+
+    statusBar()->showMessage(
+        QString("Canvas cropped to %1 x %2").arg(cropBounds.width()).arg(cropBounds.height()),
+        2000);
+}
+
+void MainWindow::onCut()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to cut from", 2000);
+        return;
+    }
+
+    // Commit any active floating buffer before cut
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
+    if (ClipboardManager::instance().cutSelection(m_document, nullptr, m_commandBus.get())) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Cut to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to cut (no selection)", 2000);
+    }
+}
+
+void MainWindow::onCopy()
+{
+    if (!m_document || m_document->layers().count() == 0) {
+        statusBar()->showMessage("No layer to copy from", 2000);
+        return;
+    }
+
+    // Commit any active floating buffer before copy
+    auto* moveTool = dynamic_cast<MoveTool*>(ToolFactory::instance().getTool("move"));
+    if (moveTool && moveTool->isMovingSelection()) {
+        moveTool->commitFloatingBuffer();
+        if (m_canvasWidget != nullptr) {
+            m_canvasWidget->clearMoveOverride();
+        }
+    }
+
+    if (ClipboardManager::instance().copySelection(m_document, nullptr)) {
+        statusBar()->showMessage("Copied to clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Failed to copy", 2000);
+    }
+}
+
+void MainWindow::onPaste()
+{
+    if (!m_document) {
+        statusBar()->showMessage("No document to paste into", 2000);
+        return;
+    }
+
+    // Use cursor position if available, otherwise center on canvas
+    bool useCursor = (m_lastCanvasMousePos.x() >= 0 && m_lastCanvasMousePos.y() >= 0 &&
+                      m_lastCanvasMousePos.x() < m_document->width() &&
+                      m_lastCanvasMousePos.y() < m_document->height());
+
+    if (ClipboardManager::instance().pasteToDocument(
+            m_document, m_commandBus.get(), m_lastCanvasMousePos, useCursor)) {
+        m_canvasWidget->update();
+        statusBar()->showMessage("Pasted from clipboard", 1000);
+    } else {
+        statusBar()->showMessage("Nothing to paste", 2000);
+    }
 }
 
 }  // namespace gimp

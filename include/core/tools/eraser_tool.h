@@ -94,7 +94,8 @@ class EraserTool : public Tool, public ToolOptions {
     void eraseAt(int x, int y, float pressure);
 
     std::vector<StrokePoint> strokePoints_;
-    std::vector<uint8_t> beforeState_;  ///< Layer data before stroke for undo.
+    std::vector<uint8_t> beforeState_;    ///< Layer data before stroke for undo.
+    std::shared_ptr<Layer> activeLayer_;  ///< Layer being erased during stroke.
     int brushSize_ = 10;
     float hardness_ = 0.5F;
     float opacity_ = 1.0F;

@@ -93,6 +93,11 @@ class MainWindow : public QMainWindow {
     void onSelectAll();
     void onSelectNone();
     void onSelectInvert();
+    void onCanvasResize();
+    void onCropToSelection();
+    void onCut();
+    void onCopy();
+    void onPaste();
     void onOpenProject();
     void onSaveProject();
     void onSaveProjectAs();
@@ -113,6 +118,10 @@ class MainWindow : public QMainWindow {
 
     EventBus::SubscriptionId m_toolChangedSubscription = 0;
     EventBus::SubscriptionId m_colorChangedSubscription = 0;
+    EventBus::SubscriptionId m_layerSelectionSubscription = 0;
+    EventBus::SubscriptionId m_mousePositionSubscription = 0;
+
+    QPoint m_lastCanvasMousePos;
 
     SkiaCanvasWidget* m_canvasWidget = nullptr;
     ToolboxPanel* m_toolboxPanel = nullptr;

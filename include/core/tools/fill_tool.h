@@ -12,9 +12,12 @@
 #include "core/tool_options.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace gimp {
+
+class Layer;
 
 /**
  * @brief A flood-fill tool that fills contiguous regions with a color.
@@ -103,9 +106,10 @@ class FillTool : public Tool, public ToolOptions {
                               int width,
                               std::uint32_t color);
 
-    std::vector<uint8_t> beforeState_;  ///< Layer data before fill for undo.
-    int tolerance_ = 0;                 ///< Color matching tolerance (0-255).
-    bool fillPending_ = false;          ///< Whether a fill operation is pending commit.
+    std::vector<uint8_t> beforeState_;    ///< Layer data before fill for undo.
+    std::shared_ptr<Layer> activeLayer_;  ///< Layer being filled.
+    int tolerance_ = 0;                   ///< Color matching tolerance (0-255).
+    bool fillPending_ = false;            ///< Whether a fill operation is pending commit.
 };
 
 }  // namespace gimp

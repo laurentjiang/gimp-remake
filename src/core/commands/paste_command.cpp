@@ -8,6 +8,8 @@
 #include "core/commands/paste_command.h"
 
 #include "core/document.h"
+#include "core/event_bus.h"
+#include "core/events.h"
 #include "core/layer.h"
 
 #include <algorithm>
@@ -51,7 +53,20 @@ void PasteCommand::apply()
     }
 
     if (!layer_) {
-        layer_ = document_->addLayer();
+        // Create layer and insert above active layer (GIMP behavior)
+        layer_ = std::make_shared<Layer>(document_->width(), document_->height());
+        layer_->setName("Pasted Layer");
+
+        // Insert above active layer
+        std::size_t insertIndex = document_->activeLayerIndex() + 1;
+        document_->layers().insertLayer(insertIndex, layer_);
+        document_->setActiveLayerIndex(insertIndex);
+
+        // Notify UI about layer stack and selection changes
+        EventBus::instance().publish(
+            LayerStackChangedEvent{LayerStackChangedEvent::Action::Added, layer_});
+        EventBus::instance().publish(LayerSelectionChangedEvent{nullptr, layer_, insertIndex});
+
         createdLayer_ = true;
         captured_ = false;
     }
@@ -79,6 +94,11 @@ void PasteCommand::undo()
 
     if (createdLayer_ && document_) {
         document_->removeLayer(layer_);
+
+        // Notify UI about layer removal
+        EventBus::instance().publish(
+            LayerStackChangedEvent{LayerStackChangedEvent::Action::Removed, layer_});
+
         layer_.reset();
         createdLayer_ = false;
         captured_ = false;

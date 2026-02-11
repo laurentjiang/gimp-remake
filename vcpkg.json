@@ -12,13 +12,15 @@
         "gui",
         "widgets",
         "png",
-        "jpeg"
+        "jpeg",
+        "opengl"
       ]
     },
     "qtsvg",
     {
       "name": "skia",
-      "default-features": false
+      "default-features": false,
+      "features": ["gl"]
     },
     {
       "name": "opencv4",

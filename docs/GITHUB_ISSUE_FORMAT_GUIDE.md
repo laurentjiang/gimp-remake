@@ -1,9 +1,7 @@
 # GitHub Issue Template for Gimp Remake Project
 
 ## Description
-- Current limitations of the existing code.
-- Desired improvements (e.g., type safety, performance).
-- Business or architectural requirements.
+Write a short description of the issue or feature request here.
 
 ## Tasks
 - [ ] Task 1: Core infrastructure/templates
@@ -19,5 +17,4 @@
 - [ ] Performance or UI stability markers
 
 ## Technical Design
-```cpp
-// Insert proposed API, class structures, or template logic here
+Insert proposed API, class structures, or template logic here

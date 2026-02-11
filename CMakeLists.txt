@@ -44,6 +44,8 @@ add_executable(gimp-remake
     "src/history/history_stack.cpp"
     "src/history/simple_history_manager.cpp"
     "src/io/io_manager.cpp"
+    "src/io/binary_project_writer.cpp"
+    "src/io/binary_project_reader.cpp"
     "src/error_handling/error_handler.cpp"
     "src/core/command_bus.cpp"
     "src/core/clipboard_manager.cpp"
@@ -117,6 +119,7 @@ endif()
 find_package(unofficial-skia CONFIG REQUIRED)
 find_package(Qt6 COMPONENTS Core Gui Widgets Svg OpenGL OpenGLWidgets REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(lz4 CONFIG REQUIRED)
 
 target_link_libraries(gimp-remake PRIVATE 
     spdlog::spdlog 
@@ -127,6 +130,7 @@ target_link_libraries(gimp-remake PRIVATE
     Qt6::Svg
     Qt6::OpenGL
     Qt6::OpenGLWidgets
+    lz4::lz4
     ${OpenCV_LIBS}
 )
 
@@ -252,6 +256,8 @@ if(GIMP_REMAKE_BUILD_TESTS)
         "src/history/simple_history_manager.cpp"
         "src/render/skia_compositor.cpp"
         "src/io/io_manager.cpp"
+        "src/io/binary_project_writer.cpp"
+        "src/io/binary_project_reader.cpp"
         "src/ui/color_chooser_panel.cpp"
         # Headers with Q_OBJECT for AUTOMOC
         "include/ui/skia_canvas_widget.h"
@@ -273,6 +279,7 @@ if(GIMP_REMAKE_BUILD_TESTS)
         Qt6::OpenGL
         Qt6::OpenGLWidgets
         spdlog::spdlog
+        lz4::lz4
         ${OpenCV_LIBS}
     )
     

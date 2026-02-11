@@ -13,6 +13,7 @@
 #include <QDockWidget>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMenu>
 #include <QMenuBar>
 #include <QPoint>
 #include <QShortcut>
@@ -34,6 +35,7 @@ class Layer;
 class LayersPanel;
 class LogBridge;
 class LogPanel;
+class RecentFilesManager;
 class ShortcutManager;
 class ToastManager;
 class SimpleHistoryManager;
@@ -94,6 +96,8 @@ class MainWindow : public QMainWindow {
     void onSelectNone();
     void onSelectInvert();
     void onOpenProject();
+    void onOpenRecentFile();
+    void onClearRecentFiles();
     void onSaveProject();
     void onSaveProjectAs();
 
@@ -105,6 +109,8 @@ class MainWindow : public QMainWindow {
     void createDocument();
     void positionDebugHud();
     std::shared_ptr<ProjectFile> buildProjectSnapshot() const;
+    void refreshRecentFilesMenu();
+    bool openProjectFromPath(const QString& filePath, bool addToRecent);
 
     std::shared_ptr<Document> m_document;
     std::shared_ptr<SkiaRenderer> m_renderer;
@@ -132,6 +138,10 @@ class MainWindow : public QMainWindow {
     QLabel* m_toolOptionsTitleLabel = nullptr;
     QDockWidget* m_rightDock = nullptr;
     QTabWidget* m_rightTabWidget = nullptr;
+
+    QMenu* m_openRecentMenu = nullptr;
+    QAction* m_clearRecentAction = nullptr;
+    std::unique_ptr<RecentFilesManager> m_recentFilesManager;
 
     QAction* m_toggleDebugAction = nullptr;
     QString m_projectPath;

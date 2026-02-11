@@ -38,6 +38,7 @@
 #include "ui/layers_panel.h"
 #include "ui/log_bridge.h"
 #include "ui/log_panel.h"
+#include "ui/recent_files_manager.h"
 #include "ui/shortcut_manager.h"
 #include "ui/skia_canvas_widget.h"
 #include "ui/theme.h"
@@ -111,6 +112,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     m_renderer = std::make_shared<SkiaRenderer>();
     m_historyManager = std::make_unique<SimpleHistoryManager>();
     m_commandBus = std::make_unique<BasicCommandBus>(*m_historyManager);
+    m_recentFilesManager = std::make_unique<RecentFilesManager>();
 
     // Register tools with the factory
     auto& factory = ToolFactory::instance();
@@ -195,6 +197,8 @@ void MainWindow::setupMenuBar()
     auto* fileMenu = menuBar()->addMenu("&File");
     fileMenu->addAction("&New Project", QKeySequence::New, this, &MainWindow::createDocument);
     fileMenu->addAction("&Open Project...", QKeySequence::Open, this, &MainWindow::onOpenProject);
+    m_openRecentMenu = fileMenu->addMenu("Open &Recent");
+    refreshRecentFilesMenu();
     fileMenu->addSeparator();
     fileMenu->addAction("&Save Project", QKeySequence::Save, this, &MainWindow::onSaveProject);
     fileMenu->addAction(
@@ -731,12 +735,52 @@ std::shared_ptr<ProjectFile> MainWindow::buildProjectSnapshot() const
     return snapshot;
 }
 
-void MainWindow::onOpenProject()
+void MainWindow::refreshRecentFilesMenu()
 {
-    const QString filePath = QFileDialog::getOpenFileName(
-        this, "Open Project", QString(), "GIMP Project (*.gimp *.json)");
-    if (filePath.isEmpty()) {
+    if (!m_openRecentMenu || !m_recentFilesManager) {
         return;
+    }
+
+    m_openRecentMenu->clear();
+
+    const QStringList recentFiles = m_recentFilesManager->recentFiles();
+    if (recentFiles.isEmpty()) {
+        auto* emptyAction = m_openRecentMenu->addAction("No recent files");
+        emptyAction->setEnabled(false);
+    } else {
+        int index = 1;
+        for (const auto& filePath : recentFiles) {
+            QFileInfo info(filePath);
+            QString label = info.fileName();
+            if (label.isEmpty()) {
+                label = filePath;
+            }
+
+            QString actionText = QString("&%1 %2").arg(index).arg(label);
+            if (m_recentFilesManager->isMissing(filePath)) {
+                actionText += " (missing)";
+            }
+
+            QAction* action = m_openRecentMenu->addAction(actionText);
+            action->setData(filePath);
+            action->setToolTip(filePath);
+            action->setEnabled(!m_recentFilesManager->isMissing(filePath));
+            connect(action, &QAction::triggered, this, &MainWindow::onOpenRecentFile);
+
+            ++index;
+        }
+    }
+
+    m_openRecentMenu->addSeparator();
+    m_clearRecentAction =
+        m_openRecentMenu->addAction("Clear Recent Files", this, &MainWindow::onClearRecentFiles);
+    m_clearRecentAction->setEnabled(!recentFiles.isEmpty());
+}
+
+bool MainWindow::openProjectFromPath(const QString& filePath, bool addToRecent)
+{
+    if (filePath.isEmpty()) {
+        return false;
     }
 
     QFileInfo fileInfo(filePath);
@@ -744,7 +788,11 @@ void MainWindow::onOpenProject()
         error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOFileNotFound,
                                                        filePath.toStdString());
         statusBar()->showMessage("Project file not found", 3000);
-        return;
+        if (m_recentFilesManager) {
+            m_recentFilesManager->removeFile(filePath);
+            refreshRecentFilesMenu();
+        }
+        return false;
     }
 
     IOManager ioManager;
@@ -764,12 +812,57 @@ void MainWindow::onOpenProject()
         }
 
         m_projectPath = filePath;
+        if (addToRecent && m_recentFilesManager) {
+            m_recentFilesManager->addFile(filePath);
+            refreshRecentFilesMenu();
+        }
+
         statusBar()->showMessage("Project loaded", 2000);
+        return true;
     } catch (const std::exception& ex) {
         error::ErrorHandler::GetInstance().ReportError(error::ErrorCode::IOCorruptedFile,
                                                        ex.what());
         statusBar()->showMessage("Failed to open project", 3000);
     }
+
+    return false;
+}
+
+void MainWindow::onOpenRecentFile()
+{
+    auto* action = qobject_cast<QAction*>(sender());
+    if (!action) {
+        return;
+    }
+
+    const QString filePath = action->data().toString();
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    openProjectFromPath(filePath, true);
+}
+
+void MainWindow::onClearRecentFiles()
+{
+    if (!m_recentFilesManager) {
+        return;
+    }
+
+    m_recentFilesManager->clear();
+    refreshRecentFilesMenu();
+    statusBar()->showMessage("Recent files cleared", 2000);
+}
+
+void MainWindow::onOpenProject()
+{
+    const QString filePath = QFileDialog::getOpenFileName(
+        this, "Open Project", QString(), "GIMP Project (*.gimp *.json)");
+    if (filePath.isEmpty()) {
+        return;
+    }
+
+    openProjectFromPath(filePath, true);
 }
 
 void MainWindow::onSaveProject()
@@ -796,6 +889,11 @@ void MainWindow::onSaveProject()
                                                        m_projectPath.toStdString());
         statusBar()->showMessage("Failed to save project", 3000);
         return;
+    }
+
+    if (m_recentFilesManager) {
+        m_recentFilesManager->addFile(m_projectPath);
+        refreshRecentFilesMenu();
     }
 
     statusBar()->showMessage("Project saved", 2000);

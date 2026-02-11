@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -103,6 +105,54 @@ class Layer {
      *  @return Const reference to the pixel data vector.
      */
     [[nodiscard]] const std::vector<uint8_t>& data() const { return m_data; }
+
+    /*! @brief Resizes the layer and repositions existing content.
+     *  @param width New width in pixels.
+     *  @param height New height in pixels.
+     *  @param offsetX Horizontal offset applied to existing pixels.
+     *  @param offsetY Vertical offset applied to existing pixels.
+     */
+    void resize(int width, int height, int offsetX, int offsetY)
+    {
+        if (width <= 0 || height <= 0) {
+            m_width = std::max(0, width);
+            m_height = std::max(0, height);
+            m_data.clear();
+            return;
+        }
+
+        std::vector<uint8_t> newData;
+        newData.resize(static_cast<size_t>(width) * static_cast<size_t>(height) * 4U, 0);
+
+        const int srcX = std::max(0, -offsetX);
+        const int srcY = std::max(0, -offsetY);
+        const int dstX = std::max(0, offsetX);
+        const int dstY = std::max(0, offsetY);
+
+        const int copyWidth = std::min(m_width - srcX, width - dstX);
+        const int copyHeight = std::min(m_height - srcY, height - dstY);
+
+        if (copyWidth > 0 && copyHeight > 0) {
+            const int srcStride = m_width * 4;
+            const int dstStride = width * 4;
+            const size_t rowBytes = static_cast<size_t>(copyWidth) * 4U;
+
+            for (int row = 0; row < copyHeight; ++row) {
+                const size_t srcOffset =
+                    static_cast<size_t>(srcY + row) * static_cast<size_t>(srcStride) +
+                    static_cast<size_t>(srcX) * 4U;
+                const size_t dstOffset =
+                    static_cast<size_t>(dstY + row) * static_cast<size_t>(dstStride) +
+                    static_cast<size_t>(dstX) * 4U;
+
+                std::memcpy(newData.data() + dstOffset, m_data.data() + srcOffset, rowBytes);
+            }
+        }
+
+        m_width = width;
+        m_height = height;
+        m_data = std::move(newData);
+    }
 
   private:
     std::string m_name = "Layer";                ///< Layer display name.

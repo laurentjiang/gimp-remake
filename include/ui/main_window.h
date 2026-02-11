@@ -91,6 +91,8 @@ class MainWindow : public QMainWindow {
     void onSelectAll();
     void onSelectNone();
     void onSelectInvert();
+    void onCanvasResize();
+    void onCropToSelection();
     void onCut();
     void onCopy();
     void onPaste();

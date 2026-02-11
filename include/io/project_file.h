@@ -11,6 +11,8 @@
 
 #include <QPainterPath>
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <string>
 
@@ -139,6 +141,31 @@ class ProjectFile : public Document {
      *  @return Height in pixels.
      */
     [[nodiscard]] int height() const override { return m_height; }
+
+    void resize(int width, int height, float anchorX, float anchorY) override
+    {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+
+        if (width == m_width && height == m_height) {
+            return;
+        }
+
+        const float clampedX = std::clamp(anchorX, 0.0F, 1.0F);
+        const float clampedY = std::clamp(anchorY, 0.0F, 1.0F);
+        const int offsetX = static_cast<int>(std::round((width - m_width) * clampedX));
+        const int offsetY = static_cast<int>(std::round((height - m_height) * clampedY));
+
+        for (const auto& layer : m_layers) {
+            if (layer) {
+                layer->resize(width, height, offsetX, offsetY);
+            }
+        }
+
+        m_width = width;
+        m_height = height;
+    }
 
     /*! @brief Sets the document selection path.
      *  @param path The selection path in canvas coordinates.

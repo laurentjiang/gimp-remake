@@ -53,16 +53,8 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
 
-    // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
-    constexpr int kTileSize = 8;
-    m_checkerboardTile = QPixmap(kTileSize * 2, kTileSize * 2);
-    m_checkerboardTile.fill(Qt::transparent);  // Initialize pixmap
-    QPainter tilePainter(&m_checkerboardTile);
-    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(180, 180, 180));
-    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(220, 220, 220));
-    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(220, 220, 220));
-    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(180, 180, 180));
-    tilePainter.end();
+    // Checkerboard colors for transparency display (GIMP-style)
+    // Colors chosen for good contrast: 102 vs 153 = 51 difference on 0-255 scale
 
     m_selectionTimer.setInterval(80);
     connect(
@@ -466,22 +458,42 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
         return;
     }
 
-    // Save painter state
     painter.save();
     painter.setClipRect(visibleRect);
 
-    // Calculate tile size scaled by zoom
-    constexpr int kBaseTileSize = 8;
-    int scaledTileSize = std::max(
-        4, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 4 for visibility
+    // Calculate tile size scaled by zoom (minimum 8px for visibility)
+    constexpr int kBaseTileSize = 16;
+    int tileSize = std::max(8, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));
 
-    // Scale the checkerboard tile to match zoom
-    QPixmap scaledTile =
-        m_checkerboardTile.scaled(scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio);
+    // GIMP-style checkerboard colors with good contrast
+    const QColor darkGray(102, 102, 102);
+    const QColor lightGray(153, 153, 153);
 
-    // Draw tiled pixmap from the canvas origin (rect.topLeft()) so pattern aligns with canvas
-    // The clip rect ensures we only paint within the visible area
-    painter.drawTiledPixmap(rect.toRect(), scaledTile);
+    // Calculate tile grid boundaries in screen coordinates
+    int startX = static_cast<int>(std::floor(visibleRect.left() / tileSize)) * tileSize;
+    int startY = static_cast<int>(std::floor(visibleRect.top() / tileSize)) * tileSize;
+    int endX = static_cast<int>(std::ceil(visibleRect.right()));
+    int endY = static_cast<int>(std::ceil(visibleRect.bottom()));
+
+    // Calculate offset from canvas origin to determine tile color parity
+    int canvasOffsetX = static_cast<int>(std::floor(rect.left() / tileSize));
+    int canvasOffsetY = static_cast<int>(std::floor(rect.top() / tileSize));
+
+    // Draw checkerboard tiles manually for reliable QOpenGLWidget rendering
+    for (int y = startY; y < endY; y += tileSize) {
+        for (int x = startX; x < endX; x += tileSize) {
+            // Calculate tile indices relative to canvas origin
+            int tileX =
+                static_cast<int>(std::floor(static_cast<float>(x) / static_cast<float>(tileSize))) -
+                canvasOffsetX;
+            int tileY =
+                static_cast<int>(std::floor(static_cast<float>(y) / static_cast<float>(tileSize))) -
+                canvasOffsetY;
+            bool isDark = ((tileX + tileY) % 2) == 0;
+
+            painter.fillRect(x, y, tileSize, tileSize, isDark ? darkGray : lightGray);
+        }
+    }
 
     painter.restore();
 }

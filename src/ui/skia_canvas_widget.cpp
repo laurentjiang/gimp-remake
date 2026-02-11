@@ -174,6 +174,12 @@ void SkiaCanvasWidget::invalidateCache()
     update();
 }
 
+void SkiaCanvasWidget::setDocument(std::shared_ptr<Document> document)
+{
+    m_document = std::move(document);
+    update();
+}
+
 void SkiaCanvasWidget::initializeGL()
 {
     auto gpuCtx = std::make_unique<GpuContext>();

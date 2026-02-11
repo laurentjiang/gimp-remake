@@ -13,6 +13,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QLockFile>
+#include <QIcon>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPixmap>
@@ -82,8 +83,9 @@ int runApplication(int argc, char** argv)
     QSurfaceFormat::setDefaultFormat(format);
 
     QApplication app(argc, argv);
+    QApplication::setWindowIcon(QIcon(":/icons/gomp.png"));
     QApplication::setApplicationName("Gimp Remake");
-    QApplication::setApplicationVersion("1.0.0");
+    QApplication::setApplicationVersion("0.4.0");
     QApplication::setOrganizationName("GimpRemake");
     QApplication::setOrganizationDomain("gimpremake.org");
 

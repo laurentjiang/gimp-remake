@@ -12,7 +12,6 @@
 #include "render/gpu_context.h"
 
 #include <QOpenGLWidget>
-#include <QPixmap>
 #include <QPointF>
 #include <QTimer>
 
@@ -250,8 +249,6 @@ class SkiaCanvasWidget : public QOpenGLWidget {
 
     QTimer m_selectionTimer;
     float m_marchingOffset = 0.0F;
-
-    QPixmap m_checkerboardTile;  ///< Cached checkerboard tile for transparency display.
 
     // Event subscriptions for layer changes
     EventBus::SubscriptionId m_layerStackSub = 0;      ///< Layer stack change subscription.

@@ -105,18 +105,9 @@ void CropCommand::restoreSelection(const QPainterPath& path, SelectionType type,
 
 QPainterPath CropCommand::buildAfterSelection() const
 {
-    if (beforeSelection_.isEmpty()) {
-        return QPainterPath();
-    }
-
-    const QPoint offset = computeOffset();
-    QTransform transform;
-    transform.translate(offset.x(), offset.y());
-    QPainterPath moved = transform.map(beforeSelection_);
-
-    QPainterPath bounds;
-    bounds.addRect(0, 0, targetWidth_, targetHeight_);
-    return moved.intersected(bounds);
+    // Crop to selection: the canvas now matches the selection bounds exactly
+    // No selection should remain after crop
+    return QPainterPath();
 }
 
 QPoint CropCommand::computeOffset() const

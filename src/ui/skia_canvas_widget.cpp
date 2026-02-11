@@ -53,15 +53,16 @@ SkiaCanvasWidget::SkiaCanvasWidget(std::shared_ptr<Document> document,
     setAttribute(Qt::WA_KeyCompression, false);
     updateCursor();
 
-    // Create checkerboard tile for transparency display (8x8 pixels, light/dark gray)
-    constexpr int kTileSize = 8;
+    // Create checkerboard tile for transparency display (16x16 pixels, GIMP-style colors)
+    constexpr int kTileSize = 16;
     m_checkerboardTile = QPixmap(kTileSize * 2, kTileSize * 2);
     m_checkerboardTile.fill(Qt::transparent);  // Initialize pixmap
     QPainter tilePainter(&m_checkerboardTile);
-    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(180, 180, 180));
-    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(220, 220, 220));
-    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(220, 220, 220));
-    tilePainter.fillRect(kTileSize, kTileSize, kTileSize, kTileSize, QColor(180, 180, 180));
+    tilePainter.fillRect(0, 0, kTileSize, kTileSize, QColor(102, 102, 102));          // Dark gray
+    tilePainter.fillRect(kTileSize, 0, kTileSize, kTileSize, QColor(153, 153, 153));  // Light gray
+    tilePainter.fillRect(0, kTileSize, kTileSize, kTileSize, QColor(153, 153, 153));  // Light gray
+    tilePainter.fillRect(
+        kTileSize, kTileSize, kTileSize, kTileSize, QColor(102, 102, 102));  // Dark
     tilePainter.end();
 
     m_selectionTimer.setInterval(80);
@@ -471,13 +472,13 @@ void SkiaCanvasWidget::drawCheckerboard(QPainter& painter, const QRectF& rect)
     painter.setClipRect(visibleRect);
 
     // Calculate tile size scaled by zoom
-    constexpr int kBaseTileSize = 8;
+    constexpr int kBaseTileSize = 16;
     int scaledTileSize = std::max(
-        4, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 4 for visibility
+        8, static_cast<int>(kBaseTileSize * m_viewport.zoomLevel));  // Min 8 for visibility
 
     // Scale the checkerboard tile to match zoom (use FastTransformation to preserve hard edges)
     QPixmap scaledTile = m_checkerboardTile.scaled(
-        scaledTileSize * 2, scaledTileSize * 2, Qt::KeepAspectRatio, Qt::FastTransformation);
+        scaledTileSize * 2, scaledTileSize * 2, Qt::IgnoreAspectRatio, Qt::FastTransformation);
 
     // Draw tiled pixmap from the canvas origin (rect.topLeft()) so pattern aligns with canvas
     // The clip rect ensures we only paint within the visible area

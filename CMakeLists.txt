@@ -334,31 +334,67 @@ if(WIN32)
 
     if(WINDEPLOYQT_EXECUTABLE)
         # Run windeployqt after installation to populate the bin folder
+        # Per Qt documentation: https://doc.qt.io/qt-6/windows-deployment.html
+        # Use --release for Release/RelWithDebInfo builds to avoid looking for debug DLLs
         install(CODE "
-            message(STATUS \"Running windeployqt...\")
+            message(STATUS \"Running windeployqt on \${CMAKE_INSTALL_PREFIX}/bin/gimp-remake.exe\")
+            set(_deploy_args \"\${CMAKE_INSTALL_PREFIX}/bin/gimp-remake.exe\" --no-translations --compiler-runtime --verbose 1)
+            if(NOT \"\${CMAKE_BUILD_TYPE}\" STREQUAL \"Debug\")
+                list(APPEND _deploy_args --release)
+            endif()
             execute_process(
-                COMMAND \"${WINDEPLOYQT_EXECUTABLE}\"
-                        --dir \"\${CMAKE_INSTALL_PREFIX}/bin\"
-                        --no-translations
-                        --compiler-runtime
-                        --verbose 0
-                        \"\${CMAKE_INSTALL_PREFIX}/bin/gimp-remake.exe\"
+                COMMAND \"${WINDEPLOYQT_EXECUTABLE}\" \${_deploy_args}
                 RESULT_VARIABLE _deploy_res
             )
             if(NOT _deploy_res EQUAL 0)
-                message(WARNING \"windeployqt failed with code \${_deploy_res}\")
+                message(WARNING \"windeployqt failed with code \${_deploy_res}, Qt plugins will be installed from vcpkg\")
             endif()
         ")
     else()
         message(WARNING "windeployqt not found! Qt DLLs will not be bundled.")
     endif()
 
-    # 2. Bundle vcpkg/other DLLs (OpenCV, Skia, spdlog)
-    # Copy all DLLs from the build directory to the install bin directory
+    # 2. Bundle vcpkg DLLs (Skia, spdlog, opencv, etc.)
+    if(VCPKG_TARGET_TRIPLET)
+        set(_vcpkg_bin_dir "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/bin")
+        set(_vcpkg_qt_plugins "${CMAKE_BINARY_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}/Qt6/plugins")
+    else()
+        set(_vcpkg_bin_dir "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows-release/bin")
+        set(_vcpkg_qt_plugins "${CMAKE_BINARY_DIR}/vcpkg_installed/x64-windows-release/Qt6/plugins")
+    endif()
+    
     install(CODE "
-        file(GLOB _app_dlls \"$<TARGET_FILE_DIR:gimp-remake>/*.dll\")
-        if(_app_dlls)
-            file(INSTALL \${_app_dlls} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        file(GLOB _vcpkg_dlls \"${_vcpkg_bin_dir}/*.dll\")
+        if(_vcpkg_dlls)
+            message(STATUS \"Installing vcpkg DLLs from ${_vcpkg_bin_dir}\")
+            file(INSTALL \${_vcpkg_dlls} DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endif()
+    ")
+    
+    # 3. Install Qt plugins (platforms, iconengines, imageformats) - fallback if windeployqt fails
+    install(CODE "
+        # Install platforms plugin (required for Qt GUI apps)
+        if(EXISTS \"${_vcpkg_qt_plugins}/platforms\")
+            message(STATUS \"Installing Qt platforms plugin from ${_vcpkg_qt_plugins}/platforms\")
+            file(INSTALL \"${_vcpkg_qt_plugins}/platforms\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endif()
+        
+        # Install iconengines plugin (for SVG icons)
+        if(EXISTS \"${_vcpkg_qt_plugins}/iconengines\")
+            message(STATUS \"Installing Qt iconengines plugin\")
+            file(INSTALL \"${_vcpkg_qt_plugins}/iconengines\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endif()
+        
+        # Install imageformats plugin
+        if(EXISTS \"${_vcpkg_qt_plugins}/imageformats\")
+            message(STATUS \"Installing Qt imageformats plugin\")
+            file(INSTALL \"${_vcpkg_qt_plugins}/imageformats\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
+        endif()
+        
+        # Install styles plugin
+        if(EXISTS \"${_vcpkg_qt_plugins}/styles\")
+            message(STATUS \"Installing Qt styles plugin\")
+            file(INSTALL \"${_vcpkg_qt_plugins}/styles\" DESTINATION \"\${CMAKE_INSTALL_PREFIX}/bin\")
         endif()
     ")
 endif()
@@ -369,11 +405,11 @@ set(CPACK_PACKAGE_VENDOR "Gimp Remake Team")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Professional Image Manipulation Program Remake")
 set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/gimp-remake/gimp-remake")
 set(CPACK_PACKAGE_CONTACT "maintainer@gimp-remake.org")
-set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_MAJOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "4")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "GimpRemake")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/license.md")
 
 if(WIN32)
     set(CPACK_GENERATOR "NSIS;ZIP")

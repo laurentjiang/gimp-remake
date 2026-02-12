@@ -59,6 +59,10 @@ jobs:
       - name: Install OpenCppCoverage
         run: choco install opencppcoverage -y
 
+      - name: Install NSIS (for releases)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: choco install nsis -y
+
       - name: Configure NuGet for GitHub Packages
         shell: pwsh
         run: |
@@ -162,11 +166,28 @@ jobs:
           Write-Host "Distribution contents:"
           Get-ChildItem -Path dist -Recurse | ForEach-Object { Write-Host $_.FullName }
 
+      - name: Create Windows Installer
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          cd build
+          cpack -G NSIS -C RelWithDebInfo
+          # List generated installers
+          Get-ChildItem -Filter "*.exe" | ForEach-Object { Write-Host "Installer: $($_.Name)" }
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: gimp-remake-windows-${{ github.sha }}
           path: dist/
+          retention-days: 14
+
+      - name: Upload Installer Artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: gimp-remake-installer-${{ github.sha }}
+          path: build/GimpRemake-*.exe
           retention-days: 14
 
       - name: Upload Test Results
@@ -205,10 +226,19 @@ jobs:
           name: gimp-remake-windows-${{ github.sha }}
           path: release/windows
 
+      - name: Download Installer Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: gimp-remake-installer-${{ github.sha }}
+          path: release/installer
+
       - name: Create Release Package
         run: |
           cd release/windows
           zip -r ../../gimp-remake-${{ github.ref_name }}-windows-x64.zip .
+          cd ../..
+          # Rename installer with version
+          mv release/installer/GimpRemake-*.exe gimp-remake-${{ github.ref_name }}-windows-x64-installer.exe
 
       - name: Generate Changelog
         id: changelog
@@ -223,6 +253,7 @@ jobs:
           body_path: CHANGELOG.md
           files: |
             gimp-remake-${{ github.ref_name }}-windows-x64.zip
+            gimp-remake-${{ github.ref_name }}-windows-x64-installer.exe
           draft: false
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
         env:
